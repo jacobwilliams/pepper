@@ -59,6 +59,14 @@ source-form = "default"
 # SPICELIB's ifort builds needed -assume byterecl. (Not FILE_STORAGE_SIZE:
 # Intel Fortran's is 8 bits, though it counts RECL= in 4-byte words.)
 # NAIF's tspice test code does need the option (tspice/fpm.toml).
+#
+# fpm compiles a dependency with the root package's flags, not with these:
+# a package using PEPPER (tspice too) must set -frecursive and
+# -ffp-contract=off (Intel: -recursive -fp-model precise) itself (README).
+#
+# With no --profile, fpm builds with these flags only (no -O, no checks):
+# `[profiles] default` replaces fpm's built-in flags. Use --profile debug or
+# --profile release (the pixi tasks do).
 [features]
 platform.gfortran.flags = "-frecursive -ffp-contract=off"
 platform.ifx.flags = "-recursive -fp-model precise"

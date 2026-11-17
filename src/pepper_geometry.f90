@@ -43700,14 +43700,12 @@ contains
 !        Determine the partition from the TICKS value that the
 !        clock string converted to.
 !
-         part = 1
-
-         do while (   part  <= nparts             .and. &
-                    ( ticks < pstart( part )     .or. &
-                      ticks > pstop ( part ) )        )
-
-            part = part + 1
-
+!
+!        PEPPER: a counted loop (Fortran's .AND. does not short-circuit:
+!        SPICELIB's loop read PSTART(NPARTS+1), past the partitions).
+!
+         do part = 1, nparts
+            if ( ticks >= pstart( part ) .and. ticks <= pstop( part ) ) exit
          end do
 
          if ( part > nparts ) then

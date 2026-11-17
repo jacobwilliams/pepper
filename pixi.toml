@@ -12,22 +12,23 @@ python = "3.13.*"
 
 [tasks]
 clean-stale = { cmd = "python tools/clean_stale.py", description = "Remove build products of deleted sources (see tools/clean_stale.py)" }
-build = { cmd = "fpm build", depends-on = ["clean-stale"], description = "Build the library" }
+build = { cmd = "fpm build --profile debug", depends-on = ["clean-stale"], description = "Build the library (debug profile: -g, bounds and array-temporary checks; fpm with no profile builds neither optimized nor checked, as fpm.toml's [profiles] default replaces fpm's built-in flags)" }
 check-threads = { cmd = "python tools/check_threads.py", description = "Check the sources for constructs gfortran makes thread-unsafe: functions with deferred-length character results (see tools/check_threads.py)" }
 check-threads-ir = { cmd = "python tools/check_threads.py --ir", description = "Also build with -fdump-tree-original and list every uninitialized static in the generated code (a build directory of its own)" }
-test = { cmd = "fpm test", depends-on = ["clean-stale", "check-threads"], description = "Build and run the unit tests (test/core); NAIF's test suite is the tspice package (pixi run tspice)" }
+test = { cmd = "fpm test --profile debug", depends-on = ["clean-stale", "check-threads"], description = "Build and run the unit tests (test/core) with the debug profile (bounds checks); NAIF's test suite is the tspice package (pixi run tspice)" }
 # Extra arguments are passed to tools/run_tspice.py, e.g.
 #   pixi run tspice                 # all families, one job per CPU
 #   pixi run tspice -j 4 'spk*'     # families matching F_SPK*
 #   pixi run tspice --help
-test-parallel = { cmd = "fpm test test_parallel --flag -fopenmp", depends-on = ["clean-stale"], description = "Run the parallel milestone test with OpenMP (the library has no OpenMP; see test/core/test_parallel.f90)" }
+test-parallel = { cmd = "fpm test test_parallel --profile debug --flag -fopenmp", depends-on = ["clean-stale"], description = "Run the parallel milestone test with OpenMP (the library has no OpenMP; see test/core/test_parallel.f90)" }
 bench-limits = { cmd = "fpm test bench_limits --profile release -- full", depends-on = ["clean-stale"], description = "Benchmark: many kernels, pool variables, body names, frames and contexts (test/core/bench_limits.f90; the baseline is in plans/limits.md)" }
 bench-parallel = { cmd = "fpm run --example bench_parallel --profile release --flag -fopenmp", depends-on = ["clean-stale"], description = "Benchmark: queries from 1, 2, 4, 8 threads (example/bench_parallel.f90)" }
 bench-queries = { cmd = "fpm test bench_queries --profile release -- build/compare/kernels", depends-on = ["clean-stale"], description = "Speed of prepared queries against SPKEZR, PXFORM and SXFORM on the real kernels (test/core/bench_queries.f90; the kernels of bench/compare_spicelib.py in build/compare/kernels)" }
 compare-spicelib = { cmd = "python bench/compare_spicelib.py", description = "Speed of PEPPER against SPICELIB N0067 built from NAIF's sources, with NAIF's flags and with -O3 (bench/compare_spicelib.py; pass --kernels DIR)" }
-verify = { cmd = "fpm run --flag -DPEPPER_VERIFY --runner 'python ../tools/run_tspice.py' --", cwd = "tspice", depends-on = ["clean-stale"], description = "tspice from a separate build directory (an extra flag gives fpm a new one), as a check against stale build products" }
-tspice = { cmd = "fpm run --runner 'python ../tools/run_tspice.py' --", cwd = "tspice", depends-on = ["clean-stale"], description = "Run the tspice test families in parallel (the tspice package; see tools/run_tspice.py)" }
-tspice-list = { cmd = "fpm run --runner 'python ../tools/run_tspice.py' -- --list", cwd = "tspice", description = "List the tspice test families" }
+verify = { cmd = "fpm run --profile debug --flag -DPEPPER_VERIFY --runner 'python ../tools/run_tspice.py' --", cwd = "tspice", depends-on = ["clean-stale"], description = "tspice from a separate build directory (an extra flag gives fpm a new one), as a check against stale build products" }
+tspice = { cmd = "fpm run --profile debug --runner 'python ../tools/run_tspice.py' --", cwd = "tspice", depends-on = ["clean-stale"], description = "Run the tspice test families in parallel, debug profile: bounds checks (the tspice package; see tools/run_tspice.py)" }
+tspice-release = { cmd = "fpm run --profile release --runner 'python ../tools/run_tspice.py' --", cwd = "tspice", depends-on = ["clean-stale"], description = "Run the tspice test families against the optimized library (-O3, as PepperyPy ships it)" }
+tspice-list = { cmd = "fpm run --profile debug --runner 'python ../tools/run_tspice.py' -- --list", cwd = "tspice", description = "List the tspice test families" }
 inventory = { cmd = "python tools/state_inventory.py", description = "Summarize the saved state in SPICELIB sources (see tools/state_inventory.py; --list, --json PATH)" }
 
 # Rust, only for the ANISE comparison (bench/anise; pixi run -e anise compare-anise)
