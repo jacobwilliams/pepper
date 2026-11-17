@@ -9,8 +9,8 @@ module pepper_capi
    use pepper_instance_module, only: pepper_instance
    use pepper_capi_core
    use pepper_math
-   use pepper_strings, only: astrip, bedec, beint, benum, beuns, cmprss, cpos, cposr, decimal_value, dpstr, eqchr, eqstr, esrchc, fndnwd, frstnb, frstnp, frstpc, intstr, lastnb, lastpc, lbuild, lcase, ljucrs, ljust, ltrim, lx4uns, lxqstr, matchi, matchw, nblen, nbwid, ncpos, ncposr, nechr, nextwd, nparsd, nparsi, nthwd, parsqs, pcwid, pos, posr, quote, replch, replwd, repmc, rjust, rtrim, samch, samchi, samsbi, samsub, shiftl, shiftr, sigdgt, ucase, wdcnt, wdindx
-   use pepper_arrays, only: bschoc, bschoi, bsrchc, bsrchd, bsrchi, isrchc, isrchd, isrchi, lstcld, lstcli, lstlec, lstled, lstlei, lstltc, lstltd, lstlti, maxac, maxad, maxai, minac, minad, minai, prodad, prodai, sameai, sumad, sumai, swapd, swapi, touchd, touchi, touchl
+   use pepper_strings, only: astrip, astrip_inplace, bedec, beint, benum, beuns, cmprss, cmprss_inplace, cpos, cposr, decimal_value, dpstr, eqchr, eqstr, esrchc, fndnwd, frstnb, frstnp, frstpc, intstr, kxtrct, lastnb, lastpc, lbuild, lcase, lcase_inplace, ljucrs, ljust, ltrim, lx4uns, lxqstr, matchi, matchw, nblen, nbwid, ncpos, ncposr, nechr, nextwd, nextwd_inplace, nparsd, nparsi, nthwd, parsqs, pcwid, pos, posr, prefix, quote, replch, replch_inplace, replwd, repmc, repmc_inplace, repmd_inplace, repmi_inplace, rjust, rtrim, samch, samchi, samsbi, samsub, scanrj, shiftl, shiftr, sigdgt, suffix, ucase, ucase_inplace, wdcnt, wdindx
+   use pepper_arrays, only: alltru, bschoc, bschoi, bsrchc, bsrchd, bsrchi, isrchc, isrchd, isrchi, lstcld, lstcli, lstlec, lstled, lstlei, lstltc, lstltd, lstlti, maxac, maxad, maxai, minac, minad, minai, notru, prodad, prodai, reordd, reordi, rmdupd, rmdupi, sameai, shelld, shelli, somfls, somtru, sumad, sumai, swapc, swapd, swapi, touchd, touchi, touchl
    implicit none
 
 contains
@@ -320,6 +320,19 @@ contains
       c_pepper_ccifrm = status_of(c_)
    end function c_pepper_ccifrm
 
+   !> C interface of `cgv2el`: Form a SPICE ellipse from a center vector and two generating vectors.
+   integer(c_int) function c_pepper_cgv2el ( ctx, center, vec1, vec2, ellips ) bind(c, name='pepper_cgv2el')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: center(3)  !! Center and two generating vectors for an ellipse.
+      real(c_double), intent(in) :: vec1(3)  !! Center and two generating vectors for an ellipse.
+      real(c_double), intent(in) :: vec2(3)  !! Center and two generating vectors for an ellipse.
+      real(c_double), intent(out) :: ellips(9)  !! The SPICE ellipse defined by the input vectors.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%cgv2el(center, vec1, vec2, ellips)
+      c_pepper_cgv2el = status_of(c_)
+   end function c_pepper_cgv2el
+
    !> C interface of `chbase`: Return the base value used to encode unsigned integer values in character strings.
    integer(c_int) function c_pepper_chbase ( ctx, fresult ) bind(c, name='pepper_chbase')
       type(c_ptr), value :: ctx  !! the context
@@ -532,6 +545,34 @@ contains
       call c_%cke04((needav /= 0), record, cmat, av, clkout)
       c_pepper_cke04 = status_of(c_)
    end function c_pepper_cke04
+
+   !> C interface of `cke05`: Evaluate a single data record from a type 5 CK segment.
+   integer(c_int) function c_pepper_cke05 ( ctx, needav, record, cmat, av, clkout ) bind(c, name='pepper_cke05')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: needav  !! .TRUE. if angular velocity is requested.
+      real(c_double), intent(inout) :: record(*)  !! Data type 5 record.
+      real(c_double), intent(out) :: cmat(3,3)  !! C-matrix.
+      real(c_double), intent(out) :: av(3)  !! Angular velocity vector.
+      real(c_double), intent(out) :: clkout  !! SCLK associated with C-matrix.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%cke05((needav /= 0), record, cmat, av, clkout)
+      c_pepper_cke05 = status_of(c_)
+   end function c_pepper_cke05
+
+   !> C interface of `cke06`: Evaluate a single data record from a type 6 CK segment.
+   integer(c_int) function c_pepper_cke06 ( ctx, needav, record, cmat, av, clkout ) bind(c, name='pepper_cke06')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: needav  !! .TRUE. if angular velocity is requested.
+      real(c_double), intent(inout) :: record(*)  !! Data type 6 record.
+      real(c_double), intent(out) :: cmat(3,3)  !! C-matrix.
+      real(c_double), intent(out) :: av(3)  !! Angular velocity vector.
+      real(c_double), intent(out) :: clkout  !! SCLK associated with C-matrix.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%cke06((needav /= 0), record, cmat, av, clkout)
+      c_pepper_cke06 = status_of(c_)
+   end function c_pepper_cke06
 
    !> C interface of `ckfrot`: Find the position rotation matrix from a C-kernel (CK) frame with the specified frame class ID (CK ID) to the base frame of the highest priority CK segment containing orientation data for this CK frame at the time requested.
    integer(c_int) function c_pepper_ckfrot ( ctx, inst, et, rotate, ref, found ) bind(c, name='pepper_ckfrot')
@@ -802,6 +843,98 @@ contains
       c_pepper_ckpfs = status_of(c_)
    end function c_pepper_ckpfs
 
+   !> C interface of `ckw01`: Add a type 1 segment to a C-kernel.
+   integer(c_int) function c_pepper_ckw01 ( ctx, handle, begtim, endtim, inst, ref, avflag, segid, nrec, sclkdp, &
+         quats, avvs ) bind(c, name='pepper_ckw01')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of an open CK file.
+      real(c_double), value :: begtim  !! The beginning encoded SCLK of the segment.
+      real(c_double), value :: endtim  !! The ending encoded SCLK of the segment.
+      integer(c_int), value :: inst  !! The NAIF instrument ID code.
+      character(kind=c_char), intent(in) :: ref(*)  !! The reference frame of the segment.
+      integer(c_int), value :: avflag  !! .TRUE. if the segment will contain angular velocity.
+      character(kind=c_char), intent(in) :: segid(*)  !! Segment identifier.
+      integer(c_int), value :: nrec  !! Number of pointing records.
+      real(c_double), intent(in) :: sclkdp(*)  !! Encoded SCLK times.
+      real(c_double), intent(in) :: quats(0:3,*)  !! SPICE quaternions representing instrument pointing.
+      real(c_double), intent(in) :: avvs(3,*)  !! Angular velocity vectors.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_ref
+      character(:), allocatable :: f_segid
+      c_ => context_of(ctx)
+      call c_to_f(ref, f_ref)
+      call c_to_f(segid, f_segid)
+      call c_%ckw01(handle, begtim, endtim, inst, f_ref, (avflag /= 0), f_segid, nrec, sclkdp, quats, avvs)
+      c_pepper_ckw01 = status_of(c_)
+   end function c_pepper_ckw01
+
+   !> C interface of `ckw02`: Write a type 2 segment to a C-kernel.
+   integer(c_int) function c_pepper_ckw02 ( ctx, handle, begtim, endtim, inst, ref, segid, nrec, start, stop, quats, &
+         avvs, rates ) bind(c, name='pepper_ckw02')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of an open CK file.
+      real(c_double), value :: begtim  !! The beginning encoded SCLK of the segment.
+      real(c_double), value :: endtim  !! The ending encoded SCLK of the segment.
+      integer(c_int), value :: inst  !! The NAIF instrument ID code.
+      character(kind=c_char), intent(in) :: ref(*)  !! The reference frame of the segment.
+      character(kind=c_char), intent(in) :: segid(*)  !! Segment identifier.
+      integer(c_int), value :: nrec  !! Number of pointing records.
+      real(c_double), intent(in) :: start(*)  !! Encoded SCLK interval start times.
+      real(c_double), intent(in) :: stop(*)  !! Encoded SCLK interval stop times.
+      real(c_double), intent(in) :: quats(0:3,*)  !! SPICE quaternions representing instrument pointing.
+      real(c_double), intent(in) :: avvs(3,*)  !! Angular velocity vectors.
+      real(c_double), intent(in) :: rates(*)  !! Number of seconds per tick for each interval.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_ref
+      character(:), allocatable :: f_segid
+      c_ => context_of(ctx)
+      call c_to_f(ref, f_ref)
+      call c_to_f(segid, f_segid)
+      call c_%ckw02(handle, begtim, endtim, inst, f_ref, f_segid, nrec, start, stop, quats, avvs, rates)
+      c_pepper_ckw02 = status_of(c_)
+   end function c_pepper_ckw02
+
+   !> C interface of `ckw03`: Add a type 3 segment to a C-kernel.
+   integer(c_int) function c_pepper_ckw03 ( ctx, handle, begtim, endtim, inst, ref, avflag, segid, nrec, sclkdp, &
+         quats, avvs, nints, starts ) bind(c, name='pepper_ckw03')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of an open CK file.
+      real(c_double), value :: begtim  !! Beginning encoded SCLK of the segment.
+      real(c_double), value :: endtim  !! Ending encoded SCLK of the segment.
+      integer(c_int), value :: inst  !! NAIF instrument ID code.
+      character(kind=c_char), intent(in) :: ref(*)  !! Reference frame of the segment.
+      integer(c_int), value :: avflag  !! .TRUE. if the segment will contain angular velocity.
+      character(kind=c_char), intent(in) :: segid(*)  !! Segment identifier.
+      integer(c_int), value :: nrec  !! Number of pointing records.
+      real(c_double), intent(in) :: sclkdp(*)  !! Encoded SCLK times.
+      real(c_double), intent(in) :: quats(0:3,*)  !! SPICE quaternions representing instrument pointing.
+      real(c_double), intent(in) :: avvs(3,*)  !! Angular velocity vectors.
+      integer(c_int), value :: nints  !! Number of intervals.
+      real(c_double), intent(in) :: starts(*)  !! Encoded SCLK interval start times.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_ref
+      character(:), allocatable :: f_segid
+      c_ => context_of(ctx)
+      call c_to_f(ref, f_ref)
+      call c_to_f(segid, f_segid)
+      call c_%ckw03(handle, begtim, endtim, inst, f_ref, (avflag /= 0), f_segid, nrec, sclkdp, quats, avvs, nints, starts)
+      c_pepper_ckw03 = status_of(c_)
+   end function c_pepper_ckw03
+
+   !> C interface of `ckw04a`: Add data to a type 4 CK segment currently being written to the file associated with HANDLE.
+   integer(c_int) function c_pepper_ckw04a ( ctx, handle, npkts, pktsiz, pktdat, sclkdp ) bind(c, name='pepper_ckw04a')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! The handle of an DAF file opened for writing.
+      integer(c_int), value :: npkts  !! Number of data packets to write to a segment.
+      integer(c_int), intent(inout) :: pktsiz(*)  !! The numbers of values in the data packets (PEPPER: changed in place)
+      real(c_double), intent(inout) :: pktdat(*)  !! The data packets. (PEPPER: packed in place)
+      real(c_double), intent(in) :: sclkdp(*)  !! The SCLK times associated with the data packets.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%ckw04a(handle, npkts, pktsiz, pktdat, sclkdp)
+      c_pepper_ckw04a = status_of(c_)
+   end function c_pepper_ckw04a
+
    !> C interface of `ckw04b`: Begin a type CK04 segment in the DAF file associated with HANDLE.
    integer(c_int) function c_pepper_ckw04b ( ctx, handle, begtim, inst, ref, avflag, segid ) bind(c, &
          name='pepper_ckw04b')
@@ -979,6 +1112,29 @@ contains
       c_pepper_copyi = status_of(c_)
    end function c_pepper_copyi
 
+   !> C interface of `countc`: Count the characters in a group of lines in a text file.
+   integer(c_int) function c_pepper_countc ( ctx, unit, bline, eline, line_size, line, fresult ) bind(c, &
+         name='pepper_countc')
+      integer(c_int), value :: line_size  !! the size of line (with the NUL)
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: unit  !! Logical unit connected to text file.
+      integer(c_int), value :: bline  !! Beginning line number.
+      integer(c_int), value :: eline  !! Ending line number.
+      character(kind=c_char), intent(inout) :: line(line_size)  !! Workspace.
+      integer(c_int), intent(out) :: fresult  !! the result
+      type(capi_context), pointer :: c_
+      character(len=max(line_size - 1, 1)) :: f_line
+      character(:), allocatable :: t_line
+      integer(ip) :: f_fresult
+      c_ => context_of(ctx)
+      call c_to_f(line, t_line)
+      f_line = t_line
+      f_fresult = c_%countc(unit, bline, eline, f_line)
+      call f_to_c(f_line, line_size, line)
+      fresult = f_fresult
+      c_pepper_countc = status_of(c_)
+   end function c_pepper_countc
+
    !> C interface of `cvpool`: Indicate whether or not any watched kernel variables that have a specified agent on their notification list have been updated.
    integer(c_int) function c_pepper_cvpool ( ctx, agent, update ) bind(c, name='pepper_cvpool')
       type(c_ptr), value :: ctx  !! the context
@@ -993,6 +1149,36 @@ contains
       update = merge(1_c_int, 0_c_int, f_update)
       c_pepper_cvpool = status_of(c_)
    end function c_pepper_cvpool
+
+   !> C interface of `cyadip`: Cycle the elements of a double precision array forward or backward in place.
+   integer(c_int) function c_pepper_cyadip ( ctx, nelt, dir, ncycle, array ) bind(c, name='pepper_cyadip')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: nelt  !! Number of elements.
+      character(kind=c_char), intent(in) :: dir(*)  !! Direction to cycle: 'F' or 'B'.
+      integer(c_int), value :: ncycle  !! Number of times to cycle.
+      real(c_double), intent(inout) :: array(*)  !! Array to be cycled/cycled array.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_dir
+      c_ => context_of(ctx)
+      call c_to_f(dir, f_dir)
+      call c_%cyadip(nelt, f_dir, ncycle, array)
+      c_pepper_cyadip = status_of(c_)
+   end function c_pepper_cyadip
+
+   !> C interface of `cyaiip`: Cycle the elements of an integer array forward or backward in place.
+   integer(c_int) function c_pepper_cyaiip ( ctx, nelt, dir, ncycle, array ) bind(c, name='pepper_cyaiip')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: nelt  !! Number of elements.
+      character(kind=c_char), intent(in) :: dir(*)  !! Direction to cycle: 'F' or 'B'.
+      integer(c_int), value :: ncycle  !! Number of times to cycle.
+      integer(c_int), intent(inout) :: array(*)  !! Array to be cycled/cycled array.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_dir
+      c_ => context_of(ctx)
+      call c_to_f(dir, f_dir)
+      call c_%cyaiip(nelt, f_dir, ncycle, array)
+      c_pepper_cyaiip = status_of(c_)
+   end function c_pepper_cyaiip
 
    !> C interface of `cyclec`: Cycle the contents of a character string to the left or right.
    integer(c_int) function c_pepper_cyclec ( ctx, instr, dir, ncycle, outstr_size, outstr ) bind(c, &
@@ -1239,6 +1425,31 @@ contains
       call c_%dafdc(handle)
       c_pepper_dafdc = status_of(c_)
    end function c_pepper_dafdc
+
+   !> C interface of `dafec`: Extract comments from the comment area of a binary DAF.
+   integer(c_int) function c_pepper_dafec ( ctx, handle, bufsiz, n, buffer_n, buffer_width, buffer, done ) bind(c, &
+         name='pepper_dafec')
+      integer(c_int), value :: buffer_n  !! the number of strings buffer holds
+      integer(c_int), value :: buffer_width  !! the size of each (with the NUL)
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of binary DAF opened with read access.
+      integer(c_int), value :: bufsiz  !! Maximum size, in lines, of BUFFER.
+      integer(c_int), intent(out) :: n  !! Number of extracted comment lines.
+      character(kind=c_char), intent(out) :: buffer(buffer_n * buffer_width)  !! Buffer where extracted comment lines are placed.
+      integer(c_int), intent(out) :: done  !! Indicates whether all comments have been extracted.
+      type(capi_context), pointer :: c_
+      character(len=max(buffer_width - 1, 1)) :: f_buffer(max(buffer_n, 1))
+      integer :: i_buffer
+      logical :: f_done
+      c_ => context_of(ctx)
+      f_buffer = ' '
+      call c_%dafec(handle, bufsiz, n, f_buffer, f_done)
+      do i_buffer = 1, buffer_n
+         call f_to_c(f_buffer(i_buffer), buffer_width, buffer((i_buffer - 1) * buffer_width + 1:i_buffer * buffer_width))
+      end do
+      done = merge(1_c_int, 0_c_int, f_done)
+      c_pepper_dafec = status_of(c_)
+   end function c_pepper_dafec
 
    !> C interface of `dafena`: End the addition of data to the newest array in the current DAF.
    integer(c_int) function c_pepper_dafena ( ctx ) bind(c, name='pepper_dafena')
@@ -1501,6 +1712,18 @@ contains
       call c_%dafps(nd, ni, dc, ic, sum)
       c_pepper_dafps = status_of(c_)
    end function c_pepper_dafps
+
+   !> C interface of `dafra`: Reorder the arrays in a DAF according to a given order vector.
+   integer(c_int) function c_pepper_dafra ( ctx, handle, iorder, n ) bind(c, name='pepper_dafra')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of DAF.
+      integer(c_int), intent(inout) :: iorder(*)  !! Order vector.
+      integer(c_int), value :: n  !! Dimension of IORDER.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%dafra(handle, iorder, n)
+      c_pepper_dafra = status_of(c_)
+   end function c_pepper_dafra
 
    !> C interface of `dafrcr`: Read the contents of a character record from a DAF.
    integer(c_int) function c_pepper_dafrcr ( ctx, handle, recno, crec_size, crec ) bind(c, name='pepper_dafrcr')
@@ -1885,6 +2108,31 @@ contains
       c_pepper_dasdc = status_of(c_)
    end function c_pepper_dasdc
 
+   !> C interface of `dasec`: Extract comments from the comment area of a binary DAS file.
+   integer(c_int) function c_pepper_dasec ( ctx, handle, bufsiz, n, buffer_n, buffer_width, buffer, done ) bind(c, &
+         name='pepper_dasec')
+      integer(c_int), value :: buffer_n  !! the number of strings buffer holds
+      integer(c_int), value :: buffer_width  !! the size of each (with the NUL)
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of binary DAS file open with read access.
+      integer(c_int), value :: bufsiz  !! Maximum size, in lines, of BUFFER.
+      integer(c_int), intent(out) :: n  !! Number of comments extracted from the DAS file.
+      character(kind=c_char), intent(out) :: buffer(buffer_n * buffer_width)  !! Buffer in which extracted comments are placed.
+      integer(c_int), intent(out) :: done  !! Indicates whether all comments have been extracted.
+      type(capi_context), pointer :: c_
+      character(len=max(buffer_width - 1, 1)) :: f_buffer(max(buffer_n, 1))
+      integer :: i_buffer
+      logical :: f_done
+      c_ => context_of(ctx)
+      f_buffer = ' '
+      call c_%dasec(handle, bufsiz, n, f_buffer, f_done)
+      do i_buffer = 1, buffer_n
+         call f_to_c(f_buffer(i_buffer), buffer_width, buffer((i_buffer - 1) * buffer_width + 1:i_buffer * buffer_width))
+      end do
+      done = merge(1_c_int, 0_c_int, f_done)
+      c_pepper_dasec = status_of(c_)
+   end function c_pepper_dasec
+
    !> C interface of `dasecu`: Extract comments from a previously opened binary DAS file to a previously opened text file attached to a Fortran logical unit.
    integer(c_int) function c_pepper_dasecu ( ctx, handle, comlun, comnts ) bind(c, name='pepper_dasecu')
       type(c_ptr), value :: ctx  !! the context
@@ -1995,6 +2243,28 @@ contains
       fresult = f_fresult
       c_pepper_dasine = status_of(c_)
    end function c_pepper_dasine
+
+   !> C interface of `dasioc`: Perform Fortran reads and writes of DAS character records.
+   integer(c_int) function c_pepper_dasioc ( ctx, action, unit, recno, record_size, record ) bind(c, &
+         name='pepper_dasioc')
+      integer(c_int), value :: record_size  !! the size of record (with the NUL)
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: action(*)  !! Action to take (read or write).
+      integer(c_int), value :: unit  !! Fortran unit connected to DAS file.
+      integer(c_int), value :: recno  !! Number of record to read or write.
+      character(kind=c_char), intent(inout) :: record(record_size)  !! DAS character record.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_action
+      character(len=max(record_size - 1, 1)) :: f_record
+      character(:), allocatable :: t_record
+      c_ => context_of(ctx)
+      call c_to_f(action, f_action)
+      call c_to_f(record, t_record)
+      f_record = t_record
+      call c_%dasioc(f_action, unit, recno, f_record)
+      call f_to_c(f_record, record_size, record)
+      c_pepper_dasioc = status_of(c_)
+   end function c_pepper_dasioc
 
    !> C interface of `daslla`: Return last DAS logical addresses of character, double precision and integer type that are currently in use in a specified DAS file.
    integer(c_int) function c_pepper_daslla ( ctx, handle, lastc, lastd, lasti ) bind(c, name='pepper_daslla')
@@ -2518,6 +2788,34 @@ contains
       c_pepper_diffi = status_of(c_)
    end function c_pepper_diffi
 
+   !> C interface of `dlabbs`: Begin a backward segment search in a DLA file.
+   integer(c_int) function c_pepper_dlabbs ( ctx, handle, dladsc, found ) bind(c, name='pepper_dlabbs')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of open DLA file.
+      integer(c_int), intent(out) :: dladsc(*)  !! Descriptor of last segment in DLA file.
+      integer(c_int), intent(out) :: found  !! Flag indicating whether a segment was found.
+      type(capi_context), pointer :: c_
+      logical :: f_found
+      c_ => context_of(ctx)
+      call c_%dlabbs(handle, dladsc, f_found)
+      found = merge(1_c_int, 0_c_int, f_found)
+      c_pepper_dlabbs = status_of(c_)
+   end function c_pepper_dlabbs
+
+   !> C interface of `dlabfs`: Begin a forward segment search in a DLA file.
+   integer(c_int) function c_pepper_dlabfs ( ctx, handle, dladsc, found ) bind(c, name='pepper_dlabfs')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of open DLA file.
+      integer(c_int), intent(out) :: dladsc(*)  !! Descriptor of first segment in DLA file.
+      integer(c_int), intent(out) :: found  !! Flag indicating whether a segment was found.
+      type(capi_context), pointer :: c_
+      logical :: f_found
+      c_ => context_of(ctx)
+      call c_%dlabfs(handle, dladsc, f_found)
+      found = merge(1_c_int, 0_c_int, f_found)
+      c_pepper_dlabfs = status_of(c_)
+   end function c_pepper_dlabfs
+
    !> C interface of `dlabns`: Begin a new segment in a DLA file.
    integer(c_int) function c_pepper_dlabns ( ctx, handle ) bind(c, name='pepper_dlabns')
       type(c_ptr), value :: ctx  !! the context
@@ -2537,6 +2835,36 @@ contains
       call c_%dlaens(handle)
       c_pepper_dlaens = status_of(c_)
    end function c_pepper_dlaens
+
+   !> C interface of `dlafns`: Find the segment following a specified segment in a DLA file.
+   integer(c_int) function c_pepper_dlafns ( ctx, handle, dladsc, nxtdsc, found ) bind(c, name='pepper_dlafns')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of open DLA file.
+      integer(c_int), intent(in) :: dladsc(*)  !! Descriptor of a segment in DLA file.
+      integer(c_int), intent(out) :: nxtdsc(*)  !! Descriptor of next segment in DLA file.
+      integer(c_int), intent(out) :: found  !! Flag indicating whether a segment was found.
+      type(capi_context), pointer :: c_
+      logical :: f_found
+      c_ => context_of(ctx)
+      call c_%dlafns(handle, dladsc, nxtdsc, f_found)
+      found = merge(1_c_int, 0_c_int, f_found)
+      c_pepper_dlafns = status_of(c_)
+   end function c_pepper_dlafns
+
+   !> C interface of `dlafps`: Find the segment preceding a specified segment in a DLA file.
+   integer(c_int) function c_pepper_dlafps ( ctx, handle, dladsc, prvdsc, found ) bind(c, name='pepper_dlafps')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of open DLA file.
+      integer(c_int), intent(in) :: dladsc(*)  !! Descriptor of a segment in DLA file.
+      integer(c_int), intent(out) :: prvdsc(*)  !! Descriptor of previous segment in DLA file.
+      integer(c_int), intent(out) :: found  !! Flag indicating whether a segment was found.
+      type(capi_context), pointer :: c_
+      logical :: f_found
+      c_ => context_of(ctx)
+      call c_%dlafps(handle, dladsc, prvdsc, f_found)
+      found = merge(1_c_int, 0_c_int, f_found)
+      c_pepper_dlafps = status_of(c_)
+   end function c_pepper_dlafps
 
    !> C interface of `dlaopn`: Open a new DLA file and set the file type.
    integer(c_int) function c_pepper_dlaopn ( ctx, fname, ftype, ifname, ncomch, handle ) bind(c, name='pepper_dlaopn')
@@ -2589,7 +2917,7 @@ contains
       c_pepper_dnearp = status_of(c_)
    end function c_pepper_dnearp
 
-   !> C interface of `dp2hx`: Convert a double precision number to an equivalent character string using a base 16 "scientific notation."  STRLEN     P   Max number of characters allowed in output string.
+   !> C interface of `dp2hx`: Convert a double precision number to an equivalent character string using a base 16 "scientific notation."  ## Detailed Input  NUMBER   is the double precision number to be converted to a character string representation.
    integer(c_int) function c_pepper_dp2hx ( ctx, number, hxstr_size, hxstr, hxssiz ) bind(c, name='pepper_dp2hx')
       type(c_ptr), value :: ctx  !! the context
       real(c_double), value :: number  !! D.p. number to be converted.
@@ -2844,6 +3172,35 @@ contains
       c_pepper_dskcls = status_of(c_)
    end function c_pepper_dskcls
 
+   !> C interface of `dskd02`: Fetch double precision data from a type 2 DSK segment.
+   integer(c_int) function c_pepper_dskd02 ( ctx, handle, dladsc, item, start, room, n, values ) bind(c, &
+         name='pepper_dskd02')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! DSK file handle.
+      integer(c_int), intent(in) :: dladsc(*)  !! DLA descriptor.
+      integer(c_int), value :: item  !! Keyword identifying item to fetch.
+      integer(c_int), value :: start  !! Start index.
+      integer(c_int), value :: room  !! Amount of room in output array.
+      integer(c_int), intent(out) :: n  !! Number of values returned.
+      real(c_double), intent(out) :: values(*)  !! Array containing requested item.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%dskd02(handle, dladsc, item, start, room, n, values)
+      c_pepper_dskd02 = status_of(c_)
+   end function c_pepper_dskd02
+
+   !> C interface of `dskgd`: Return the DSK descriptor from a DSK segment identified by a DAS handle and DLA descriptor.
+   integer(c_int) function c_pepper_dskgd ( ctx, handle, dladsc, dskdsc ) bind(c, name='pepper_dskgd')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of a DSK file.
+      integer(c_int), intent(in) :: dladsc(*)  !! DLA segment descriptor.
+      real(c_double), intent(out) :: dskdsc(*)  !! DSK segment descriptor.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%dskgd(handle, dladsc, dskdsc)
+      c_pepper_dskgd = status_of(c_)
+   end function c_pepper_dskgd
+
    !> C interface of `dskgtl`: Retrieve the value of a specified DSK tolerance or margin parameter.
    integer(c_int) function c_pepper_dskgtl ( ctx, keywrd, dpval ) bind(c, name='pepper_dskgtl')
       type(c_ptr), value :: ctx  !! the context
@@ -2854,6 +3211,48 @@ contains
       call c_%dskgtl(keywrd, dpval)
       c_pepper_dskgtl = status_of(c_)
    end function c_pepper_dskgtl
+
+   !> C interface of `dski02`: Fetch integer data from a type 2 DSK segment.
+   integer(c_int) function c_pepper_dski02 ( ctx, handle, dladsc, item, start, room, n, values ) bind(c, &
+         name='pepper_dski02')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! DSK file handle.
+      integer(c_int), intent(in) :: dladsc(*)  !! DLA descriptor.
+      integer(c_int), value :: item  !! Keyword identifying item to fetch.
+      integer(c_int), value :: start  !! Start index.
+      integer(c_int), value :: room  !! Amount of room in output array.
+      integer(c_int), intent(out) :: n  !! Number of values returned.
+      integer(c_int), intent(out) :: values(*)  !! Array containing requested item.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%dski02(handle, dladsc, item, start, room, n, values)
+      c_pepper_dski02 = status_of(c_)
+   end function c_pepper_dski02
+
+   !> C interface of `dskmi2`: Make spatial index for a DSK type 2 segment.
+   integer(c_int) function c_pepper_dskmi2 ( ctx, nv, vrtces, np, plates, finscl, corscl, worksz, voxpsz, voxlsz, &
+         makvtl, spxisz, work, spaixd, spaixi ) bind(c, name='pepper_dskmi2')
+      integer(c_int), value :: spxisz  !! Spatial index integer component size.
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: nv  !! Number of vertices.
+      real(c_double), intent(in) :: vrtces(3,*)  !! Vertices.
+      integer(c_int), value :: np  !! Number of plates.
+      integer(c_int), intent(in) :: plates(3,*)  !! Plates.
+      real(c_double), value :: finscl  !! Fine voxel scale.
+      integer(c_int), value :: corscl  !! Coarse voxel scale.
+      integer(c_int), value :: worksz  !! Workspace size.
+      integer(c_int), value :: voxpsz  !! Voxel-plate pointer array size.
+      integer(c_int), value :: voxlsz  !! Voxel-plate list array size.
+      integer(c_int), value :: makvtl  !! Vertex-plate list flag.
+      integer(c_int), intent(inout) :: work(*)  !! workspace
+      real(c_double), intent(out) :: spaixd(10)  !! Double precision component of spatial index.
+      integer(c_int), intent(out) :: spaixi(spxisz)  !! Integer component of spatial index.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%dskmi2(nv, vrtces, np, plates, finscl, corscl, worksz, voxpsz, voxlsz, (makvtl /= 0), spxisz, work, spaixd, &
+               spaixi)
+      c_pepper_dskmi2 = status_of(c_)
+   end function c_pepper_dskmi2
 
    !> C interface of `dskn02`: Compute the unit normal vector for a specified plate from a type 2 DSK segment.
    integer(c_int) function c_pepper_dskn02 ( ctx, handle, dladsc, plid, normal ) bind(c, name='pepper_dskn02')
@@ -2898,6 +3297,21 @@ contains
       c_pepper_dskopn = status_of(c_)
    end function c_pepper_dskopn
 
+   !> C interface of `dskp02`: Fetch triangular plates from a type 2 DSK segment.
+   integer(c_int) function c_pepper_dskp02 ( ctx, handle, dladsc, start, room, n, plates ) bind(c, name='pepper_dskp02')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! DSK file handle.
+      integer(c_int), intent(in) :: dladsc(*)  !! DLA descriptor.
+      integer(c_int), value :: start  !! Start index.
+      integer(c_int), value :: room  !! Amount of room in output array.
+      integer(c_int), intent(out) :: n  !! Number of plates returned.
+      integer(c_int), intent(out) :: plates(3,*)  !! Array containing plates.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%dskp02(handle, dladsc, start, room, n, plates)
+      c_pepper_dskp02 = status_of(c_)
+   end function c_pepper_dskp02
+
    !> C interface of `dskrb2`: Determine range bounds for a set of triangular plates to be stored in a type 2 DSK segment.
    integer(c_int) function c_pepper_dskrb2 ( ctx, nv, vrtces, np, plates, corsys, corpar, mncor3, mxcor3 ) bind(c, &
          name='pepper_dskrb2')
@@ -2940,6 +3354,21 @@ contains
       call c_%dskstl(keywrd, dpval)
       c_pepper_dskstl = status_of(c_)
    end function c_pepper_dskstl
+
+   !> C interface of `dskv02`: Fetch vertices from a type 2 DSK segment.
+   integer(c_int) function c_pepper_dskv02 ( ctx, handle, dladsc, start, room, n, vrtces ) bind(c, name='pepper_dskv02')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! DSK file handle.
+      integer(c_int), intent(in) :: dladsc(*)  !! DLA descriptor.
+      integer(c_int), value :: start  !! Start index.
+      integer(c_int), value :: room  !! Amount of room in output array.
+      integer(c_int), intent(out) :: n  !! Number of vertices returned.
+      real(c_double), intent(out) :: vrtces(3,*)  !! Array containing vertices.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%dskv02(handle, dladsc, start, room, n, vrtces)
+      c_pepper_dskv02 = status_of(c_)
+   end function c_pepper_dskv02
 
    !> C interface of `dskw02`: Write a type 2 segment to a DSK file.
    integer(c_int) function c_pepper_dskw02 ( ctx, handle, center, surfid, dclass, frame, corsys, corpar, mncor1, &
@@ -2994,6 +3423,69 @@ contains
       found = merge(1_c_int, 0_c_int, f_found)
       c_pepper_dskx02 = status_of(c_)
    end function c_pepper_dskx02
+
+   !> C interface of `dskxsi`: Compute a ray-surface intercept using data provided by multiple loaded DSK segments.
+   integer(c_int) function c_pepper_dskxsi ( ctx, pri, target, nsurf, srflst, et, fixref, vertex, raydir, maxd, maxi, &
+         xpt, handle, dladsc, dskdsc, dc, ic, found ) bind(c, name='pepper_dskxsi')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: pri  !! Data prioritization flag.
+      character(kind=c_char), intent(in) :: target(*)  !! Target body name.
+      integer(c_int), value :: nsurf  !! Number of surface IDs in list.
+      integer(c_int), intent(in) :: srflst(*)  !! Surface ID list.
+      real(c_double), value :: et  !! Epoch, expressed as seconds past J2000 TDB.
+      character(kind=c_char), intent(in) :: fixref(*)  !! Name of target body-fixed reference frame.
+      real(c_double), intent(in) :: vertex(3)  !! Vertex of ray.
+      real(c_double), intent(in) :: raydir(3)  !! Direction vector of ray.
+      integer(c_int), value :: maxd  !! Size of DC array.
+      integer(c_int), value :: maxi  !! Size of IC array.
+      real(c_double), intent(out) :: xpt(3)  !! Intercept point.
+      integer(c_int), intent(out) :: handle  !! Handle of segment contributing surface data.
+      integer(c_int), intent(out) :: dladsc(*)  !! DLA descriptor of segment.
+      real(c_double), intent(out) :: dskdsc(*)  !! DSK descriptor of segment.
+      real(c_double), intent(out) :: dc(*)  !! Double precision component of source info.
+      integer(c_int), intent(out) :: ic(*)  !! Integer component of source info.
+      integer(c_int), intent(out) :: found  !! Found flag.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_target
+      character(:), allocatable :: f_fixref
+      logical :: f_found
+      c_ => context_of(ctx)
+      call c_to_f(target, f_target)
+      call c_to_f(fixref, f_fixref)
+      call c_%dskxsi((pri /= 0), f_target, nsurf, srflst, et, f_fixref, vertex, raydir, maxd, maxi, xpt, handle, dladsc, &
+               dskdsc, dc, ic, f_found)
+      found = merge(1_c_int, 0_c_int, f_found)
+      c_pepper_dskxsi = status_of(c_)
+   end function c_pepper_dskxsi
+
+   !> C interface of `dskxv`: Compute ray-surface intercepts for a set of rays, using data provided by multiple loaded DSK segments.
+   integer(c_int) function c_pepper_dskxv ( ctx, pri, target, nsurf, srflst, et, fixref, nrays, vtxarr, dirarr, &
+         xptarr, fndarr_n, fndarr ) bind(c, name='pepper_dskxv')
+      integer(c_int), value :: fndarr_n  !! the number of flags in fndarr
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: pri  !! Data prioritization flag.
+      character(kind=c_char), intent(in) :: target(*)  !! Target body name.
+      integer(c_int), value :: nsurf  !! Number of surface IDs in list.
+      integer(c_int), intent(in) :: srflst(*)  !! Surface ID list.
+      real(c_double), value :: et  !! Epoch, expressed as seconds past J2000 TDB.
+      character(kind=c_char), intent(in) :: fixref(*)  !! Name of target body-fixed reference frame.
+      integer(c_int), value :: nrays  !! Number of rays.
+      real(c_double), intent(in) :: vtxarr(3,*)  !! Array of vertices of rays.
+      real(c_double), intent(in) :: dirarr(3,*)  !! Array of direction vectors of rays.
+      real(c_double), intent(out) :: xptarr(3,*)  !! Intercept point array.
+      integer(c_int), intent(out) :: fndarr(max(fndarr_n, 1))  !! Found flag array. (0: false)
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_target
+      character(:), allocatable :: f_fixref
+      logical :: f_fndarr(max(fndarr_n, 1))
+      c_ => context_of(ctx)
+      call c_to_f(target, f_target)
+      call c_to_f(fixref, f_fixref)
+      f_fndarr = .false.
+      call c_%dskxv((pri /= 0), f_target, nsurf, srflst, et, f_fixref, nrays, vtxarr, dirarr, xptarr, f_fndarr)
+      fndarr = merge(1_c_int, 0_c_int, f_fndarr)
+      c_pepper_dskxv = status_of(c_)
+   end function c_pepper_dskxv
 
    !> C interface of `dskz02`: Return plate model size parameters---plate count and vertex count---for a type 2 DSK segment.
    integer(c_int) function c_pepper_dskz02 ( ctx, handle, dladsc, nv, np ) bind(c, name='pepper_dskz02')
@@ -3067,6 +3559,20 @@ contains
       call c_%dwpool(f_agent)
       c_pepper_dwpool = status_of(c_)
    end function c_pepper_dwpool
+
+   !> C interface of `edlimb`: Find the limb of a triaxial ellipsoid, viewed from a specified point.
+   integer(c_int) function c_pepper_edlimb ( ctx, a, b, c, viewpt, limb ) bind(c, name='pepper_edlimb')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), value :: a  !! Length of ellipsoid semi-axis lying on the x-axis.
+      real(c_double), value :: b  !! Length of ellipsoid semi-axis lying on the y-axis.
+      real(c_double), value :: c  !! Length of ellipsoid semi-axis lying on the z-axis.
+      real(c_double), intent(in) :: viewpt(3)  !! Location of viewing point.
+      real(c_double), intent(out) :: limb(9)  !! Limb of ellipsoid as seen from viewing point.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%edlimb(a, b, c, viewpt, limb)
+      c_pepper_edlimb = status_of(c_)
+   end function c_pepper_edlimb
 
    !> C interface of `ednmpt`: Return the unique point on an ellipsoid's surface where the outward normal direction is a given vector.
    integer(c_int) function c_pepper_ednmpt ( ctx, a, b, c, normal, point ) bind(c, name='pepper_ednmpt')
@@ -3262,6 +3768,79 @@ contains
       c_pepper_ekacei = status_of(c_)
    end function c_pepper_ekacei
 
+   !> C interface of `ekaclc`: Add an entire character column to an EK segment.
+   integer(c_int) function c_pepper_ekaclc ( ctx, handle, segno, column, cvals_n, cvals_width, cvals, entszs, &
+         nlflgs_n, nlflgs, rcptrs, wkindx ) bind(c, name='pepper_ekaclc')
+      integer(c_int), value :: nlflgs_n  !! the number of flags in nlflgs
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! EK file handle.
+      integer(c_int), value :: segno  !! Number of segment to add column to.
+      character(kind=c_char), intent(in) :: column(*)  !! Column name.
+      integer(c_int), value :: cvals_n  !! the number of strings in cvals
+      integer(c_int), value :: cvals_width  !! the width of each string in cvals
+      character(kind=c_char), intent(in) :: cvals(*)  !! Character values to add to column.
+      integer(c_int), intent(in) :: entszs(*)  !! Array of sizes of column entries.
+      integer(c_int), intent(in) :: nlflgs(max(nlflgs_n, 1))  !! Array of null flags for column entries. (0: false)
+      integer(c_int), intent(in) :: rcptrs(*)  !! Record pointers for segment.
+      integer(c_int), intent(inout) :: wkindx(*)  !! Work space for column index.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_column
+      character(:), allocatable :: f_cvals(:)
+      logical :: f_nlflgs(max(nlflgs_n, 1))
+      c_ => context_of(ctx)
+      call c_to_f(column, f_column)
+      call c_to_f_array(cvals, cvals_n, cvals_width, f_cvals)
+      f_nlflgs = nlflgs /= 0
+      call c_%ekaclc(handle, segno, f_column, f_cvals, entszs, f_nlflgs, rcptrs, wkindx)
+      c_pepper_ekaclc = status_of(c_)
+   end function c_pepper_ekaclc
+
+   !> C interface of `ekacld`: Add an entire double precision column to an EK segment.
+   integer(c_int) function c_pepper_ekacld ( ctx, handle, segno, column, dvals, entszs, nlflgs_n, nlflgs, rcptrs, &
+         wkindx ) bind(c, name='pepper_ekacld')
+      integer(c_int), value :: nlflgs_n  !! the number of flags in nlflgs
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! EK file handle.
+      integer(c_int), value :: segno  !! Number of segment to add column to.
+      character(kind=c_char), intent(in) :: column(*)  !! Column name.
+      real(c_double), intent(in) :: dvals(*)  !! Double precision values to add to column.
+      integer(c_int), intent(in) :: entszs(*)  !! Array of sizes of column entries.
+      integer(c_int), intent(in) :: nlflgs(max(nlflgs_n, 1))  !! Array of null flags for column entries. (0: false)
+      integer(c_int), intent(in) :: rcptrs(*)  !! Record pointers for segment.
+      integer(c_int), intent(inout) :: wkindx(*)  !! Work space for column index.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_column
+      logical :: f_nlflgs(max(nlflgs_n, 1))
+      c_ => context_of(ctx)
+      call c_to_f(column, f_column)
+      f_nlflgs = nlflgs /= 0
+      call c_%ekacld(handle, segno, f_column, dvals, entszs, f_nlflgs, rcptrs, wkindx)
+      c_pepper_ekacld = status_of(c_)
+   end function c_pepper_ekacld
+
+   !> C interface of `ekacli`: Add an entire integer column to an EK segment.
+   integer(c_int) function c_pepper_ekacli ( ctx, handle, segno, column, ivals, entszs, nlflgs_n, nlflgs, rcptrs, &
+         wkindx ) bind(c, name='pepper_ekacli')
+      integer(c_int), value :: nlflgs_n  !! the number of flags in nlflgs
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! EK file handle.
+      integer(c_int), value :: segno  !! Number of segment to add column to.
+      character(kind=c_char), intent(in) :: column(*)  !! Column name.
+      integer(c_int), intent(in) :: ivals(*)  !! Integer values to add to column.
+      integer(c_int), intent(in) :: entszs(*)  !! Array of sizes of column entries.
+      integer(c_int), intent(in) :: nlflgs(max(nlflgs_n, 1))  !! Array of null flags for column entries. (0: false)
+      integer(c_int), intent(in) :: rcptrs(*)  !! Record pointers for segment.
+      integer(c_int), intent(inout) :: wkindx(*)  !! Work space for column index.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_column
+      logical :: f_nlflgs(max(nlflgs_n, 1))
+      c_ => context_of(ctx)
+      call c_to_f(column, f_column)
+      f_nlflgs = nlflgs /= 0
+      call c_%ekacli(handle, segno, f_column, ivals, entszs, f_nlflgs, rcptrs, wkindx)
+      c_pepper_ekacli = status_of(c_)
+   end function c_pepper_ekacli
+
    !> C interface of `ekappr`: Append a new, empty record at the end of a specified E-kernel segment.
    integer(c_int) function c_pepper_ekappr ( ctx, handle, segno, recno ) bind(c, name='pepper_ekappr')
       type(c_ptr), value :: ctx  !! the context
@@ -3313,6 +3892,26 @@ contains
       c_pepper_ekccnt = status_of(c_)
    end function c_pepper_ekccnt
 
+   !> C interface of `ekcii`: Return attribute information about a column belonging to a loaded EK table, specifying the column by table and index.
+   integer(c_int) function c_pepper_ekcii ( ctx, table, cindex, column_size, column, attdsc ) bind(c, &
+         name='pepper_ekcii')
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: table(*)  !! Name of table containing column.
+      integer(c_int), value :: cindex  !! Index of column whose attributes are to be found.
+      integer(c_int), value :: column_size  !! the size of column (with the NUL)
+      character(kind=c_char), intent(out) :: column(*)  !! Name of column.
+      integer(c_int), intent(out) :: attdsc(6)  !! Column attribute descriptor.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_table
+      character(len=max(column_size - 1, 1)) :: f_column
+      c_ => context_of(ctx)
+      call c_to_f(table, f_table)
+      f_column = ' '
+      call c_%ekcii(f_table, cindex, f_column, attdsc)
+      call f_to_c(f_column, column_size, column)
+      c_pepper_ekcii = status_of(c_)
+   end function c_pepper_ekcii
+
    !> C interface of `ekcls`: Close an E-kernel.
    integer(c_int) function c_pepper_ekcls ( ctx, handle ) bind(c, name='pepper_ekcls')
       type(c_ptr), value :: ctx  !! the context
@@ -3334,6 +3933,18 @@ contains
       call c_%ekdelr(handle, segno, recno)
       c_pepper_ekdelr = status_of(c_)
    end function c_pepper_ekdelr
+
+   !> C interface of `ekffld`: Complete a fast write operation on a new E-kernel segment.
+   integer(c_int) function c_pepper_ekffld ( ctx, handle, segno, rcptrs ) bind(c, name='pepper_ekffld')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! File handle.
+      integer(c_int), value :: segno  !! Segment number.
+      integer(c_int), intent(inout) :: rcptrs(*)  !! Record pointers. (PEPPER: changed by the routine, an input in SPICELIB's table)
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%ekffld(handle, segno, rcptrs)
+      c_pepper_ekffld = status_of(c_)
+   end function c_pepper_ekffld
 
    !> C interface of `ekfind`: Find E-kernel data that satisfy a set of constraints.
    integer(c_int) function c_pepper_ekfind ( ctx, query, nmrows, error, errmsg_size, errmsg ) bind(c, &
@@ -3418,6 +4029,34 @@ contains
       found = merge(1_c_int, 0_c_int, f_found)
       c_pepper_ekgi = status_of(c_)
    end function c_pepper_ekgi
+
+   !> C interface of `ekifld`: Initialize a new E-kernel segment to allow fast writing.
+   integer(c_int) function c_pepper_ekifld ( ctx, handle, tabnam, ncols, nrows, cnames_n, cnames_width, cnames, &
+         decls_n, decls_width, decls, segno, rcptrs ) bind(c, name='pepper_ekifld')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! File handle.
+      character(kind=c_char), intent(in) :: tabnam(*)  !! Table name.
+      integer(c_int), value :: ncols  !! Number of columns in the segment.
+      integer(c_int), value :: nrows  !! Number of rows in the segment.
+      integer(c_int), value :: cnames_n  !! the number of strings in cnames
+      integer(c_int), value :: cnames_width  !! the width of each string in cnames
+      character(kind=c_char), intent(in) :: cnames(*)  !! Names of columns.
+      integer(c_int), value :: decls_n  !! the number of strings in decls
+      integer(c_int), value :: decls_width  !! the width of each string in decls
+      character(kind=c_char), intent(in) :: decls(*)  !! Declarations of columns.
+      integer(c_int), intent(out) :: segno  !! Segment number.
+      integer(c_int), intent(out) :: rcptrs(*)  !! Array of record pointers.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_tabnam
+      character(:), allocatable :: f_cnames(:)
+      character(:), allocatable :: f_decls(:)
+      c_ => context_of(ctx)
+      call c_to_f(tabnam, f_tabnam)
+      call c_to_f_array(cnames, cnames_n, cnames_width, f_cnames)
+      call c_to_f_array(decls, decls_n, decls_width, f_decls)
+      call c_%ekifld(handle, f_tabnam, ncols, nrows, f_cnames, f_decls, segno, rcptrs)
+      c_pepper_ekifld = status_of(c_)
+   end function c_pepper_ekifld
 
    !> C interface of `ekinsr`: Add a new, empty record to a specified E-kernel segment at a specified index.
    integer(c_int) function c_pepper_ekinsr ( ctx, handle, segno, recno ) bind(c, name='pepper_ekinsr')
@@ -3519,6 +4158,67 @@ contains
       c_pepper_ekopw = status_of(c_)
    end function c_pepper_ekopw
 
+   !> C interface of `ekpsel`: Parse the SELECT clause of an EK query, returning full particulars concerning each selected item.
+   integer(c_int) function c_pepper_ekpsel ( ctx, query, n, xbegs, xends, xtypes_n, xtypes_width, xtypes, xclass_n, &
+         xclass_width, xclass, tabs_n, tabs_width, tabs, cols_n, cols_width, cols, error, errmsg_size, &
+         errmsg ) bind(c, name='pepper_ekpsel')
+      integer(c_int), value :: xtypes_n  !! the number of strings xtypes holds
+      integer(c_int), value :: xtypes_width  !! the size of each (with the NUL)
+      integer(c_int), value :: xclass_n  !! the number of strings xclass holds
+      integer(c_int), value :: xclass_width  !! the size of each (with the NUL)
+      integer(c_int), value :: tabs_n  !! the number of strings tabs holds
+      integer(c_int), value :: tabs_width  !! the size of each (with the NUL)
+      integer(c_int), value :: cols_n  !! the number of strings cols holds
+      integer(c_int), value :: cols_width  !! the size of each (with the NUL)
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: query(*)  !! EK query.
+      integer(c_int), intent(out) :: n  !! Number of items in SELECT clause of QUERY.
+      integer(c_int), intent(out) :: xbegs(*)  !! Begin positions of expressions in SELECT clause.
+      integer(c_int), intent(out) :: xends(*)  !! End positions of expressions in SELECT clause.
+      character(kind=c_char), intent(out) :: xtypes(xtypes_n * xtypes_width)  !! Data types of expressions.
+      character(kind=c_char), intent(out) :: xclass(xclass_n * xclass_width)  !! Classes of expressions.
+      character(kind=c_char), intent(out) :: tabs(tabs_n * tabs_width)  !! Names of tables qualifying SELECT columns.
+      character(kind=c_char), intent(out) :: cols(cols_n * cols_width)  !! Names of columns in SELECT clause of QUERY.
+      integer(c_int), intent(out) :: error  !! Error flag.
+      integer(c_int), value :: errmsg_size  !! the size of errmsg (with the NUL)
+      character(kind=c_char), intent(out) :: errmsg(*)  !! Parse error message.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_query
+      character(len=max(xtypes_width - 1, 1)) :: f_xtypes(max(xtypes_n, 1))
+      integer :: i_xtypes
+      character(len=max(xclass_width - 1, 1)) :: f_xclass(max(xclass_n, 1))
+      integer :: i_xclass
+      character(len=max(tabs_width - 1, 1)) :: f_tabs(max(tabs_n, 1))
+      integer :: i_tabs
+      character(len=max(cols_width - 1, 1)) :: f_cols(max(cols_n, 1))
+      integer :: i_cols
+      logical :: f_error
+      character(len=max(errmsg_size - 1, 1)) :: f_errmsg
+      c_ => context_of(ctx)
+      call c_to_f(query, f_query)
+      f_xtypes = ' '
+      f_xclass = ' '
+      f_tabs = ' '
+      f_cols = ' '
+      f_errmsg = ' '
+      call c_%ekpsel(f_query, n, xbegs, xends, f_xtypes, f_xclass, f_tabs, f_cols, f_error, f_errmsg)
+      do i_xtypes = 1, xtypes_n
+         call f_to_c(f_xtypes(i_xtypes), xtypes_width, xtypes((i_xtypes - 1) * xtypes_width + 1:i_xtypes * xtypes_width))
+      end do
+      do i_xclass = 1, xclass_n
+         call f_to_c(f_xclass(i_xclass), xclass_width, xclass((i_xclass - 1) * xclass_width + 1:i_xclass * xclass_width))
+      end do
+      do i_tabs = 1, tabs_n
+         call f_to_c(f_tabs(i_tabs), tabs_width, tabs((i_tabs - 1) * tabs_width + 1:i_tabs * tabs_width))
+      end do
+      do i_cols = 1, cols_n
+         call f_to_c(f_cols(i_cols), cols_width, cols((i_cols - 1) * cols_width + 1:i_cols * cols_width))
+      end do
+      error = merge(1_c_int, 0_c_int, f_error)
+      call f_to_c(f_errmsg, errmsg_size, errmsg)
+      c_pepper_ekpsel = status_of(c_)
+   end function c_pepper_ekpsel
+
    !> C interface of `ekshdw`: Return shadowing status of a specified EK file.
    integer(c_int) function c_pepper_ekshdw ( ctx, handle, isshad ) bind(c, name='pepper_ekshdw')
       type(c_ptr), value :: ctx  !! the context
@@ -3555,6 +4255,56 @@ contains
       call f_to_c(f_errmsg, errmsg_size, errmsg)
       c_pepper_eksrch = status_of(c_)
    end function c_pepper_eksrch
+
+   !> C interface of `ekssum`: Return summary information for a specified segment in a specified EK.
+   integer(c_int) function c_pepper_ekssum ( ctx, handle, segno, tabnam_size, tabnam, nrows, ncols, cnames_n, &
+         cnames_width, cnames, dtypes_n, dtypes_width, dtypes, sizes, strlns, indexd_n, indexd, nullok_n, &
+         nullok ) bind(c, name='pepper_ekssum')
+      integer(c_int), value :: cnames_n  !! the number of strings cnames holds
+      integer(c_int), value :: cnames_width  !! the size of each (with the NUL)
+      integer(c_int), value :: dtypes_n  !! the number of strings dtypes holds
+      integer(c_int), value :: dtypes_width  !! the size of each (with the NUL)
+      integer(c_int), value :: indexd_n  !! the number of flags in indexd
+      integer(c_int), value :: nullok_n  !! the number of flags in nullok
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: handle  !! Handle of EK.
+      integer(c_int), value :: segno  !! Number of segment to be summarized.
+      integer(c_int), value :: tabnam_size  !! the size of tabnam (with the NUL)
+      character(kind=c_char), intent(out) :: tabnam(*)  !! Name of table containing segment.
+      integer(c_int), intent(out) :: nrows  !! Number of rows in segment.
+      integer(c_int), intent(out) :: ncols  !! Number of columns in segment.
+      character(kind=c_char), intent(out) :: cnames(cnames_n * cnames_width)  !! Names of columns in segment.
+      character(kind=c_char), intent(out) :: dtypes(dtypes_n * dtypes_width)  !! Data types of columns in segment.
+      integer(c_int), intent(out) :: sizes(*)  !! Entry sizes of columns in segment.
+      integer(c_int), intent(out) :: strlns(*)  !! String lengths of columns in segment.
+      integer(c_int), intent(out) :: indexd(max(indexd_n, 1))  !! Flags indicating whether columns are indexed. (0: false)
+      integer(c_int), intent(out) :: nullok(max(nullok_n, 1))  !! Flags indicating whether columns allow nulls. (0: false)
+      type(capi_context), pointer :: c_
+      character(len=max(tabnam_size - 1, 1)) :: f_tabnam
+      character(len=max(cnames_width - 1, 1)) :: f_cnames(max(cnames_n, 1))
+      integer :: i_cnames
+      character(len=max(dtypes_width - 1, 1)) :: f_dtypes(max(dtypes_n, 1))
+      integer :: i_dtypes
+      logical :: f_indexd(max(indexd_n, 1))
+      logical :: f_nullok(max(nullok_n, 1))
+      c_ => context_of(ctx)
+      f_tabnam = ' '
+      f_cnames = ' '
+      f_dtypes = ' '
+      f_indexd = .false.
+      f_nullok = .false.
+      call c_%ekssum(handle, segno, f_tabnam, nrows, ncols, f_cnames, f_dtypes, sizes, strlns, f_indexd, f_nullok)
+      call f_to_c(f_tabnam, tabnam_size, tabnam)
+      do i_cnames = 1, cnames_n
+         call f_to_c(f_cnames(i_cnames), cnames_width, cnames((i_cnames - 1) * cnames_width + 1:i_cnames * cnames_width))
+      end do
+      do i_dtypes = 1, dtypes_n
+         call f_to_c(f_dtypes(i_dtypes), dtypes_width, dtypes((i_dtypes - 1) * dtypes_width + 1:i_dtypes * dtypes_width))
+      end do
+      indexd = merge(1_c_int, 0_c_int, f_indexd)
+      nullok = merge(1_c_int, 0_c_int, f_nullok)
+      c_pepper_ekssum = status_of(c_)
+   end function c_pepper_ekssum
 
    !> C interface of `ektnam`: Return the name of a specified, loaded table.
    integer(c_int) function c_pepper_ektnam ( ctx, n, table_size, table ) bind(c, name='pepper_ektnam')
@@ -3795,6 +4545,19 @@ contains
       call c_%eul2xf(eulang, axisa, axisb, axisc, xform)
       c_pepper_eul2xf = status_of(c_)
    end function c_pepper_eul2xf
+
+   !> C interface of `ev2lin`: **Deprecated:** This routine has been superseded by the SPICELIB routine [[evsgp4]].
+   integer(c_int) function c_pepper_ev2lin ( ctx, et, geophs, elems, state ) bind(c, name='pepper_ev2lin')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), value :: et  !! Epoch in seconds past ephemeris epoch J2000.
+      real(c_double), intent(in) :: geophs(*)  !! Geophysical constants
+      real(c_double), intent(in) :: elems(*)  !! Two-line element data
+      real(c_double), intent(out) :: state(*)  !! Evaluated state
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%ev2lin(et, geophs, elems, state)
+      c_pepper_ev2lin = status_of(c_)
+   end function c_pepper_ev2lin
 
    !> C interface of `evsgp4`: Evaluate NORAD two-line element data for earth orbiting spacecraft.
    integer(c_int) function c_pepper_evsgp4 ( ctx, et, geophs, elems, state ) bind(c, name='pepper_evsgp4')
@@ -4110,6 +4873,24 @@ contains
       c_pepper_georec = status_of(c_)
    end function c_pepper_georec
 
+   !> C interface of `getelm`: Parse the "lines" of a two-line element set, returning the elements in units suitable for use in SPICE software.
+   integer(c_int) function c_pepper_getelm ( ctx, frstyr, lines_n, lines_width, lines, epoch, elems ) bind(c, &
+         name='pepper_getelm')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: frstyr  !! Year of earliest representable two-line elements.
+      integer(c_int), value :: lines_n  !! the number of strings in lines
+      integer(c_int), value :: lines_width  !! the width of each string in lines
+      character(kind=c_char), intent(in) :: lines(*)  !! A pair of "lines" containing two-line elements.
+      real(c_double), intent(out) :: epoch  !! The epoch of the elements in seconds past J2000.
+      real(c_double), intent(out) :: elems(10)  !! The elements converted to SPICE units.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_lines(:)
+      c_ => context_of(ctx)
+      call c_to_f_array(lines, lines_n, lines_width, f_lines)
+      call c_%getelm(frstyr, f_lines, epoch, elems)
+      c_pepper_getelm = status_of(c_)
+   end function c_pepper_getelm
+
    !> C interface of `getfat`: Determine the architecture and type of SPICE kernels.
    integer(c_int) function c_pepper_getfat ( ctx, file, arch_size, arch, kertyp_size, kertyp ) bind(c, &
          name='pepper_getfat')
@@ -4132,6 +4913,33 @@ contains
       call f_to_c(f_kertyp, kertyp_size, kertyp)
       c_pepper_getfat = status_of(c_)
    end function c_pepper_getfat
+
+   !> C interface of `getfvn`: Return the field-of-view (FOV) parameters for a specified instrument.
+   integer(c_int) function c_pepper_getfvn ( ctx, inst, room, shape_size, shape, frame_size, frame, bsight, n, &
+         bounds ) bind(c, name='pepper_getfvn')
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: inst(*)  !! Name of an instrument.
+      integer(c_int), value :: room  !! Maximum number of vectors that can be returned.
+      integer(c_int), value :: shape_size  !! the size of shape (with the NUL)
+      character(kind=c_char), intent(out) :: shape(*)  !! Instrument FOV shape.
+      integer(c_int), value :: frame_size  !! the size of frame (with the NUL)
+      character(kind=c_char), intent(out) :: frame(*)  !! Name of the frame in which FOV vectors are defined.
+      real(c_double), intent(out) :: bsight(3)  !! Boresight vector.
+      integer(c_int), intent(out) :: n  !! Number of boundary vectors returned.
+      real(c_double), intent(out) :: bounds(3,*)  !! FOV boundary vectors.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_inst
+      character(len=max(shape_size - 1, 1)) :: f_shape
+      character(len=max(frame_size - 1, 1)) :: f_frame
+      c_ => context_of(ctx)
+      call c_to_f(inst, f_inst)
+      f_shape = ' '
+      f_frame = ' '
+      call c_%getfvn(f_inst, room, f_shape, f_frame, bsight, n, bounds)
+      call f_to_c(f_shape, shape_size, shape)
+      call f_to_c(f_frame, frame_size, frame)
+      c_pepper_getfvn = status_of(c_)
+   end function c_pepper_getfvn
 
    !> C interface of `gf_distance`: A GF search on the observer-target distance (PEPPER; [[gfdist]] with the confinement and result windows as arrays, and without workspace).
    integer(c_int) function c_pepper_gf_distance ( ctx, target, abcorr, obsrvr, relate, refval, adjust, step, &
@@ -4169,6 +4977,60 @@ contains
       result_cols = int(size(f_result, 1), c_int)
       c_pepper_gf_distance = status_of(c_)
    end function c_pepper_gf_distance
+
+   !> C interface of `gf_event`: A GF search on a geometric quantity, with the caller's step and refinement routines (PEPPER; [[gfevnt]] with the confinement and result windows as arrays, and without workspace).
+   integer(c_int) function c_pepper_gf_event ( ctx, gquant, qnpars, qpnams_n, qpnams_width, qpnams, qcpars_n, &
+         qcpars_width, qcpars, qdpars, qipars, qlpars_n, qlpars, op, refval, tol, adjust, step, cnfine_rows, &
+         cnfine_cols, cnfine, rpt, bail, result, result_rows, result_cols ) bind(c, name='pepper_gf_event')
+      integer(c_int), value :: qlpars_n  !! the number of flags in qlpars
+      integer(c_int), value :: cnfine_rows  !! the number of rows of cnfine (Fortran: its columns)
+      integer(c_int), value :: cnfine_cols  !! the number of columns of cnfine (Fortran: its rows)
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: gquant(*)  !! Type of geometric quantity.
+      integer(c_int), value :: qnpars  !! Number of quantity definition parameters.
+      integer(c_int), value :: qpnams_n  !! the number of strings in qpnams
+      integer(c_int), value :: qpnams_width  !! the width of each string in qpnams
+      character(kind=c_char), intent(in) :: qpnams(*)  !! Names of quantity definition parameters.
+      integer(c_int), value :: qcpars_n  !! the number of strings in qcpars
+      integer(c_int), value :: qcpars_width  !! the width of each string in qcpars
+      character(kind=c_char), intent(in) :: qcpars(*)  !! Array of character quantity definition parameters.
+      real(c_double), intent(in) :: qdpars(*)  !! Array of double precision quantity definition parameters.
+      integer(c_int), intent(in) :: qipars(*)  !! Array of integer quantity definition parameters.
+      integer(c_int), intent(in) :: qlpars(max(qlpars_n, 1))  !! Array of logical quantity definition parameters. (0: false)
+      character(kind=c_char), intent(in) :: op(*)  !! Operator that either looks for an extreme value (max, min, local, absolute) or compares the geometric quantity value and a number.
+      real(c_double), value :: refval  !! Reference value.
+      real(c_double), value :: tol  !! Convergence tolerance in seconds
+      real(c_double), value :: adjust  !! Absolute extremum adjustment value.
+      real(c_double), value :: step  !! the smallest step UDSTEP returns: it sizes the work windows (PEPPER)
+      real(c_double), intent(in) :: cnfine(cnfine_cols, cnfine_rows)  !! the confinement window, shape (2, n): intervals [start, stop], sorted and disjoint
+      integer(c_int), value :: rpt  !! Progress reporter on (.TRUE.) or off (.FALSE.).
+      integer(c_int), value :: bail  !! Logical indicating program interrupt monitoring.
+      type(c_ptr), intent(out) :: result  !! the result window, shape (2, n) (n = 0 after an error) (in the context)
+      integer(c_int), intent(out) :: result_rows  !! its number of rows (Fortran: columns)
+      integer(c_int), intent(out) :: result_cols  !! its number of columns (Fortran: rows)
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_gquant
+      character(:), allocatable :: f_qpnams(:)
+      character(:), allocatable :: f_qcpars(:)
+      logical :: f_qlpars(max(qlpars_n, 1))
+      character(:), allocatable :: f_op
+      real(wp), allocatable :: f_result(:,:)
+      integer(c_int) :: result_total
+      c_ => context_of(ctx)
+      call c_to_f(gquant, f_gquant)
+      call c_to_f_array(qpnams, qpnams_n, qpnams_width, f_qpnams)
+      call c_to_f_array(qcpars, qcpars_n, qcpars_width, f_qcpars)
+      f_qlpars = qlpars /= 0
+      call c_to_f(op, f_op)
+      call c_%gf_event(capi_gf_step, capi_gf_refn, f_gquant, qnpars, f_qpnams, f_qcpars, qdpars, qipars, f_qlpars, f_op, &
+               refval, tol, adjust, step, cnfine, (rpt /= 0), capi_gf_repi, capi_gf_repu, capi_gf_repf, (bail /= 0), &
+               capi_gf_bail, f_result)
+      if (.not. allocated(f_result)) allocate (f_result(0, 0))
+      call set_real_result(c_, 1, reshape(f_result, [size(f_result)]), result, result_total)
+      result_rows = int(size(f_result, 2), c_int)
+      result_cols = int(size(f_result, 1), c_int)
+      c_pepper_gf_event = status_of(c_)
+   end function c_pepper_gf_event
 
    !> C interface of `gf_illumination`: A GF search on an illumination angle (PEPPER; [[gfilum]] with the confinement and result windows as arrays, and without workspace).
    integer(c_int) function c_pepper_gf_illumination ( ctx, method, angtyp, target, illmn, fixref, abcorr, obsrvr, &
@@ -4648,6 +5510,85 @@ contains
       c_pepper_gfbail = status_of(c_)
    end function c_pepper_gfbail
 
+   !> C interface of `gffove`: Determine time intervals when a specified target body or ray intersects the space bounded by the field-of-view (FOV) of a specified instrument.
+   integer(c_int) function c_pepper_gffove ( ctx, inst, tshape, raydir, target, tframe, abcorr, obsrvr, tol, rpt, &
+         bail, cnfine, result ) bind(c, name='pepper_gffove')
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: inst(*)  !! Name of the instrument.
+      character(kind=c_char), intent(in) :: tshape(*)  !! Type of shape model used for target body.
+      real(c_double), intent(in) :: raydir(3)  !! Ray's direction vector.
+      character(kind=c_char), intent(in) :: target(*)  !! Name of the target body.
+      character(kind=c_char), intent(in) :: tframe(*)  !! Body-fixed, body-centered frame for target body.
+      character(kind=c_char), intent(in) :: abcorr(*)  !! Aberration correction flag.
+      character(kind=c_char), intent(in) :: obsrvr(*)  !! Name of the observing body.
+      real(c_double), value :: tol  !! Convergence tolerance in seconds.
+      integer(c_int), value :: rpt  !! Progress report flag.
+      integer(c_int), value :: bail  !! Logical indicating program interrupt monitoring.
+      real(c_double), intent(in) :: cnfine(-5:*)  !! SPICE window to which the search is restricted. (a cell: the control area first)
+      real(c_double), intent(inout) :: result(-5:*)  !! SPICE window containing results. (a cell: the control area first)
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_inst
+      character(:), allocatable :: f_tshape
+      character(:), allocatable :: f_target
+      character(:), allocatable :: f_tframe
+      character(:), allocatable :: f_abcorr
+      character(:), allocatable :: f_obsrvr
+      c_ => context_of(ctx)
+      call c_to_f(inst, f_inst)
+      call c_to_f(tshape, f_tshape)
+      call c_to_f(target, f_target)
+      call c_to_f(tframe, f_tframe)
+      call c_to_f(abcorr, f_abcorr)
+      call c_to_f(obsrvr, f_obsrvr)
+      call c_%gffove(f_inst, f_tshape, raydir, f_target, f_tframe, f_abcorr, f_obsrvr, tol, capi_gf_step, capi_gf_refn, &
+               (rpt /= 0), capi_gf_repi, capi_gf_repu, capi_gf_repf, (bail /= 0), capi_gf_bail, cnfine, result)
+      c_pepper_gffove = status_of(c_)
+   end function c_pepper_gffove
+
+   !> C interface of `gfocce`: Determine time intervals when an observer sees one target occulted by another.
+   integer(c_int) function c_pepper_gfocce ( ctx, occtyp, front, fshape, fframe, back, bshape, bframe, abcorr, &
+         obsrvr, tol, rpt, bail, cnfine, result ) bind(c, name='pepper_gfocce')
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: occtyp(*)  !! Type of occultation.
+      character(kind=c_char), intent(in) :: front(*)  !! Name of body occulting the other.
+      character(kind=c_char), intent(in) :: fshape(*)  !! Type of shape model used for front body.
+      character(kind=c_char), intent(in) :: fframe(*)  !! Body-fixed, body-centered frame for front body.
+      character(kind=c_char), intent(in) :: back(*)  !! Name of body occulted by the other.
+      character(kind=c_char), intent(in) :: bshape(*)  !! Type of shape model used for back body.
+      character(kind=c_char), intent(in) :: bframe(*)  !! Body-fixed, body-centered frame for back body.
+      character(kind=c_char), intent(in) :: abcorr(*)  !! Aberration correction flag.
+      character(kind=c_char), intent(in) :: obsrvr(*)  !! Name of the observing body.
+      real(c_double), value :: tol  !! Convergence tolerance in seconds.
+      integer(c_int), value :: rpt  !! Progress report flag.
+      integer(c_int), value :: bail  !! Logical indicating program interrupt monitoring.
+      real(c_double), intent(in) :: cnfine(-5:*)  !! SPICE window to which the search is restricted. (a cell: the control area first)
+      real(c_double), intent(inout) :: result(-5:*)  !! SPICE window containing results. (a cell: the control area first)
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_occtyp
+      character(:), allocatable :: f_front
+      character(:), allocatable :: f_fshape
+      character(:), allocatable :: f_fframe
+      character(:), allocatable :: f_back
+      character(:), allocatable :: f_bshape
+      character(:), allocatable :: f_bframe
+      character(:), allocatable :: f_abcorr
+      character(:), allocatable :: f_obsrvr
+      c_ => context_of(ctx)
+      call c_to_f(occtyp, f_occtyp)
+      call c_to_f(front, f_front)
+      call c_to_f(fshape, f_fshape)
+      call c_to_f(fframe, f_fframe)
+      call c_to_f(back, f_back)
+      call c_to_f(bshape, f_bshape)
+      call c_to_f(bframe, f_bframe)
+      call c_to_f(abcorr, f_abcorr)
+      call c_to_f(obsrvr, f_obsrvr)
+      call c_%gfocce(f_occtyp, f_front, f_fshape, f_fframe, f_back, f_bshape, f_bframe, f_abcorr, f_obsrvr, tol, &
+               capi_gf_step, capi_gf_refn, (rpt /= 0), capi_gf_repi, capi_gf_repu, capi_gf_repf, (bail /= 0), capi_gf_bail, &
+               cnfine, result)
+      c_pepper_gfocce = status_of(c_)
+   end function c_pepper_gfocce
+
    !> C interface of `gfoclt`: Determine time intervals when an observer sees one target body occulted by, or in transit across, another.
    integer(c_int) function c_pepper_gfoclt ( ctx, occtyp, front, fshape, fframe, back, bshape, bframe, abcorr, &
          obsrvr, step, cnfine, result ) bind(c, name='pepper_gfoclt')
@@ -4828,7 +5769,7 @@ contains
       c_pepper_gftfov = status_of(c_)
    end function c_pepper_gftfov
 
-   !> C interface of `gr2jul`: Convert Year Month and Day on the  Gregorian Calendar to the Julian Calendar.
+   !> C interface of `gr2jul`: Convert Year Month and Day on the  Gregorian Calendar to the Julian Calendar  ## Detailed Input  YEAR     is an integer representing the year of an epoch, E, in the Gregorian calendar.
    integer(c_int) function c_pepper_gr2jul ( ctx, year, month, day, doy ) bind(c, name='pepper_gr2jul')
       type(c_ptr), value :: ctx  !! the context
       integer(c_int), intent(inout) :: year  !! Year  of Gregorian Calendar/Julian Calendar
@@ -4840,6 +5781,39 @@ contains
       call c_%gr2jul(year, month, day, doy)
       c_pepper_gr2jul = status_of(c_)
    end function c_pepper_gr2jul
+
+   !> C interface of `hrmesp`: Evaluate, at a specified point, a Hermite interpolating polynomial for a specified set of equally spaced abscissa values and corresponding pairs of function and function derivative values.
+   integer(c_int) function c_pepper_hrmesp ( ctx, n, first, step, yvals, x, work, f, df ) bind(c, name='pepper_hrmesp')
+      integer(c_int), value :: n  !! Number of points defining the polynomial.
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), value :: first  !! First abscissa value.
+      real(c_double), value :: step  !! Step size.
+      real(c_double), intent(in) :: yvals(2*n)  !! Ordinate and derivative values.
+      real(c_double), value :: x  !! Point at which to interpolate the polynomial.
+      real(c_double), intent(inout) :: work(*)  !! workspace
+      real(c_double), intent(out) :: f  !! Interpolated function value at X.
+      real(c_double), intent(out) :: df  !! Interpolated function's derivative at X.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%hrmesp(n, first, step, yvals, x, work, f, df)
+      c_pepper_hrmesp = status_of(c_)
+   end function c_pepper_hrmesp
+
+   !> C interface of `hrmint`: Evaluate a Hermite interpolating polynomial at a specified abscissa value.
+   integer(c_int) function c_pepper_hrmint ( ctx, n, xvals, yvals, x, work, f, df ) bind(c, name='pepper_hrmint')
+      integer(c_int), value :: n  !! Number of points defining the polynomial.
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: xvals(n)  !! Abscissa values.
+      real(c_double), intent(in) :: yvals(2*n)  !! Ordinate and derivative values.
+      real(c_double), value :: x  !! Point at which to interpolate the polynomial.
+      real(c_double), intent(inout) :: work(*)  !! workspace
+      real(c_double), intent(out) :: f  !! Interpolated function value at X.
+      real(c_double), intent(out) :: df  !! Interpolated function's derivative at X.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%hrmint(n, xvals, yvals, x, work, f, df)
+      c_pepper_hrmint = status_of(c_)
+   end function c_pepper_hrmint
 
    !> C interface of `hx2dp`: Convert a string representing a double precision number in a base 16 "scientific notation" into its equivalent double precision number.
    integer(c_int) function c_pepper_hx2dp ( ctx, string, number, error, errmsg_size, errmsg ) bind(c, &
@@ -5071,6 +6045,79 @@ contains
       call c_%incnsg(apex, axis, angle, endpt1, endpt2, nxpts, xpt1, xpt2)
       c_pepper_incnsg = status_of(c_)
    end function c_pepper_incnsg
+
+   !> C interface of `inedpl`: Find the intersection of a triaxial ellipsoid and a plane.
+   integer(c_int) function c_pepper_inedpl ( ctx, a, b, c, plane, ellips, found ) bind(c, name='pepper_inedpl')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), value :: a  !! Length of ellipsoid semi-axis lying on the x-axis.
+      real(c_double), value :: b  !! Length of ellipsoid semi-axis lying on the y-axis.
+      real(c_double), value :: c  !! Length of ellipsoid semi-axis lying on the z-axis.
+      real(c_double), intent(in) :: plane(4)  !! Plane that intersects ellipsoid.
+      real(c_double), intent(out) :: ellips(9)  !! Intersection ellipse, when FOUND is .TRUE.
+      integer(c_int), intent(out) :: found  !! Flag indicating whether ellipse was found.
+      type(capi_context), pointer :: c_
+      logical :: f_found
+      c_ => context_of(ctx)
+      call c_%inedpl(a, b, c, plane, ellips, f_found)
+      found = merge(1_c_int, 0_c_int, f_found)
+      c_pepper_inedpl = status_of(c_)
+   end function c_pepper_inedpl
+
+   !> C interface of `inelpl`: Find the intersection of an ellipse and a plane.
+   integer(c_int) function c_pepper_inelpl ( ctx, ellips, plane, nxpts, xpt1, xpt2 ) bind(c, name='pepper_inelpl')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: ellips(9)  !! A SPICE ellipse.
+      real(c_double), intent(in) :: plane(4)  !! A SPICE plane.
+      integer(c_int), intent(out) :: nxpts  !! Number of intersection points of plane and ellipse.
+      real(c_double), intent(out) :: xpt1(3)  !! Intersection points.
+      real(c_double), intent(out) :: xpt2(3)  !! Intersection points.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%inelpl(ellips, plane, nxpts, xpt1, xpt2)
+      c_pepper_inelpl = status_of(c_)
+   end function c_pepper_inelpl
+
+   !> C interface of `inrypl`: Find the intersection of a ray and a plane.
+   integer(c_int) function c_pepper_inrypl ( ctx, vertex, dir, plane, nxpts, xpt ) bind(c, name='pepper_inrypl')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: vertex(3)  !! Vertex and direction vector of ray.
+      real(c_double), intent(in) :: dir(3)  !! Vertex and direction vector of ray.
+      real(c_double), intent(in) :: plane(4)  !! A SPICE plane.
+      integer(c_int), intent(out) :: nxpts  !! Number of intersection points of ray and plane.
+      real(c_double), intent(out) :: xpt(3)  !! Intersection point, if NXPTS = 1.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%inrypl(vertex, dir, plane, nxpts, xpt)
+      c_pepper_inrypl = status_of(c_)
+   end function c_pepper_inrypl
+
+   !> C interface of `inslad`: Insert one or more elements into a double precision array at the indicated location.
+   integer(c_int) function c_pepper_inslad ( ctx, elts, ne, loc, array, na ) bind(c, name='pepper_inslad')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: elts(*)  !! Elements to be inserted.
+      integer(c_int), value :: ne  !! Number of elements to be inserted.
+      integer(c_int), value :: loc  !! Location of the first inserted element.
+      real(c_double), intent(inout) :: array(*)  !! Input/output array.
+      integer(c_int), intent(inout) :: na  !! Number of elements in the input/output array.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%inslad(elts, ne, loc, array, na)
+      c_pepper_inslad = status_of(c_)
+   end function c_pepper_inslad
+
+   !> C interface of `inslai`: Insert one or more elements into an integer array at the indicated location.
+   integer(c_int) function c_pepper_inslai ( ctx, elts, ne, loc, array, na ) bind(c, name='pepper_inslai')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), intent(in) :: elts(*)  !! Elements to be inserted.
+      integer(c_int), value :: ne  !! Number of elements to be inserted.
+      integer(c_int), value :: loc  !! Location of the first inserted element.
+      integer(c_int), intent(inout) :: array(*)  !! Input/output array.
+      integer(c_int), intent(inout) :: na  !! Number of elements in the input/output array.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%inslai(elts, ne, loc, array, na)
+      c_pepper_inslai = status_of(c_)
+   end function c_pepper_inslai
 
    !> C interface of `insrtd`: Insert an item into a double precision set.
    integer(c_int) function c_pepper_insrtd ( ctx, item, a ) bind(c, name='pepper_insrtd')
@@ -5342,7 +6389,7 @@ contains
       c_pepper_isrot = status_of(c_)
    end function c_pepper_isrot
 
-   !> C interface of `jul2gr`: Convert Year Month and Day on the Julian Calendar to the Gregorian Calendar.
+   !> C interface of `jul2gr`: Convert Year Month and Day on the Julian Calendar to the Gregorian Calendar  ## Detailed Input  YEAR     is an integer representing the year of an epoch, E, in the Julian proleptic calendar.
    integer(c_int) function c_pepper_jul2gr ( ctx, year, month, day, doy ) bind(c, name='pepper_jul2gr')
       type(c_ptr), value :: ctx  !! the context
       integer(c_int), intent(inout) :: year  !! Year  of Julian Calendar/Gregorian Calendar
@@ -5489,7 +6536,7 @@ contains
       c_pepper_kernel_info = status_of(c_)
    end function c_pepper_kernel_info
 
-   !> C interface of `kinfo`: Return information about a specific kernel.
+   !> C interface of `kinfo`: Return information about a specific kernel  ## Detailed Input  FILE     is the name of a kernel file for which KEEPER information is desired.
    integer(c_int) function c_pepper_kinfo ( ctx, file, filtyp_size, filtyp, srcfil_size, srcfil, handle, &
          found ) bind(c, name='pepper_kinfo')
       type(c_ptr), value :: ctx  !! the context
@@ -5553,13 +6600,55 @@ contains
       c_pepper_ktotal = status_of(c_)
    end function c_pepper_ktotal
 
+   !> C interface of `latsrf`: Map array of planetocentric longitude/latitude coordinate pairs to surface points on a specified target body.
+   integer(c_int) function c_pepper_latsrf ( ctx, method, target, et, fixref, npts, lonlat, srfpts ) bind(c, &
+         name='pepper_latsrf')
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: method(*)  !! Computation method.
+      character(kind=c_char), intent(in) :: target(*)  !! Name of target body.
+      real(c_double), value :: et  !! Epoch in TDB seconds past J2000 TDB.
+      character(kind=c_char), intent(in) :: fixref(*)  !! Body-fixed, body-centered target body frame.
+      integer(c_int), value :: npts  !! Number of coordinate pairs in input array.
+      real(c_double), intent(in) :: lonlat(2,*)  !! Array of longitude/latitude coordinate pairs.
+      real(c_double), intent(out) :: srfpts(3,*)  !! Array of surface points.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_method
+      character(:), allocatable :: f_target
+      character(:), allocatable :: f_fixref
+      c_ => context_of(ctx)
+      call c_to_f(method, f_method)
+      call c_to_f(target, f_target)
+      call c_to_f(fixref, f_fixref)
+      call c_%latsrf(f_method, f_target, et, f_fixref, npts, lonlat, srfpts)
+      c_pepper_latsrf = status_of(c_)
+   end function c_pepper_latsrf
+
+   !> C interface of `lgresp`: Evaluate a Lagrange interpolating polynomial for a specified set of coordinate pairs whose first components are equally spaced, at a specified abscissa value.
+   integer(c_int) function c_pepper_lgresp ( ctx, n, first, step, yvals, work, x, fresult ) bind(c, &
+         name='pepper_lgresp')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: n  !! Number of points defining the polynomial.
+      real(c_double), value :: first  !! First abscissa value.
+      real(c_double), value :: step  !! Step size.
+      real(c_double), intent(in) :: yvals(*)  !! Ordinate values.
+      real(c_double), intent(inout) :: work(*)  !! workspace
+      real(c_double), value :: x  !! Point at which to interpolate the polynomial.
+      real(c_double), intent(out) :: fresult  !! the result
+      type(capi_context), pointer :: c_
+      real(wp) :: f_fresult
+      c_ => context_of(ctx)
+      f_fresult = c_%lgresp(n, first, step, yvals, work, x)
+      fresult = f_fresult
+      c_pepper_lgresp = status_of(c_)
+   end function c_pepper_lgresp
+
    !> C interface of `lgrind`: Evaluate a Lagrange interpolating polynomial, for a specified set of coordinate pairs, at a specified abscissa value.
    integer(c_int) function c_pepper_lgrind ( ctx, n, xvals, yvals, work, x, p, dp ) bind(c, name='pepper_lgrind')
       integer(c_int), value :: n  !! Number of points defining the polynomial.
       type(c_ptr), value :: ctx  !! the context
       real(c_double), intent(in) :: xvals(n)  !! Abscissa values.
       real(c_double), intent(in) :: yvals(n)  !! Ordinate values.
-      real(c_double), intent(inout) :: work(n,2)  !! Work space array.
+      real(c_double), intent(inout) :: work(*)  !! workspace
       real(c_double), value :: x  !! Point at which to interpolate the polynomial.
       real(c_double), intent(out) :: p  !! Polynomial value at X.
       real(c_double), intent(out) :: dp  !! Polynomial derivative at X.
@@ -5568,6 +6657,23 @@ contains
       call c_%lgrind(n, xvals, yvals, work, x, p, dp)
       c_pepper_lgrind = status_of(c_)
    end function c_pepper_lgrind
+
+   !> C interface of `lgrint`: Evaluate a Lagrange interpolating polynomial for a specified set of coordinate pairs, at a specified abscissa value.
+   integer(c_int) function c_pepper_lgrint ( ctx, n, xvals, yvals, work, x, fresult ) bind(c, name='pepper_lgrint')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: n  !! Number of points defining the polynomial.
+      real(c_double), intent(in) :: xvals(*)  !! Abscissa values.
+      real(c_double), intent(in) :: yvals(*)  !! Ordinate values.
+      real(c_double), intent(inout) :: work(*)  !! workspace
+      real(c_double), value :: x  !! Point at which to interpolate the polynomial.
+      real(c_double), intent(out) :: fresult  !! the result
+      type(capi_context), pointer :: c_
+      real(wp) :: f_fresult
+      c_ => context_of(ctx)
+      f_fresult = c_%lgrint(n, xvals, yvals, work, x)
+      fresult = f_fresult
+      c_pepper_lgrint = status_of(c_)
+   end function c_pepper_lgrint
 
    !> C interface of `limb_points`: Limb points on a target body, without a limit on their number (PEPPER; [[limbpt]] without MAXN).
    integer(c_int) function c_pepper_limb_points ( ctx, method, target, et, fixref, abcorr, corloc, obsrvr, refvec, &
@@ -5646,6 +6752,35 @@ contains
       call set_strings_result(c_, 1, f_names, names, names_n)
       c_pepper_loader_names = status_of(c_)
    end function c_pepper_loader_names
+
+   !> C interface of `locln`: Locate a group of lines in a text file delimited by markers.
+   integer(c_int) function c_pepper_locln ( ctx, unit, bmark, emark, line_size, line, bline, eline, found ) bind(c, &
+         name='pepper_locln')
+      integer(c_int), value :: line_size  !! the size of line (with the NUL)
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: unit  !! Logical unit connected to text file.
+      character(kind=c_char), intent(in) :: bmark(*)  !! Begin marker.
+      character(kind=c_char), intent(in) :: emark(*)  !! End marker.
+      character(kind=c_char), intent(inout) :: line(line_size)  !! Workspace.
+      integer(c_int), intent(out) :: bline  !! Beginning line.
+      integer(c_int), intent(out) :: eline  !! Ending line.
+      integer(c_int), intent(out) :: found  !! Markers found?
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_bmark
+      character(:), allocatable :: f_emark
+      character(len=max(line_size - 1, 1)) :: f_line
+      character(:), allocatable :: t_line
+      logical :: f_found
+      c_ => context_of(ctx)
+      call c_to_f(bmark, f_bmark)
+      call c_to_f(emark, f_emark)
+      call c_to_f(line, t_line)
+      f_line = t_line
+      call c_%locln(unit, f_bmark, f_emark, f_line, bline, eline, f_found)
+      call f_to_c(f_line, line_size, line)
+      found = merge(1_c_int, 0_c_int, f_found)
+      c_pepper_locln = status_of(c_)
+   end function c_pepper_locln
 
    !> C interface of `lspcn`: Compute L_s, the planetocentric longitude of the sun, as seen from a specified body.
    integer(c_int) function c_pepper_lspcn ( ctx, body, et, abcorr, fresult ) bind(c, name='pepper_lspcn')
@@ -5857,6 +6992,19 @@ contains
       c_pepper_npedln = status_of(c_)
    end function c_pepper_npedln
 
+   !> C interface of `npelpt`: Find the nearest point on an ellipse to a specified point, both in three-dimensional space, and find the distance between the ellipse and the point.
+   integer(c_int) function c_pepper_npelpt ( ctx, point, ellips, pnear, dist ) bind(c, name='pepper_npelpt')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: point(3)  !! Point whose distance to an ellipse is to be found.
+      real(c_double), intent(in) :: ellips(9)  !! A SPICE ellipse.
+      real(c_double), intent(out) :: pnear(3)  !! Nearest point on ellipse to input point.
+      real(c_double), intent(out) :: dist  !! Distance of input point to ellipse.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%npelpt(point, ellips, pnear, dist)
+      c_pepper_npelpt = status_of(c_)
+   end function c_pepper_npelpt
+
    !> C interface of `nplnpt`: Find the nearest point on a line to a specified point, and find the distance between the two points.
    integer(c_int) function c_pepper_nplnpt ( ctx, linpt, lindir, point, pnear, dist ) bind(c, name='pepper_nplnpt')
       type(c_ptr), value :: ctx  !! the context
@@ -5884,6 +7032,30 @@ contains
       call c_%npsgpt(ep1, ep2, point, pnear, dist)
       c_pepper_npsgpt = status_of(c_)
    end function c_pepper_npsgpt
+
+   !> C interface of `nvc2pl`: Make a SPICE plane from a normal vector and a constant.
+   integer(c_int) function c_pepper_nvc2pl ( ctx, normal, konst, plane ) bind(c, name='pepper_nvc2pl')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: normal(3)  !! A normal vector and constant defining a plane.
+      real(c_double), value :: konst  !! A normal vector and constant defining a plane.
+      real(c_double), intent(out) :: plane(4)  !! An array representing the plane.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%nvc2pl(normal, konst, plane)
+      c_pepper_nvc2pl = status_of(c_)
+   end function c_pepper_nvc2pl
+
+   !> C interface of `nvp2pl`: Make a SPICE plane from a normal vector and a point.
+   integer(c_int) function c_pepper_nvp2pl ( ctx, normal, point, plane ) bind(c, name='pepper_nvp2pl')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: normal(3)  !! A normal vector and a point defining a plane.
+      real(c_double), intent(in) :: point(3)  !! A normal vector and a point defining a plane.
+      real(c_double), intent(out) :: plane(4)  !! An array representing the plane.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%nvp2pl(normal, point, plane)
+      c_pepper_nvp2pl = status_of(c_)
+   end function c_pepper_nvp2pl
 
    !> C interface of `occult`: Determine the occultation condition (not occulted, partially occulted, etc.) of one target relative to another target as seen by an observer at a given time.
    integer(c_int) function c_pepper_occult ( ctx, targ1, shape1, frame1, targ2, shape2, frame2, abcorr, obsrvr, et, &
@@ -5961,6 +7133,19 @@ contains
       call c_%oscelt(state, et, mu, elts)
       c_pepper_oscelt = status_of(c_)
    end function c_pepper_oscelt
+
+   !> C interface of `oscltx`: Determine the set of osculating conic orbital elements that corresponds to the state (position, velocity) of a body at some epoch.
+   integer(c_int) function c_pepper_oscltx ( ctx, state, et, mu, elts ) bind(c, name='pepper_oscltx')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: state(6)  !! State of body at epoch of elements.
+      real(c_double), value :: et  !! Epoch of elements.
+      real(c_double), value :: mu  !! Gravitational parameter (GM) of primary body.
+      real(c_double), intent(out) :: elts(*)  !! Extended set of classical conic elements.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%oscltx(state, et, mu, elts)
+      c_pepper_oscltx = status_of(c_)
+   end function c_pepper_oscltx
 
    !> C interface of `partof`: Solve the time of flight equation MA = D + (D**3) / 3 for the parabolic eccentric anomaly D, given mean anomaly.
    integer(c_int) function c_pepper_partof ( ctx, ma, d ) bind(c, name='pepper_partof')
@@ -6183,7 +7368,7 @@ contains
       c_pepper_pckopn = status_of(c_)
    end function c_pepper_pckopn
 
-   !> C interface of `pckuds`: Unpack the contents of a PCK segment descriptor.
+   !> C interface of `pckuds`: Unpack the contents of a PCK segment descriptor  ## Detailed Input  DESCR    is a PCK segment descriptor.
    integer(c_int) function c_pepper_pckuds ( ctx, descr, body, frame, type, first, last, begin, end ) bind(c, &
          name='pepper_pckuds')
       type(c_ptr), value :: ctx  !! the context
@@ -6297,6 +7482,18 @@ contains
       fresult = f_fresult
       c_pepper_phaseq = status_of(c_)
    end function c_pepper_phaseq
+
+   !> C interface of `pjelpl`: Project an ellipse onto a plane, orthogonally.
+   integer(c_int) function c_pepper_pjelpl ( ctx, elin, plane, elout ) bind(c, name='pepper_pjelpl')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: elin(9)  !! A SPICE ellipse to be projected.
+      real(c_double), intent(in) :: plane(4)  !! A plane onto which ELIN is to be projected.
+      real(c_double), intent(out) :: elout(9)  !! A SPICE ellipse resulting from the projection.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%pjelpl(elin, plane, elout)
+      c_pepper_pjelpl = status_of(c_)
+   end function c_pepper_pjelpl
 
    !> C interface of `plnsns`: Indicate for a specified body whether planetographic and planetocentric longitude increase in the same sense.
    integer(c_int) function c_pepper_plnsns ( ctx, bodid, fresult ) bind(c, name='pepper_plnsns')
@@ -6604,6 +7801,19 @@ contains
       c_pepper_prtenc = status_of(c_)
    end function c_pepper_prtenc
 
+   !> C interface of `psv2pl`: Make a SPICE plane from a point and two spanning vectors.
+   integer(c_int) function c_pepper_psv2pl ( ctx, point, span1, span2, plane ) bind(c, name='pepper_psv2pl')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: point(3)  !! A point and two spanning vectors defining a
+      real(c_double), intent(in) :: span1(3)  !! A point and two spanning vectors defining a
+      real(c_double), intent(in) :: span2(3)  !! A point and two spanning vectors defining a
+      real(c_double), intent(out) :: plane(4)  !! An array representing the plane.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%psv2pl(point, span1, span2, plane)
+      c_pepper_psv2pl = status_of(c_)
+   end function c_pepper_psv2pl
+
    !> C interface of `pxform`: Return the matrix that transforms position vectors from one specified frame to another at a specified epoch.
    integer(c_int) function c_pepper_pxform ( ctx, from, to, et, rotate ) bind(c, name='pepper_pxform')
       type(c_ptr), value :: ctx  !! the context
@@ -6812,6 +8022,32 @@ contains
       call c_%refchg(frame1, frame2, et, rotate)
       c_pepper_refchg = status_of(c_)
    end function c_pepper_refchg
+
+   !> C interface of `remlad`: Remove one or more elements from a double precision array at the indicated location.
+   integer(c_int) function c_pepper_remlad ( ctx, ne, loc, array, na ) bind(c, name='pepper_remlad')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: ne  !! Number of elements to be removed.
+      integer(c_int), value :: loc  !! Location of the first removed element.
+      real(c_double), intent(inout) :: array(*)  !! Input/output array.
+      integer(c_int), intent(inout) :: na  !! Number of elements in the input/output array.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%remlad(ne, loc, array, na)
+      c_pepper_remlad = status_of(c_)
+   end function c_pepper_remlad
+
+   !> C interface of `remlai`: Remove one or more elements from an integer array at the indicated location.
+   integer(c_int) function c_pepper_remlai ( ctx, ne, loc, array, na ) bind(c, name='pepper_remlai')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: ne  !! Number of elements to be removed.
+      integer(c_int), value :: loc  !! Location of the first removed element.
+      integer(c_int), intent(inout) :: array(*)  !! Input/output array.
+      integer(c_int), intent(inout) :: na  !! Number of elements in the input/output array.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%remlai(ne, loc, array, na)
+      c_pepper_remlai = status_of(c_)
+   end function c_pepper_remlai
 
    !> C interface of `removd`: Remove an item from a double precision set.
    integer(c_int) function c_pepper_removd ( ctx, item, a ) bind(c, name='pepper_removd')
@@ -7330,6 +8566,19 @@ contains
       call f_to_c(f_msg, msg_size, msg)
       c_pepper_scpars = status_of(c_)
    end function c_pepper_scpars
+
+   !> C interface of `scpart`: Get spacecraft clock partition information from a spacecraft clock kernel file.
+   integer(c_int) function c_pepper_scpart ( ctx, sc, nparts, pstart, pstop ) bind(c, name='pepper_scpart')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: sc  !! NAIF spacecraft identification code.
+      integer(c_int), intent(out) :: nparts  !! The number of spacecraft clock partitions.
+      real(c_double), intent(out) :: pstart(*)  !! Array of partition start times.
+      real(c_double), intent(out) :: pstop(*)  !! Array of partition stop times.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%scpart(sc, nparts, pstart, pstop)
+      c_pepper_scpart = status_of(c_)
+   end function c_pepper_scpart
 
    !> C interface of `scps01`: Convert a character representation of a type 1 spacecraft clock count to ticks.
    integer(c_int) function c_pepper_scps01 ( ctx, sc, clkstr, error, msg_size, msg, ticks ) bind(c, &
@@ -8268,6 +9517,18 @@ contains
       c_pepper_spke08 = status_of(c_)
    end function c_pepper_spke08
 
+   !> C interface of `spke09`: Evaluate a single SPK data record from a segment of type 9 (discrete states, evaluated by Lagrange interpolation).
+   integer(c_int) function c_pepper_spke09 ( ctx, et, record, state ) bind(c, name='pepper_spke09')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), value :: et  !! Target epoch.
+      real(c_double), intent(inout) :: record(*)  !! Data record.
+      real(c_double), intent(out) :: state(6)  !! State (position and velocity).
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%spke09(et, record, state)
+      c_pepper_spke09 = status_of(c_)
+   end function c_pepper_spke09
+
    !> C interface of `spke10`: Evaluate a single SPK data record from a segment of type 10 (NORAD two-line element sets.).
    integer(c_int) function c_pepper_spke10 ( ctx, et, record, state ) bind(c, name='pepper_spke10')
       type(c_ptr), value :: ctx  !! the context
@@ -8339,6 +9600,30 @@ contains
       call c_%spke17(et, recin, state)
       c_pepper_spke17 = status_of(c_)
    end function c_pepper_spke17
+
+   !> C interface of `spke18`: Evaluate a single data record from a type 18 SPK segment.
+   integer(c_int) function c_pepper_spke18 ( ctx, et, record, state ) bind(c, name='pepper_spke18')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), value :: et  !! Epoch for which a state is desired.
+      real(c_double), intent(inout) :: record(*)  !! Record from a type 18 SPK segment valid for ET. (PEPPER: its packets are transposed in place.)
+      real(c_double), intent(out) :: state(6)  !! State (position and velocity) at epoch ET.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%spke18(et, record, state)
+      c_pepper_spke18 = status_of(c_)
+   end function c_pepper_spke18
+
+   !> C interface of `spke19`: Evaluate a single data record from a type 19 SPK segment.
+   integer(c_int) function c_pepper_spke19 ( ctx, et, record, state ) bind(c, name='pepper_spke19')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), value :: et  !! Epoch for which a state is desired.
+      real(c_double), intent(inout) :: record(*)  !! Record from a type 19 SPK segment valid for ET. (PEPPER: its packets are transposed in place.)
+      real(c_double), intent(out) :: state(6)  !! State (position and velocity) at epoch ET.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%spke19(et, record, state)
+      c_pepper_spke19 = status_of(c_)
+   end function c_pepper_spke19
 
    !> C interface of `spke20`: Evaluate a single data record from an SPK or PCK segment of type 20 (Chebyshev polynomials, velocity only).
    integer(c_int) function c_pepper_spke20 ( ctx, et, record, xyzdot ) bind(c, name='pepper_spke20')
@@ -8526,6 +9811,25 @@ contains
       call c_%spkopn(f_fname, f_ifname, ncomch, handle)
       c_pepper_spkopn = status_of(c_)
    end function c_pepper_spkopn
+
+   !> C interface of `spkpds`: Perform routine error checks and if all check pass, pack the descriptor for an SPK segment  ## Detailed Input  BODY     is the NAIF ID code for the body of the segment.
+   integer(c_int) function c_pepper_spkpds ( ctx, body, center, frame, type, first, last, descr ) bind(c, &
+         name='pepper_spkpds')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: body  !! The NAIF ID code for the body of the segment.
+      integer(c_int), value :: center  !! The center of motion for BODY.
+      character(kind=c_char), intent(in) :: frame(*)  !! The frame for this segment.
+      integer(c_int), value :: type  !! The type of SPK segment to create.
+      real(c_double), value :: first  !! The first epoch for which the segment is valid.
+      real(c_double), value :: last  !! The last  epoch for which the segment is valid.
+      real(c_double), intent(out) :: descr(*)  !! An SPK segment descriptor.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_frame
+      c_ => context_of(ctx)
+      call c_to_f(frame, f_frame)
+      call c_%spkpds(body, center, f_frame, type, first, last, descr)
+      c_pepper_spkpds = status_of(c_)
+   end function c_pepper_spkpds
 
    !> C interface of `spkpos`: Return the position of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration.
    integer(c_int) function c_pepper_spkpos ( ctx, targ, et, ref, abcorr, obs, ptarg, lt ) bind(c, name='pepper_spkpos')
@@ -8810,6 +10114,28 @@ contains
       call c_%spks21(handle, baddr, eaddr, begin, end)
       c_pepper_spks21 = status_of(c_)
    end function c_pepper_spks21
+
+   !> C interface of `spksfs`: Search through loaded SPK files to find the highest-priority segment applicable to the body and time specified and buffer searched segments in the process, to attempt to avoid re-reading files.
+   integer(c_int) function c_pepper_spksfs ( ctx, body, et, handle, descr, ident_size, ident, found ) bind(c, &
+         name='pepper_spksfs')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: body  !! Body ID.
+      real(c_double), value :: et  !! Ephemeris time.
+      integer(c_int), intent(out) :: handle  !! Handle of file containing the applicable segment.
+      real(c_double), intent(out) :: descr(*)  !! Descriptor of the applicable segment.
+      integer(c_int), value :: ident_size  !! the size of ident (with the NUL)
+      character(kind=c_char), intent(out) :: ident(*)  !! Identifier of the applicable segment.
+      integer(c_int), intent(out) :: found  !! Indicates whether or not a segment was found.
+      type(capi_context), pointer :: c_
+      character(len=max(ident_size - 1, 1)) :: f_ident
+      logical :: f_found
+      c_ => context_of(ctx)
+      f_ident = ' '
+      call c_%spksfs(body, et, handle, descr, f_ident, f_found)
+      call f_to_c(f_ident, ident_size, ident)
+      found = merge(1_c_int, 0_c_int, f_found)
+      c_pepper_spksfs = status_of(c_)
+   end function c_pepper_spksfs
 
    !> C interface of `spkssb`: Return the state (position and velocity) of a target body relative to the solar system barycenter.
    integer(c_int) function c_pepper_spkssb ( ctx, targ, et, ref, starg ) bind(c, name='pepper_spkssb')
@@ -9275,6 +10601,29 @@ contains
       c_pepper_srfcss = status_of(c_)
    end function c_pepper_srfcss
 
+   !> C interface of `srfnrm`: Map array of surface points on a specified target body to the corresponding unit length outward surface normal vectors.
+   integer(c_int) function c_pepper_srfnrm ( ctx, method, target, et, fixref, npts, srfpts, normls ) bind(c, &
+         name='pepper_srfnrm')
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: method(*)  !! Computation method.
+      character(kind=c_char), intent(in) :: target(*)  !! Name of target body.
+      real(c_double), value :: et  !! Epoch in TDB seconds past J2000 TDB.
+      character(kind=c_char), intent(in) :: fixref(*)  !! Body-fixed, body-centered target body frame.
+      integer(c_int), value :: npts  !! Number of surface points in input array.
+      real(c_double), intent(in) :: srfpts(3,*)  !! Array of surface points.
+      real(c_double), intent(out) :: normls(3,*)  !! Array of outward, unit length normal vectors.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_method
+      character(:), allocatable :: f_target
+      character(:), allocatable :: f_fixref
+      c_ => context_of(ctx)
+      call c_to_f(method, f_method)
+      call c_to_f(target, f_target)
+      call c_to_f(fixref, f_fixref)
+      call c_%srfnrm(f_method, f_target, et, f_fixref, npts, srfpts, normls)
+      c_pepper_srfnrm = status_of(c_)
+   end function c_pepper_srfnrm
+
    !> C interface of `srfrec`: Convert planetocentric latitude and longitude of a surface point on a specified body to rectangular coordinates.
    integer(c_int) function c_pepper_srfrec ( ctx, body, lon, lat, rectan ) bind(c, name='pepper_srfrec')
       type(c_ptr), value :: ctx  !! the context
@@ -9718,6 +11067,34 @@ contains
       c_pepper_surfpv = status_of(c_)
    end function c_pepper_surfpv
 
+   !> C interface of `swapad`: Swap (exchange) two non-intersecting groups of contiguous elements of a double precision array.
+   integer(c_int) function c_pepper_swapad ( ctx, n, locn, m, locm, array ) bind(c, name='pepper_swapad')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: n  !! Number of elements in the first group.
+      integer(c_int), value :: locn  !! Location of the first group.
+      integer(c_int), value :: m  !! Number of elements in the second group.
+      integer(c_int), value :: locm  !! Location of the second group.
+      real(c_double), intent(inout) :: array(*)  !! The array.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%swapad(n, locn, m, locm, array)
+      c_pepper_swapad = status_of(c_)
+   end function c_pepper_swapad
+
+   !> C interface of `swapai`: Swap (exchange) two non-intersecting groups of contiguous elements of an integer array.
+   integer(c_int) function c_pepper_swapai ( ctx, n, locn, m, locm, array ) bind(c, name='pepper_swapai')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: n  !! Number of elements in the first group.
+      integer(c_int), value :: locn  !! Location of the first group.
+      integer(c_int), value :: m  !! Number of elements in the second group.
+      integer(c_int), value :: locm  !! Location of the second group.
+      integer(c_int), intent(inout) :: array(*)  !! The array.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%swapai(n, locn, m, locm, array)
+      c_pepper_swapai = status_of(c_)
+   end function c_pepper_swapai
+
    !> C interface of `swpool`: Add a name to the list of agents to notify whenever a member of a list of kernel variables is updated.
    integer(c_int) function c_pepper_swpool ( ctx, agent, nnames, names_n, names_width, names ) bind(c, &
          name='pepper_swpool')
@@ -9928,6 +11305,28 @@ contains
       call c_%texpyr(year)
       c_pepper_texpyr = status_of(c_)
    end function c_pepper_texpyr
+
+   !> C interface of `timdef`: Set and retrieve the defaults associated with calendar input strings.
+   integer(c_int) function c_pepper_timdef ( ctx, action, item, value_size, value ) bind(c, name='pepper_timdef')
+      integer(c_int), value :: value_size  !! the size of value (with the NUL)
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: action(*)  !! Kind of action to take 'SET' or 'GET'.
+      character(kind=c_char), intent(in) :: item(*)  !! Default item of interest.
+      character(kind=c_char), intent(inout) :: value(value_size)  !! Value associated with the default item.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_action
+      character(:), allocatable :: f_item
+      character(len=max(value_size - 1, 1)) :: f_value
+      character(:), allocatable :: t_value
+      c_ => context_of(ctx)
+      call c_to_f(action, f_action)
+      call c_to_f(item, f_item)
+      call c_to_f(value, t_value)
+      f_value = t_value
+      call c_%timdef(f_action, f_item, f_value)
+      call f_to_c(f_value, value_size, value)
+      c_pepper_timdef = status_of(c_)
+   end function c_pepper_timdef
 
    !> C interface of `timout`: Convert an input epoch represented in TDB seconds past the TDB epoch of J2000 to a character string formatted to the specifications of a user's format picture.
    integer(c_int) function c_pepper_timout ( ctx, et, pictur, output_size, output ) bind(c, name='pepper_timout')
@@ -10269,6 +11668,34 @@ contains
       call c_%validi(size, n, a)
       c_pepper_validi = status_of(c_)
    end function c_pepper_validi
+
+   !> C interface of `vprjp`: Project a vector onto a specified plane, orthogonally.
+   integer(c_int) function c_pepper_vprjp ( ctx, vin, plane, vout ) bind(c, name='pepper_vprjp')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: vin(3)  !! Vector to be projected.
+      real(c_double), intent(in) :: plane(4)  !! A SPICE plane onto which VIN is projected.
+      real(c_double), intent(out) :: vout(3)  !! Vector resulting from projection.
+      type(capi_context), pointer :: c_
+      c_ => context_of(ctx)
+      call c_%vprjp(vin, plane, vout)
+      c_pepper_vprjp = status_of(c_)
+   end function c_pepper_vprjp
+
+   !> C interface of `vprjpi`: Find the vector in a specified plane that maps to a specified vector in another plane under orthogonal projection.
+   integer(c_int) function c_pepper_vprjpi ( ctx, vin, projpl, invpl, vout, found ) bind(c, name='pepper_vprjpi')
+      type(c_ptr), value :: ctx  !! the context
+      real(c_double), intent(in) :: vin(3)  !! The projected vector.
+      real(c_double), intent(in) :: projpl(4)  !! Plane containing VIN.
+      real(c_double), intent(in) :: invpl(4)  !! Plane containing inverse image of VIN.
+      real(c_double), intent(out) :: vout(3)  !! Inverse projection of VIN.
+      integer(c_int), intent(out) :: found  !! Flag indicating whether VOUT could be calculated.
+      type(capi_context), pointer :: c_
+      logical :: f_found
+      c_ => context_of(ctx)
+      call c_%vprjpi(vin, projpl, invpl, vout, f_found)
+      found = merge(1_c_int, 0_c_int, f_found)
+      c_pepper_vprjpi = status_of(c_)
+   end function c_pepper_vprjpi
 
    !> C interface of `wncard`: Return the cardinality (number of intervals) of a double precision window.
    integer(c_int) function c_pepper_wncard ( ctx, window, fresult ) bind(c, name='pepper_wncard')
@@ -10769,7 +12196,7 @@ contains
       c_pepper_spice_pckuof = spice_status(s_)
    end function c_pepper_spice_pckuof
 
-   !> C interface of `remove_ephemeris`: Remove a programmatic ephemeris (PEPPER): the body's other segments (files) apply again.
+   !> C interface of `remove_ephemeris`: remove_ephemeris.
    integer(c_int) function c_pepper_spice_remove_ephemeris ( spice, body ) bind(c, name='pepper_spice_remove_ephemeris')
       type(c_ptr), value :: spice  !! the instance
       integer(c_int), value :: body  !! the body's ID code
@@ -10779,7 +12206,7 @@ contains
       c_pepper_spice_remove_ephemeris = spice_status(s_)
    end function c_pepper_spice_remove_ephemeris
 
-   !> C interface of `remove_frame`: Remove a programmatic frame and its definition from the kernel pool (PEPPER).
+   !> C interface of `remove_frame`: remove_frame.
    integer(c_int) function c_pepper_spice_remove_frame ( spice, name ) bind(c, name='pepper_spice_remove_frame')
       type(c_ptr), value :: spice  !! the instance
       character(kind=c_char), intent(in) :: name(*)  !! the frame's name
@@ -10826,6 +12253,20 @@ contains
       c_pepper_spice_unload = spice_status(s_)
    end function c_pepper_spice_unload
 
+   !> C interface of `alltru`: Determine if all the entries in an array of logicals are .TRUE.
+   integer(c_int) function c_pepper_alltru ( logcls_n, logcls, n, fresult ) bind(c, name='pepper_alltru')
+      integer(c_int), value :: logcls_n  !! the number of flags in logcls
+      integer(c_int), intent(in) :: logcls(max(logcls_n, 1))  !! An array of logicals. (0: false)
+      integer(c_int), value :: n  !! Number of elements in the array LOGCLS.
+      integer(c_int), intent(out) :: fresult  !! the result
+      logical :: f_logcls(max(logcls_n, 1))
+      logical :: f_fresult
+      f_logcls = logcls /= 0
+      f_fresult = alltru(f_logcls, n)
+      fresult = merge(1_c_int, 0_c_int, f_fresult)
+      c_pepper_alltru = 0_c_int
+   end function c_pepper_alltru
+
    !> C interface of `approx`: Return .TRUE.
    integer(c_int) function c_pepper_approx ( x, y, tol, fresult ) bind(c, name='pepper_approx')
       real(c_double), value :: x  !! Double precision numbers.
@@ -10857,6 +12298,26 @@ contains
       call f_to_c(f_outstr, outstr_size, outstr)
       c_pepper_astrip = 0_c_int
    end function c_pepper_astrip
+
+   !> C interface of `astrip_inplace`: Remove the characters in an ASCII range from a string, in place: the in-place form of [[astrip]].
+   integer(c_int) function c_pepper_astrip_inplace ( string_size, string, asciib, asciie ) bind(c, &
+         name='pepper_astrip_inplace')
+      integer(c_int), value :: string_size  !! the size of string (with the NUL)
+      character(kind=c_char), intent(inout) :: string(string_size)  !! String to strip.
+      character(kind=c_char), intent(in) :: asciib(*)  !! First ASCII character in range to be stripped.
+      character(kind=c_char), intent(in) :: asciie(*)  !! Last ASCII character in range to be stripped.
+      character(len=max(string_size - 1, 1)) :: f_string
+      character(:), allocatable :: t_string
+      character(:), allocatable :: f_asciib
+      character(:), allocatable :: f_asciie
+      call c_to_f(string, t_string)
+      f_string = t_string
+      call c_to_f(asciib, f_asciib)
+      call c_to_f(asciie, f_asciie)
+      call astrip_inplace(f_string, f_asciib, f_asciie)
+      call f_to_c(f_string, string_size, string)
+      c_pepper_astrip_inplace = 0_c_int
+   end function c_pepper_astrip_inplace
 
    !> C interface of `axisar`: Construct a rotation matrix that rotates vectors by a specified angle about a specified axis.
    integer(c_int) function c_pepper_axisar ( axis, angle, r ) bind(c, name='pepper_axisar')
@@ -11027,6 +12488,19 @@ contains
       c_pepper_bsrchi = 0_c_int
    end function c_pepper_bsrchi
 
+   !> C interface of `chbder`: Return the value of a polynomial and its first NDERIV derivatives, evaluated at the input X, using the coefficients of the Chebyshev expansion of the polynomial.
+   integer(c_int) function c_pepper_chbder ( cp, degp, x2s, x, nderiv, partdp, dpdxs ) bind(c, name='pepper_chbder')
+      real(c_double), intent(in) :: cp(*)  !! DEGP+1 Chebyshev polynomial coefficients.
+      integer(c_int), value :: degp  !! Degree of polynomial.
+      real(c_double), intent(in) :: x2s(2)  !! Transformation parameters of polynomial.
+      real(c_double), value :: x  !! Value for which the polynomial is to be evaluated.
+      integer(c_int), value :: nderiv  !! The number of derivatives to compute.
+      real(c_double), intent(inout) :: partdp(*)  !! workspace
+      real(c_double), intent(out) :: dpdxs(*)  !! Array of the derivatives of the polynomial.
+      call chbder(cp, degp, x2s, x, nderiv, partdp, dpdxs)
+      c_pepper_chbder = 0_c_int
+   end function c_pepper_chbder
+
    !> C interface of `chbint`: Return the value of a polynomial and its derivative, evaluated at the input X, using the coefficients of the Chebyshev expansion of the polynomial.
    integer(c_int) function c_pepper_chbint ( cp, degp, x2s, x, p, dpdx ) bind(c, name='pepper_chbint')
       real(c_double), intent(in) :: cp(*)  !! DEGP+1 Chebyshev polynomial coefficients.
@@ -11067,6 +12541,24 @@ contains
       call f_to_c(f_output, output_size, output)
       c_pepper_cmprss = 0_c_int
    end function c_pepper_cmprss
+
+   !> C interface of `cmprss_inplace`: Compress runs of a delimiter in a string, in place: the in-place form of [[cmprss]].
+   integer(c_int) function c_pepper_cmprss_inplace ( delim, n, string_size, string ) bind(c, &
+         name='pepper_cmprss_inplace')
+      integer(c_int), value :: string_size  !! the size of string (with the NUL)
+      character(kind=c_char), intent(in) :: delim(*)  !! Delimiter to be compressed.
+      integer(c_int), value :: n  !! Maximum consecutive occurrences of DELIM.
+      character(kind=c_char), intent(inout) :: string(string_size)  !! String to compress.
+      character(:), allocatable :: f_delim
+      character(len=max(string_size - 1, 1)) :: f_string
+      character(:), allocatable :: t_string
+      call c_to_f(delim, f_delim)
+      call c_to_f(string, t_string)
+      f_string = t_string
+      call cmprss_inplace(f_delim, n, f_string)
+      call f_to_c(f_string, string_size, string)
+      c_pepper_cmprss_inplace = 0_c_int
+   end function c_pepper_cmprss_inplace
 
    !> C interface of `cpos`: Find the first occurrence in a string of a character belonging to a collection of characters, starting at a specified location, searching forward.
    integer(c_int) function c_pepper_cpos ( str, chars, start, fresult ) bind(c, name='pepper_cpos')
@@ -11254,6 +12746,16 @@ contains
       fresult = f_fresult
       c_pepper_dvnorm = 0_c_int
    end function c_pepper_dvnorm
+
+   !> C interface of `el2cgv`: Convert a SPICE ellipse to a center vector and two generating vectors.
+   integer(c_int) function c_pepper_el2cgv ( ellips, center, smajor, sminor ) bind(c, name='pepper_el2cgv')
+      real(c_double), intent(in) :: ellips(9)  !! A SPICE ellipse.
+      real(c_double), intent(out) :: center(3)  !! Center and semi-axes of ELLIPS.
+      real(c_double), intent(out) :: smajor(3)  !! Center and semi-axes of ELLIPS.
+      real(c_double), intent(out) :: sminor(3)  !! Center and semi-axes of ELLIPS.
+      call el2cgv(ellips, center, smajor, sminor)
+      c_pepper_el2cgv = 0_c_int
+   end function c_pepper_el2cgv
 
    !> C interface of `eqchr`: Return .TRUE.
    integer(c_int) function c_pepper_eqchr ( a, b, fresult ) bind(c, name='pepper_eqchr')
@@ -11478,6 +12980,37 @@ contains
       c_pepper_isrchi = 0_c_int
    end function c_pepper_isrchi
 
+   !> C interface of `kxtrct`: Locate a keyword in a string and extract the substring from the beginning of the first word following the keyword to the beginning of the first subsequent recognized terminator of a list.
+   integer(c_int) function c_pepper_kxtrct ( keywd, terms_n, terms_width, terms, nterms, wordsq_size, wordsq, found, &
+         substr_size, substr ) bind(c, name='pepper_kxtrct')
+      integer(c_int), value :: wordsq_size  !! the size of wordsq (with the NUL)
+      character(kind=c_char), intent(in) :: keywd(*)  !! Word that marks the beginning of text of interest.
+      integer(c_int), value :: terms_n  !! the number of strings in terms
+      integer(c_int), value :: terms_width  !! the width of each string in terms
+      character(kind=c_char), intent(in) :: terms(*)  !! Set of words, any of which marks the end of text.
+      integer(c_int), value :: nterms  !! Number of TERMS.
+      character(kind=c_char), intent(inout) :: wordsq(wordsq_size)  !! String containing a sequence of words.
+      integer(c_int), intent(out) :: found  !! .TRUE. if the keyword is found in the string.
+      integer(c_int), value :: substr_size  !! the size of substr (with the NUL)
+      character(kind=c_char), intent(out) :: substr(*)  !! String from end of KEYWD to beginning of first TERMS
+      character(:), allocatable :: f_keywd
+      character(:), allocatable :: f_terms(:)
+      character(len=max(wordsq_size - 1, 1)) :: f_wordsq
+      character(:), allocatable :: t_wordsq
+      logical :: f_found
+      character(len=max(substr_size - 1, 1)) :: f_substr
+      call c_to_f(keywd, f_keywd)
+      call c_to_f_array(terms, terms_n, terms_width, f_terms)
+      call c_to_f(wordsq, t_wordsq)
+      f_wordsq = t_wordsq
+      f_substr = ' '
+      call kxtrct(f_keywd, f_terms, nterms, f_wordsq, f_found, f_substr)
+      call f_to_c(f_wordsq, wordsq_size, wordsq)
+      found = merge(1_c_int, 0_c_int, f_found)
+      call f_to_c(f_substr, substr_size, substr)
+      c_pepper_kxtrct = 0_c_int
+   end function c_pepper_kxtrct
+
    !> C interface of `lastnb`: Return the index of the last non-blank character in a character string.
    integer(c_int) function c_pepper_lastnb ( string, fresult ) bind(c, name='pepper_lastnb')
       character(kind=c_char), intent(in) :: string(*)  !! Input character string.
@@ -11570,6 +13103,19 @@ contains
       call f_to_c(f_out, out_size, out)
       c_pepper_lcase = 0_c_int
    end function c_pepper_lcase
+
+   !> C interface of `lcase_inplace`: Lowercase a string in place: the in-place form of [[lcase]].
+   integer(c_int) function c_pepper_lcase_inplace ( string_size, string ) bind(c, name='pepper_lcase_inplace')
+      integer(c_int), value :: string_size  !! the size of string (with the NUL)
+      character(kind=c_char), intent(inout) :: string(string_size)  !! String to convert to lowercase.
+      character(len=max(string_size - 1, 1)) :: f_string
+      character(:), allocatable :: t_string
+      call c_to_f(string, t_string)
+      f_string = t_string
+      call lcase_inplace(f_string)
+      call f_to_c(f_string, string_size, string)
+      c_pepper_lcase_inplace = 0_c_int
+   end function c_pepper_lcase_inplace
 
    !> C interface of `ljucrs`: Left-justify, uppercase, and space-compress a character string.
    integer(c_int) function c_pepper_ljucrs ( n, input, output_size, output ) bind(c, name='pepper_ljucrs')
@@ -12083,6 +13629,39 @@ contains
       c_pepper_nextwd = 0_c_int
    end function c_pepper_nextwd
 
+   !> C interface of `nextwd_inplace`: Remove the next word from a string: the form of [[nextwd]] whose REST is the input string.
+   integer(c_int) function c_pepper_nextwd_inplace ( string_size, string, next_size, next ) bind(c, &
+         name='pepper_nextwd_inplace')
+      integer(c_int), value :: string_size  !! the size of string (with the NUL)
+      character(kind=c_char), intent(inout) :: string(string_size)  !! On input, the string; on output, the remaining part, left-justified.
+      integer(c_int), value :: next_size  !! the size of next (with the NUL)
+      character(kind=c_char), intent(out) :: next(*)  !! The next word in the string.
+      character(len=max(string_size - 1, 1)) :: f_string
+      character(:), allocatable :: t_string
+      character(len=max(next_size - 1, 1)) :: f_next
+      call c_to_f(string, t_string)
+      f_string = t_string
+      f_next = ' '
+      call nextwd_inplace(f_string, f_next)
+      call f_to_c(f_string, string_size, string)
+      call f_to_c(f_next, next_size, next)
+      c_pepper_nextwd_inplace = 0_c_int
+   end function c_pepper_nextwd_inplace
+
+   !> C interface of `notru`: Determine if none the entries in an array of logicals are .TRUE.
+   integer(c_int) function c_pepper_notru ( logcls_n, logcls, n, fresult ) bind(c, name='pepper_notru')
+      integer(c_int), value :: logcls_n  !! the number of flags in logcls
+      integer(c_int), intent(in) :: logcls(max(logcls_n, 1))  !! An array of logicals. (0: false)
+      integer(c_int), value :: n  !! Number of elements in the array LOGCLS.
+      integer(c_int), intent(out) :: fresult  !! the result
+      logical :: f_logcls(max(logcls_n, 1))
+      logical :: f_fresult
+      f_logcls = logcls /= 0
+      f_fresult = notru(f_logcls, n)
+      fresult = merge(1_c_int, 0_c_int, f_fresult)
+      c_pepper_notru = 0_c_int
+   end function c_pepper_notru
+
    !> C interface of `nparsd`: Parse a character string that represents a number and return a double precision value.
    integer(c_int) function c_pepper_nparsd ( string, x, error_size, error, ptr ) bind(c, name='pepper_nparsd')
       character(kind=c_char), intent(in) :: string(*)  !! Character string representing a numeric value.
@@ -12206,6 +13785,34 @@ contains
       c_pepper_pcwid = 0_c_int
    end function c_pepper_pcwid
 
+   !> C interface of `pl2nvc`: Return a unit normal vector and constant that define a specified plane.
+   integer(c_int) function c_pepper_pl2nvc ( plane, normal, konst ) bind(c, name='pepper_pl2nvc')
+      real(c_double), intent(in) :: plane(4)  !! A SPICE plane.
+      real(c_double), intent(out) :: normal(3)  !! A normal vector and constant defining the
+      real(c_double), intent(out) :: konst  !! A normal vector and constant defining the geometric plane
+      call pl2nvc(plane, normal, konst)
+      c_pepper_pl2nvc = 0_c_int
+   end function c_pepper_pl2nvc
+
+   !> C interface of `pl2nvp`: Return a unit normal vector and point that define a specified plane.
+   integer(c_int) function c_pepper_pl2nvp ( plane, normal, point ) bind(c, name='pepper_pl2nvp')
+      real(c_double), intent(in) :: plane(4)  !! A SPICE plane.
+      real(c_double), intent(out) :: normal(3)  !! A unit normal vector and point that define PLANE.
+      real(c_double), intent(out) :: point(3)  !! A unit normal vector and point that define PLANE.
+      call pl2nvp(plane, normal, point)
+      c_pepper_pl2nvp = 0_c_int
+   end function c_pepper_pl2nvp
+
+   !> C interface of `pl2psv`: Return a point and two orthogonal spanning vectors that generate a specified plane.
+   integer(c_int) function c_pepper_pl2psv ( plane, point, span1, span2 ) bind(c, name='pepper_pl2psv')
+      real(c_double), intent(in) :: plane(4)  !! A SPICE plane.
+      real(c_double), intent(out) :: point(3)  !! A point in the input plane and two vectors
+      real(c_double), intent(out) :: span1(3)  !! A point in the input plane and two vectors
+      real(c_double), intent(out) :: span2(3)  !! A point in the input plane and two vectors
+      call pl2psv(plane, point, span1, span2)
+      c_pepper_pl2psv = 0_c_int
+   end function c_pepper_pl2psv
+
    !> C interface of `pltexp`: Expand a triangular plate by a specified amount.
    integer(c_int) function c_pepper_pltexp ( iverts, delta, overts ) bind(c, name='pepper_pltexp')
       real(c_double), intent(in) :: iverts(3,3)  !! Vertices of the plate to be expanded.
@@ -12224,6 +13831,17 @@ contains
       call pltnrm(v1, v2, v3, normal)
       c_pepper_pltnrm = 0_c_int
    end function c_pepper_pltnrm
+
+   !> C interface of `polyds`: Compute the value of a polynomial and its first NDERIV derivatives at the value T.
+   integer(c_int) function c_pepper_polyds ( coeffs, deg, nderiv, t, p ) bind(c, name='pepper_polyds')
+      real(c_double), intent(in) :: coeffs(*)  !! Coefficients of the polynomial to be evaluated.
+      integer(c_int), value :: deg  !! Degree of the polynomial to be evaluated.
+      integer(c_int), value :: nderiv  !! Number of derivatives to compute.
+      real(c_double), value :: t  !! Point to evaluate the polynomial and derivatives
+      real(c_double), intent(out) :: p(*)  !! Value of polynomial and derivatives.
+      call polyds(coeffs, deg, nderiv, t, p)
+      c_pepper_polyds = 0_c_int
+   end function c_pepper_polyds
 
    !> C interface of `pos`: Find the first occurrence in a string of a substring, starting at a specified location, searching forward.
    integer(c_int) function c_pepper_pos ( str, substr, start, fresult ) bind(c, name='pepper_pos')
@@ -12256,6 +13874,23 @@ contains
       fresult = f_fresult
       c_pepper_posr = 0_c_int
    end function c_pepper_posr
+
+   !> C interface of `prefix`: Add a prefix to a character string.
+   integer(c_int) function c_pepper_prefix ( pref, spaces, string_size, string ) bind(c, name='pepper_prefix')
+      integer(c_int), value :: string_size  !! the size of string (with the NUL)
+      character(kind=c_char), intent(in) :: pref(*)  !! Prefix.
+      integer(c_int), value :: spaces  !! Number of spaces separating prefix and suffix.
+      character(kind=c_char), intent(inout) :: string(string_size)  !! Suffix on input, string on output.
+      character(:), allocatable :: f_pref
+      character(len=max(string_size - 1, 1)) :: f_string
+      character(:), allocatable :: t_string
+      call c_to_f(pref, f_pref)
+      call c_to_f(string, t_string)
+      f_string = t_string
+      call prefix(f_pref, spaces, f_string)
+      call f_to_c(f_string, string_size, string)
+      c_pepper_prefix = 0_c_int
+   end function c_pepper_prefix
 
    !> C interface of `prodad`: Return the product of the elements of a double precision array.
    integer(c_int) function c_pepper_prodad ( array, n, fresult ) bind(c, name='pepper_prodad')
@@ -12396,6 +14031,24 @@ contains
       c_pepper_recsph = 0_c_int
    end function c_pepper_recsph
 
+   !> C interface of `reordd`: Reorder the elements of a double precision array according to a given order vector.
+   integer(c_int) function c_pepper_reordd ( iorder, ndim, array ) bind(c, name='pepper_reordd')
+      integer(c_int), intent(inout) :: iorder(*)  !! Order vector to be used to re-order ARRAY.
+      integer(c_int), value :: ndim  !! Dimension of ARRAY.
+      real(c_double), intent(inout) :: array(*)  !! Array to be re-ordered.
+      call reordd(iorder, ndim, array)
+      c_pepper_reordd = 0_c_int
+   end function c_pepper_reordd
+
+   !> C interface of `reordi`: Reorder the elements of an integer array according to a given order vector.
+   integer(c_int) function c_pepper_reordi ( iorder, ndim, array ) bind(c, name='pepper_reordi')
+      integer(c_int), intent(inout) :: iorder(*)  !! Order vector to be used to re-order ARRAY.
+      integer(c_int), value :: ndim  !! Dimension of ARRAY.
+      integer(c_int), intent(inout) :: array(*)  !! Array to be re-ordered.
+      call reordi(iorder, ndim, array)
+      c_pepper_reordi = 0_c_int
+   end function c_pepper_reordi
+
    !> C interface of `replch`: Replace all occurrences of a single character with a second character.
    integer(c_int) function c_pepper_replch ( instr, old, new, outstr_size, outstr ) bind(c, name='pepper_replch')
       character(kind=c_char), intent(in) :: instr(*)  !! Input string.
@@ -12415,6 +14068,26 @@ contains
       call f_to_c(f_outstr, outstr_size, outstr)
       c_pepper_replch = 0_c_int
    end function c_pepper_replch
+
+   !> C interface of `replch_inplace`: Replace every occurrence of a character in a string, in place: the in-place form of [[replch]].
+   integer(c_int) function c_pepper_replch_inplace ( string_size, string, old, new ) bind(c, &
+         name='pepper_replch_inplace')
+      integer(c_int), value :: string_size  !! the size of string (with the NUL)
+      character(kind=c_char), intent(inout) :: string(string_size)  !! String in which to replace characters.
+      character(kind=c_char), intent(in) :: old(*)  !! Character to be replaced.
+      character(kind=c_char), intent(in) :: new(*)  !! Replacement character.
+      character(len=max(string_size - 1, 1)) :: f_string
+      character(:), allocatable :: t_string
+      character(:), allocatable :: f_old
+      character(:), allocatable :: f_new
+      call c_to_f(string, t_string)
+      f_string = t_string
+      call c_to_f(old, f_old)
+      call c_to_f(new, f_new)
+      call replch_inplace(f_string, f_old, f_new)
+      call f_to_c(f_string, string_size, string)
+      c_pepper_replch_inplace = 0_c_int
+   end function c_pepper_replch_inplace
 
    !> C interface of `replwd`: Replace the Nth word in a string with a new word.
    integer(c_int) function c_pepper_replwd ( instr, nth, new, outstr_size, outstr ) bind(c, name='pepper_replwd')
@@ -12454,6 +14127,63 @@ contains
       c_pepper_repmc = 0_c_int
    end function c_pepper_repmc
 
+   !> C interface of `repmc_inplace`: Replace a marker in a string with a character string, in place: the in-place form of [[repmc]].
+   integer(c_int) function c_pepper_repmc_inplace ( string_size, string, marker, value ) bind(c, &
+         name='pepper_repmc_inplace')
+      integer(c_int), value :: string_size  !! the size of string (with the NUL)
+      character(kind=c_char), intent(inout) :: string(string_size)  !! String in which the marker is replaced.
+      character(kind=c_char), intent(in) :: marker(*)  !! Marker to be replaced.
+      character(kind=c_char), intent(in) :: value(*)  !! Replacement string.
+      character(len=max(string_size - 1, 1)) :: f_string
+      character(:), allocatable :: t_string
+      character(:), allocatable :: f_marker
+      character(:), allocatable :: f_value
+      call c_to_f(string, t_string)
+      f_string = t_string
+      call c_to_f(marker, f_marker)
+      call c_to_f(value, f_value)
+      call repmc_inplace(f_string, f_marker, f_value)
+      call f_to_c(f_string, string_size, string)
+      c_pepper_repmc_inplace = 0_c_int
+   end function c_pepper_repmc_inplace
+
+   !> C interface of `repmd_inplace`: Replace a marker in a string with a double precision number, in place: the in-place form of [[repmd]].
+   integer(c_int) function c_pepper_repmd_inplace ( string_size, string, marker, value, sigdig ) bind(c, &
+         name='pepper_repmd_inplace')
+      integer(c_int), value :: string_size  !! the size of string (with the NUL)
+      character(kind=c_char), intent(inout) :: string(string_size)  !! String in which the marker is replaced.
+      character(kind=c_char), intent(in) :: marker(*)  !! Marker to be replaced.
+      real(c_double), value :: value  !! Replacement value.
+      integer(c_int), value :: sigdig  !! Significant digits in replacement text.
+      character(len=max(string_size - 1, 1)) :: f_string
+      character(:), allocatable :: t_string
+      character(:), allocatable :: f_marker
+      call c_to_f(string, t_string)
+      f_string = t_string
+      call c_to_f(marker, f_marker)
+      call repmd_inplace(f_string, f_marker, value, sigdig)
+      call f_to_c(f_string, string_size, string)
+      c_pepper_repmd_inplace = 0_c_int
+   end function c_pepper_repmd_inplace
+
+   !> C interface of `repmi_inplace`: Replace a marker in a string with an integer, in place: the in-place form of [[repmi]].
+   integer(c_int) function c_pepper_repmi_inplace ( string_size, string, marker, value ) bind(c, &
+         name='pepper_repmi_inplace')
+      integer(c_int), value :: string_size  !! the size of string (with the NUL)
+      character(kind=c_char), intent(inout) :: string(string_size)  !! String in which the marker is replaced.
+      character(kind=c_char), intent(in) :: marker(*)  !! Marker to be replaced.
+      integer(c_int), value :: value  !! Replacement value.
+      character(len=max(string_size - 1, 1)) :: f_string
+      character(:), allocatable :: t_string
+      character(:), allocatable :: f_marker
+      call c_to_f(string, t_string)
+      f_string = t_string
+      call c_to_f(marker, f_marker)
+      call repmi_inplace(f_string, f_marker, value)
+      call f_to_c(f_string, string_size, string)
+      c_pepper_repmi_inplace = 0_c_int
+   end function c_pepper_repmi_inplace
+
    !> C interface of `rjust`: Right justify a character string.
    integer(c_int) function c_pepper_rjust ( input, output_size, output ) bind(c, name='pepper_rjust')
       character(kind=c_char), intent(in) :: input(*)  !! Input character string.
@@ -12467,6 +14197,22 @@ contains
       call f_to_c(f_output, output_size, output)
       c_pepper_rjust = 0_c_int
    end function c_pepper_rjust
+
+   !> C interface of `rmdupd`: Remove duplicate elements from a double precision array.
+   integer(c_int) function c_pepper_rmdupd ( nelt, array ) bind(c, name='pepper_rmdupd')
+      integer(c_int), intent(inout) :: nelt  !! Number of elements in the array.
+      real(c_double), intent(inout) :: array(*)  !! Input/output array.
+      call rmdupd(nelt, array)
+      c_pepper_rmdupd = 0_c_int
+   end function c_pepper_rmdupd
+
+   !> C interface of `rmdupi`: Remove duplicate elements from an integer array.
+   integer(c_int) function c_pepper_rmdupi ( nelt, array ) bind(c, name='pepper_rmdupi')
+      integer(c_int), intent(inout) :: nelt  !! Number of elements in the array.
+      integer(c_int), intent(inout) :: array(*)  !! Input/output array.
+      call rmdupi(nelt, array)
+      c_pepper_rmdupi = 0_c_int
+   end function c_pepper_rmdupi
 
    !> C interface of `rtrim`: Return the maximum of 1 and the location of the last non-blank character in the string.
    integer(c_int) function c_pepper_rtrim ( string, fresult ) bind(c, name='pepper_rtrim')
@@ -12564,12 +14310,40 @@ contains
       c_pepper_samsub = 0_c_int
    end function c_pepper_samsub
 
+   !> C interface of `scanrj`: Reject those tokens descriptors whose identities are among those of a specific collection.
+   integer(c_int) function c_pepper_scanrj ( ids, n, ntokns, ident, beg, end ) bind(c, name='pepper_scanrj')
+      integer(c_int), intent(in) :: ids(*)  !! value of id's of tokens that should be dumped.
+      integer(c_int), value :: n  !! number of id's.
+      integer(c_int), intent(inout) :: ntokns  !! number of tokens input. The number kept.
+      integer(c_int), intent(inout) :: ident(*)  !! identity of each of the tokens.
+      integer(c_int), intent(inout) :: beg(*)  !! indices of beginning of tokens.
+      integer(c_int), intent(inout) :: end(*)  !! indices of endings of tokens.
+      call scanrj(ids, n, ntokns, ident, beg, end)
+      c_pepper_scanrj = 0_c_int
+   end function c_pepper_scanrj
+
    !> C interface of `sharpr`: Adjust the columns of a matrix that is "nearly" a rotation so that they are numerically unit length and orthogonal, going from left to right in the usual printed presentation of a matrix.
    integer(c_int) function c_pepper_sharpr ( rot ) bind(c, name='pepper_sharpr')
       real(c_double), intent(inout) :: rot(3,3)  !! The rotation matrix to be sharpened.
       call sharpr(rot)
       c_pepper_sharpr = 0_c_int
    end function c_pepper_sharpr
+
+   !> C interface of `shelld`: Sort a double precision array using the Shell Sort algorithm.
+   integer(c_int) function c_pepper_shelld ( ndim, array ) bind(c, name='pepper_shelld')
+      integer(c_int), value :: ndim  !! Dimension of the array.
+      real(c_double), intent(inout) :: array(*)  !! The array.
+      call shelld(ndim, array)
+      c_pepper_shelld = 0_c_int
+   end function c_pepper_shelld
+
+   !> C interface of `shelli`: Sort an integer array using the Shell Sort algorithm.
+   integer(c_int) function c_pepper_shelli ( ndim, array ) bind(c, name='pepper_shelli')
+      integer(c_int), value :: ndim  !! Dimension of the array.
+      integer(c_int), intent(inout) :: array(*)  !! The array.
+      call shelli(ndim, array)
+      c_pepper_shelli = 0_c_int
+   end function c_pepper_shelli
 
    !> C interface of `shiftl`: Shift the contents of a character string to the left.
    integer(c_int) function c_pepper_shiftl ( in, nshift, fillc, out_size, out ) bind(c, name='pepper_shiftl')
@@ -12643,6 +14417,34 @@ contains
       c_pepper_smsgni = 0_c_int
    end function c_pepper_smsgni
 
+   !> C interface of `somfls`: Determine if some of the entries in an array of logicals are .FALSE.
+   integer(c_int) function c_pepper_somfls ( logcls_n, logcls, n, fresult ) bind(c, name='pepper_somfls')
+      integer(c_int), value :: logcls_n  !! the number of flags in logcls
+      integer(c_int), intent(in) :: logcls(max(logcls_n, 1))  !! An array of logicals. (0: false)
+      integer(c_int), value :: n  !! Number of elements in the array LOGCLS.
+      integer(c_int), intent(out) :: fresult  !! the result
+      logical :: f_logcls(max(logcls_n, 1))
+      logical :: f_fresult
+      f_logcls = logcls /= 0
+      f_fresult = somfls(f_logcls, n)
+      fresult = merge(1_c_int, 0_c_int, f_fresult)
+      c_pepper_somfls = 0_c_int
+   end function c_pepper_somfls
+
+   !> C interface of `somtru`: Determine if some of the entries in an array of logicals are .TRUE.
+   integer(c_int) function c_pepper_somtru ( logcls_n, logcls, n, fresult ) bind(c, name='pepper_somtru')
+      integer(c_int), value :: logcls_n  !! the number of flags in logcls
+      integer(c_int), intent(in) :: logcls(max(logcls_n, 1))  !! An array of logicals. (0: false)
+      integer(c_int), value :: n  !! Number of elements in the array LOGCLS.
+      integer(c_int), intent(out) :: fresult  !! the result
+      logical :: f_logcls(max(logcls_n, 1))
+      logical :: f_fresult
+      f_logcls = logcls /= 0
+      f_fresult = somtru(f_logcls, n)
+      fresult = merge(1_c_int, 0_c_int, f_fresult)
+      c_pepper_somtru = 0_c_int
+   end function c_pepper_somtru
+
    !> C interface of `sphcyl`: Convert from spherical coordinates to cylindrical coordinates.
    integer(c_int) function c_pepper_sphcyl ( radius, colat, slon, r, clon, z ) bind(c, name='pepper_sphcyl')
       real(c_double), value :: radius  !! Distance of point from origin.
@@ -12677,6 +14479,23 @@ contains
       c_pepper_sphrec = 0_c_int
    end function c_pepper_sphrec
 
+   !> C interface of `suffix`: Add a suffix to a character string.
+   integer(c_int) function c_pepper_suffix ( suff, spaces, string_size, string ) bind(c, name='pepper_suffix')
+      integer(c_int), value :: string_size  !! the size of string (with the NUL)
+      character(kind=c_char), intent(in) :: suff(*)  !! Suffix.
+      integer(c_int), value :: spaces  !! Number of spaces separating prefix and suffix.
+      character(kind=c_char), intent(inout) :: string(string_size)  !! Prefix on input, string on output.
+      character(:), allocatable :: f_suff
+      character(len=max(string_size - 1, 1)) :: f_string
+      character(:), allocatable :: t_string
+      call c_to_f(suff, f_suff)
+      call c_to_f(string, t_string)
+      f_string = t_string
+      call suffix(f_suff, spaces, f_string)
+      call f_to_c(f_string, string_size, string)
+      c_pepper_suffix = 0_c_int
+   end function c_pepper_suffix
+
    !> C interface of `sumad`: Return the sum of the elements of a double precision array.
    integer(c_int) function c_pepper_sumad ( array, n, fresult ) bind(c, name='pepper_sumad')
       real(c_double), intent(in) :: array(*)  !! Input array.
@@ -12698,6 +14517,26 @@ contains
       fresult = f_fresult
       c_pepper_sumai = 0_c_int
    end function c_pepper_sumai
+
+   !> C interface of `swapc`: Swap the contents of two character strings.
+   integer(c_int) function c_pepper_swapc ( a_size, a, b_size, b ) bind(c, name='pepper_swapc')
+      integer(c_int), value :: a_size  !! the size of a (with the NUL)
+      integer(c_int), value :: b_size  !! the size of b (with the NUL)
+      character(kind=c_char), intent(inout) :: a(a_size)  !! First string.
+      character(kind=c_char), intent(inout) :: b(b_size)  !! Second string.
+      character(len=max(a_size - 1, 1)) :: f_a
+      character(:), allocatable :: t_a
+      character(len=max(b_size - 1, 1)) :: f_b
+      character(:), allocatable :: t_b
+      call c_to_f(a, t_a)
+      f_a = t_a
+      call c_to_f(b, t_b)
+      f_b = t_b
+      call swapc(f_a, f_b)
+      call f_to_c(f_a, a_size, a)
+      call f_to_c(f_b, b_size, b)
+      c_pepper_swapc = 0_c_int
+   end function c_pepper_swapc
 
    !> C interface of `swapd`: Swap the contents of two double precision variables.
    integer(c_int) function c_pepper_swapd ( a, b ) bind(c, name='pepper_swapd')
@@ -12779,6 +14618,19 @@ contains
       call f_to_c(f_out, out_size, out)
       c_pepper_ucase = 0_c_int
    end function c_pepper_ucase
+
+   !> C interface of `ucase_inplace`: Uppercase a string in place: the in-place form of [[ucase]].
+   integer(c_int) function c_pepper_ucase_inplace ( string_size, string ) bind(c, name='pepper_ucase_inplace')
+      integer(c_int), value :: string_size  !! the size of string (with the NUL)
+      character(kind=c_char), intent(inout) :: string(string_size)  !! String to convert to uppercase.
+      character(len=max(string_size - 1, 1)) :: f_string
+      character(:), allocatable :: t_string
+      call c_to_f(string, t_string)
+      f_string = t_string
+      call ucase_inplace(f_string)
+      call f_to_c(f_string, string_size, string)
+      c_pepper_ucase_inplace = 0_c_int
+   end function c_pepper_ucase_inplace
 
    !> C interface of `ucrss`: Compute the normalized cross product of two 3-vectors.
    integer(c_int) function c_pepper_ucrss ( v1, v2, vout ) bind(c, name='pepper_ucrss')
@@ -13237,5 +15089,14 @@ contains
       call xpose(m1, mout)
       c_pepper_xpose = 0_c_int
    end function c_pepper_xpose
+
+   !> C interface of `xpsgip`: Transpose a matrix of arbitrary size and shape in place.
+   integer(c_int) function c_pepper_xpsgip ( nrow, ncol, matrix ) bind(c, name='pepper_xpsgip')
+      integer(c_int), value :: nrow  !! Number of rows of input matrix.
+      integer(c_int), value :: ncol  !! Number of columns of input matrix.
+      real(c_double), intent(inout) :: matrix(*)  !! Matrix to be transposed/transposed matrix.
+      call xpsgip(nrow, ncol, matrix)
+      c_pepper_xpsgip = 0_c_int
+   end function c_pepper_xpsgip
 
 end module pepper_capi

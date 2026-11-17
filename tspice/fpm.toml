@@ -32,7 +32,11 @@ source-form = "default"
 
 [features]
 # No preprocessor directives (plans/preprocessor_plan.md): only compiler options.
-platform.gfortran.flags = "-frecursive -fallow-argument-mismatch"
+# -ffp-contract=off: the library's own flag (../fpm.toml). fpm compiles a
+# dependency with the root package's flags, not the dependency's, so it is
+# repeated here; without it an optimized build fuses multiply-adds and NAIF's
+# tests of exact results fail (VSEPG of a vector with itself, DNEARP).
+platform.gfortran.flags = "-frecursive -ffp-contract=off -fallow-argument-mismatch"
 # Intel: RECL= in bytes, as in NAIF's ifort builds: NAIF's test code opens
 # binary files with RECL=1024 (the library computes RECL= itself)
 platform.ifx.flags = "-recursive -fp-model precise -assume byterecl"

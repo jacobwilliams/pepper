@@ -2505,11 +2505,14 @@ contains
 
             end if
 
-            units = 'RADIANS'
-
             call gdpool ( ctx, item(3),   1, 3, n, angles, fnd )
             call gipool ( ctx, item(4),   1, 3, n, axes,   fnd )
             call gcpool ( ctx, item(5),   1, 1, n, units,  fnd )
+
+!           (SPICELIB sets the default before the call and relies on
+!           GCPOOL leaving it unchanged; PEPPER's GCPOOL output is
+!           INTENT(OUT).)
+            if ( .not. fnd ) units = 'RADIANS'
 
 !
 !           Convert angles to radians.

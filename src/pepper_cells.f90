@@ -11704,7 +11704,8 @@ contains
 !
       i = 2
 
-      do while ( i <= card  .and.  window(i) < left )
+      do while ( i <= card )
+         if ( .not. ( window(i) < left ) ) exit
          i = i + 2
       end do
 
@@ -11776,7 +11777,8 @@ contains
 !
          j = i + 2
 
-         do while ( j <= card  .and.  window(j) <= window(i) )
+         do while ( j <= card )
+            if ( .not. ( window(j) <= window(i) ) ) exit
             j = j + 2
          end do
 
@@ -11784,9 +11786,11 @@ contains
 !        If the modified interval extends into the next interval,
 !        merge the two. (The modified interval grows to the right.)
 !
-         if ( j <= card  .and.  window(i) >= window(j-1) ) then
-            window(i) = window(j)
-            j         = j + 2
+         if ( j <= card ) then
+            if ( window(i) >= window(j-1) ) then
+               window(i) = window(j)
+               j         = j + 2
+            end if
          end if
 
 !
@@ -12200,7 +12204,8 @@ contains
 !
       i = 2
 
-      do while ( i <= card  .and.  window(i) < left )
+      do while ( i <= card )
+         if ( .not. ( window(i) < left ) ) exit
          i = i + 2
       end do
 
@@ -12208,8 +12213,8 @@ contains
 !     If the beginning of the input interval doesn't split an interval
 !     in the input window, the complement begins with LEFT.
 !
-      if ( i <= card  .and.  window(i-1) > left ) then
-         call wninsd ( ctx, left, window(i-1), result )
+      if ( i <= card ) then
+         if ( window(i-1) > left ) call wninsd ( ctx, left, window(i-1), result )
       end if
 
 !
@@ -12217,10 +12222,9 @@ contains
 !     to the output window. Stop when we find one of our new right
 !     endpoints exceeds the end of the input interval.
 !
-      do while (        ( .not. ctx%failed() ) &
-                 .and.  i           < card &
-                 .and.  window(i+1) < right )
+      do while (  ( .not. ctx%failed() )  .and.  i < card )
 
+         if ( .not. ( window(i+1) < right ) ) exit
          call wninsd ( ctx, window(i), window(i+1), result )
          i = i + 2
 
@@ -12230,8 +12234,8 @@ contains
 !     If the end of the input interval doesn't split an interval
 !     in the input window, the complement ends with RIGHT.
 !
-      if ( i <= card  .and.  window(i) < right ) then
-         call wninsd ( ctx, window(i), right, result )
+      if ( i <= card ) then
+         if ( window(i) < right ) call wninsd ( ctx, window(i), right, result )
       end if
 
       return
@@ -14453,7 +14457,8 @@ contains
 !
       i = 2
 
-      do while ( i <= card  .and.  window(i) < left )
+      do while ( i <= card )
+         if ( .not. ( window(i) < left ) ) exit
          i = i + 2
       end do
 
@@ -14514,7 +14519,8 @@ contains
 !
          j = i + 2
 
-         do while ( j <= card  .and.  window(j) <= window(i) )
+         do while ( j <= card )
+            if ( .not. ( window(j) <= window(i) ) ) exit
             j = j + 2
          end do
 
@@ -14522,9 +14528,11 @@ contains
 !        If the modified interval extends into the next interval,
 !        merge the two. (The modified interval grows to the right.)
 !
-         if ( j <= card  .and.  window(i) >= window(j-1) ) then
-            window(i) = window(j)
-            j         = j + 2
+         if ( j <= card ) then
+            if ( window(i) >= window(j-1) ) then
+               window(i) = window(j)
+               j         = j + 2
+            end if
          end if
 
 !

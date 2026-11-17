@@ -25,6 +25,7 @@ import numpy as np
 from . import config
 from .cells import SpiceCell, DOUBLE as _CDOUBLE, INT as _CINT, from_values as _from_values
 from .exceptions import (NotFoundError, SpiceyError, dynamically_instantiate_spiceyerror)
+from .utils.support_types import Plane, Ellipse, SpiceDLADescr, SpiceDSKDescr, SpiceEKAttDsc
 
 cnp.import_array()
 
@@ -98,6 +99,67 @@ cdef tuple _strblock(object strings):
     cdef list bs = [_b(x) for x in strings]
     cdef int width = max([len(x) for x in bs] + [1]) + 1
     return b''.join([x.ljust(width, b'\0') for x in bs]), len(bs), width
+
+
+cdef Py_ssize_t _vlen(list sizes) except -1:
+    """The number of elements of a vectorized call: its arrays' (those of
+    one element are used for all)."""
+    cdef Py_ssize_t n = 1
+    for m in sizes:
+        if m != 1:
+            if n != 1 and m != n:
+                raise ValueError(f'arrays of different lengths: {sizes}')
+            n = m
+    if 0 in sizes:
+        return 0
+    return n
+
+
+cdef inline bint _isvec(object x, int d):
+    """Whether an argument of a vectorized routine is an array of its
+    elements (d: the dimensions of one element), for the dispatch of
+    `<name>` to `<name>_v`."""
+    if isinstance(x, cnp.ndarray):
+        return (<cnp.ndarray>x).ndim > d
+    cdef type t = type(x)
+    if t is float or t is int or t is str or t is bytes:
+        return False
+    cdef int k
+    cdef object y = x
+    if t is list or t is tuple:
+        # nested lists: a number within d levels is one element; d + 1
+        # levels of lists are several
+        for k in range(d + 1):
+            t = type(y)
+            if t is float or t is int:
+                return False
+            if not (t is list or t is tuple) or not len(y):
+                break
+            y = y[0]
+        else:
+            return True
+    elif isinstance(x, (str, bytes)):
+        return False
+    return np.ndim(x) > d
+
+
+cdef inline object _sc(object x):
+    """A 0-d array as its element, bytes as a string: for the scalar form."""
+    if isinstance(x, cnp.ndarray) and (<cnp.ndarray>x).ndim == 0:
+        return x.item()
+    if type(x) is bytes:
+        return (<bytes>x).decode('latin-1')
+    return x
+
+
+cdef object _outer(object a, Py_ssize_t n1, Py_ssize_t n2):
+    """A result of an outer vectorized call as (n1, n2, ...)."""
+    return np.asarray(a).reshape((n1, n2) + np.shape(a)[1:])
+
+
+cdef list _strs(bytearray b, int n, int w):
+    """An array of n strings out, each in w bytes (NUL-terminated)."""
+    return [bytes(b[i * w:(i + 1) * w]).split(b'\0', 1)[0].decode('latin-1').rstrip() for i in range(n)]
 
 
 cdef cnp.ndarray _empty(int dt, int d1, int d2):
@@ -243,6 +305,18 @@ cdef object _found(str name, tuple outs, bint found):
 def _found_public(name, outs, found):
     """SpiceyPy's found handling, for the hand-written functions."""
     return _found(name, tuple(outs), found)
+
+
+cdef object _found_v(str name, tuple outs, object found):
+    """SpiceyPy's found handling of a vectorized call (cyice's):
+    NotFoundError unless every element was found, then the results; the
+    flags returned last under no_found_check."""
+    if catch_false_founds():
+        if not np.all(found):
+            raise NotFoundError(f'Spice returns not found in a series of calls for function: {name}',
+                                found=found)
+        return outs[0] if len(outs) == 1 else outs
+    return outs + (found,)
 
 
 # ----------------------------------------------------------------------
@@ -974,6 +1048,35 @@ cdef class Context(_ContextRoutines):
             self._leave()
         return RotationQuery._make(self, q)
 
+    # ---- vectorized forms faster still as prepared queries (the results of
+    # the C loops over spkezr, pxform and sxform, to the last bit)
+
+    def spkezr_v(self, targ, et, ref, abcorr, obs):
+        """`spkezr` at each element of `et` (an array): states (n, 6) and
+        light times (n,), from a prepared state query (faster than SpiceyPy's
+        cyice `spkezr_v`)."""
+        if not targ: _empty_string('spkezr', 'targ')
+        if not ref: _empty_string('spkezr', 'ref')
+        if not abcorr: _empty_string('spkezr', 'abcorr')
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is spkezr's)")
+        return self.prepare_state(targ, obs, ref, abcorr)(np.asarray(et, dtype=np.float64).reshape(-1))
+
+    def pxform_v(self, fromstr, tostr, et):
+        """`pxform` at each element of `et` (an array): rotations (n, 3, 3),
+        from a prepared query."""
+        if not fromstr: _empty_string('pxform', 'from')
+        if not tostr: _empty_string('pxform', 'to')
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is pxform's)")
+        return self.prepare_rotation(fromstr, tostr)(np.asarray(et, dtype=np.float64).reshape(-1))
+
+    def sxform_v(self, instring, tostring, et):
+        """`sxform` at each element of `et` (an array): state transformations
+        (n, 6, 6), from a prepared query."""
+        if not instring: _empty_string('sxform', 'from')
+        if not tostring: _empty_string('sxform', 'to')
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is sxform's)")
+        return self.prepare_rotation(instring, tostring).transform(np.asarray(et, dtype=np.float64).reshape(-1))
+
     # ---- GF searches with Python functions
 
     def gf_user_scalar(self, udfuns, relate, double refval, double adjust, double step, cnfine, udqdec=None):
@@ -1025,6 +1128,67 @@ cdef class Context(_ContextRoutines):
         finally:
             self._leave()
 
+    def uddf(self, udfunc, double x, double dx):
+        """The derivative of a scalar function of time at x, from its values
+        at x - dx and x + dx (UDDF)."""
+        holder = _GFHolder(udfunc, None)
+        cdef double deriv = 0.0
+        cdef int st
+        cdef void *user = <void*>holder
+        self._enter()
+        try:
+            with nogil:
+                st = pepper_uddf(self._ptr, _scalar_cb, user, x, dx, &deriv)
+            if st:
+                self._raise()
+            return deriv
+        finally:
+            self._leave()
+
+    def _gf_hooks_on(self, step=None, refn=None, repi=None, repu=None, repf=None, bail=None):
+        """Set the GF hooks (GFEVNT, GFFOVE, GFOCCE) for a search: Python
+        functions, or PEPPER's own routines where the function given is
+        PepperyPy's gfstep, gfrefn, gfrepi, gfrepu or gfrepf (or None).
+        Returns the object that holds them, to keep until `_gf_hooks_off`."""
+        cdef pepper_step_fn fs = NULL
+        cdef pepper_refn_fn fr = NULL
+        cdef pepper_repi_fn fi = NULL
+        cdef pepper_repu_fn fu = NULL
+        cdef pepper_repf_fn ff = NULL
+        cdef pepper_bail_fn fb = NULL
+        cdef _GFHooks h = _GFHooks(step, refn, repi, repu, repf, bail)
+        if h.step is not None:
+            fs = _step_cb
+        if h.refn is not None:
+            fr = _refn_cb
+        if h.repi is not None:
+            fi = _repi_cb
+        if h.repu is not None:
+            fu = _repu_cb
+        if h.repf is not None:
+            ff = _repf_cb
+        if h.bail is not None:
+            fb = _bail_cb
+        pepper_gf_set_hooks(self._ptr, fs, fr, fi, fu, ff, fb, <void*>h)
+        return h
+
+    def _zzdynrot(self, int infram, int center, double et):
+        """The rotation of a dynamic frame to its base frame (ZZDYNROT)."""
+        cdef cnp.ndarray r = _empty(NPY_DOUBLE, 3, 3)
+        cdef int basfrm = 0, st
+        self._enter()
+        try:
+            st = pepper_zzdynrot(self._ptr, infram, center, et, <double*>cnp.PyArray_DATA(r), &basfrm)
+            if st:
+                self._raise()
+            return r, basfrm
+        finally:
+            self._leave()
+
+    def _gf_hooks_off(self):
+        """Clear the GF hooks (PEPPER's own routines again)."""
+        pepper_gf_set_hooks(self._ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+
     def uddc(self, udfuns, double x, double dx):
         """Whether a scalar function of time is decreasing at x: its
         derivative from its values at x - dx and x + dx (UDDC)."""
@@ -1073,6 +1237,92 @@ cdef void _bool_cb(void *ctx, void *user, double et, int *value) noexcept with g
         value[0] = 1 if h.other(h.udfuns, et) else 0
     except BaseException as e:
         _callback_failed(ctx, e)
+
+
+cdef class _GFHooks:
+    """The Python functions of a GF search's hooks (None: PEPPER's routine)."""
+    cdef public object step, refn, repi, repu, repf, bail
+
+    def __cinit__(self, step, refn, repi, repu, repf, bail):
+        g = globals()
+        # PepperyPy's own routines: PEPPER's, without a trip through Python
+        self.step = None if step is None or step is g.get('gfstep') else step
+        self.refn = None if refn is None or refn is g.get('gfrefn') else refn
+        self.repi = None if repi is None or repi is g.get('gfrepi') else repi
+        self.repu = None if repu is None or repu is g.get('gfrepu') else repu
+        self.repf = None if repf is None or repf is g.get('gfrepf') else repf
+        self.bail = bail
+
+
+cdef void _step_cb(void *ctx, void *user, double time, double *step) noexcept with gil:
+    step[0] = 0.0
+    if pepper_failed(ctx):
+        return
+    try:
+        step[0] = float((<_GFHooks>user).step(time))
+    except BaseException as e:
+        _callback_failed(ctx, e)
+
+
+cdef void _refn_cb(void *ctx, void *user, double t1, double t2, int s1, int s2, double *t) noexcept with gil:
+    t[0] = 0.5 * (t1 + t2)
+    if pepper_failed(ctx):
+        return
+    try:
+        t[0] = float((<_GFHooks>user).refn(t1, t2, s1 != 0, s2 != 0))
+    except BaseException as e:
+        _callback_failed(ctx, e)
+
+
+cdef void _repi_cb(void *ctx, void *user, int n, const double *window, const char *begmss,
+                   const char *endmss) noexcept with gil:
+    if pepper_failed(ctx):
+        return
+    try:
+        w = _from_values([window[i] for i in range(n)], _CDOUBLE, size=max(n, 2))
+        (<_GFHooks>user).repi(w, _s(begmss), _s(endmss))
+    except BaseException as e:
+        _callback_failed(ctx, e)
+
+
+cdef void _repu_cb(void *ctx, void *user, double ivbeg, double ivend, double time) noexcept with gil:
+    if pepper_failed(ctx):
+        return
+    try:
+        (<_GFHooks>user).repu(ivbeg, ivend, time)
+    except BaseException as e:
+        _callback_failed(ctx, e)
+
+
+cdef void _repf_cb(void *ctx, void *user) noexcept with gil:
+    if pepper_failed(ctx):
+        return
+    try:
+        (<_GFHooks>user).repf()
+    except BaseException as e:
+        _callback_failed(ctx, e)
+
+
+cdef int _bail_cb(void *ctx, void *user) noexcept with gil:
+    if pepper_failed(ctx):
+        return 1
+    try:
+        return 1 if (<_GFHooks>user).bail() else 0
+    except BaseException as e:
+        _callback_failed(ctx, e)
+        return 1
+
+
+def _ftncls(int unit):
+    """Close a Fortran logical unit (CSPICE's FTNCLS)."""
+    pepper_ftncls(unit)
+
+
+def _empty_string(caller, name):
+    """CSPICE's check of a string argument (CHKFSTR): SPICE(EMPTYSTRING)."""
+    raise dynamically_instantiate_spiceyerror(
+        short='SPICE(EMPTYSTRING)', explain='',
+        long=f'String "{name}" has length zero.', traceback=f'{caller}_c')
 
 
 class KernelLoader:

@@ -63,6 +63,17 @@ typedef void (*pepper_scalar_fn)(void *ctx, void *user, double et, double *value
 /* A boolean function of time (GF): a condition at et, or whether the scalar
    function is decreasing at et. */
 typedef void (*pepper_bool_fn)(void *ctx, void *user, double et, int *value);
+/* GF hooks (pepper_gf_set_hooks): the step, refinement, progress report
+   and interrupt routines of GFEVNT, GFFOVE and GFOCCE. */
+typedef void (*pepper_step_fn)(void *ctx, void *user, double time, double *step);
+typedef void (*pepper_refn_fn)(void *ctx, void *user, double t1, double t2, int s1, int s2, double *t);
+/* window: n endpoints (the intervals of the window searched) */
+typedef void (*pepper_repi_fn)(void *ctx, void *user, int n, const double *window,
+                               const char *begmss, const char *endmss);
+typedef void (*pepper_repu_fn)(void *ctx, void *user, double ivbeg, double ivend, double time);
+typedef void (*pepper_repf_fn)(void *ctx, void *user);
+/* nonzero: stop the search */
+typedef int (*pepper_bail_fn)(void *ctx, void *user);
 /* The state of a programmatic body relative to its registered center, in
    its registered frame; returns 0 if none at et. ctx is the context of the
    query (NULL if it is not one of the C interface). */
@@ -119,6 +130,17 @@ int pepper_gf_user_boolean(void *ctx, pepper_scalar_fn scalar, pepper_bool_fn bo
                            const double **res, int *nres);
 /* UDDC */
 int pepper_uddc(void *ctx, pepper_scalar_fn scalar, void *user, double x, double dx, int *isdecr);
+/* UDDF */
+int pepper_uddf(void *ctx, pepper_scalar_fn scalar, void *user, double x, double dx, double *deriv);
+/* The GF hooks of a context (NULL: PEPPER's GFSTEP, GFREFN, GFREPI, GFREPU,
+   GFREPF, GFBAIL), used by GFEVNT, GFFOVE and GFOCCE until changed. */
+void pepper_gf_set_hooks(void *ctx, pepper_step_fn step, pepper_refn_fn refn, pepper_repi_fn repi,
+                         pepper_repu_fn repu, pepper_repf_fn repf, pepper_bail_fn bail, void *user);
+/* The private ZZDYNROT (SpiceyPy exports it): the rotation (column-major)
+   of a dynamic frame to its base frame *basfrm. */
+int pepper_zzdynrot(void *ctx, int infram, int center, double et, double *rotate, int *basfrm);
+/* CSPICE's FTNCLS: close a Fortran logical unit (TXTOPN, TXTOPR) */
+void pepper_ftncls(int unit);
 
 /* ---- Programmatic ephemerides and frames ---- */
 
@@ -242,6 +264,8 @@ int pepper_cardd(void *ctx, const double *cell, int *fresult);
 int pepper_cardi(void *ctx, const int *cell, int *fresult);
 /* ccifrm: Return the frame name, frame ID, and center associated with a given frame class and class ID. */
 int pepper_ccifrm(void *ctx, int frclss, int clssid, int *frcode, int frname_size, char *frname, int *cent, int *found);
+/* cgv2el: Form a SPICE ellipse from a center vector and two generating vectors. */
+int pepper_cgv2el(void *ctx, const double *center, const double *vec1, const double *vec2, double *ellips);
 /* chbase: Return the base value used to encode unsigned integer values in character strings. */
 int pepper_chbase(void *ctx, int *fresult);
 /* chbigr: Evaluate an indefinite integral of a Chebyshev expansion at a specified point X and return the value of the input expansion at X as well. */
@@ -268,6 +292,10 @@ int pepper_cke02(void *ctx, int needav, const double *record, double *cmat, doub
 int pepper_cke03(void *ctx, int needav, const double *record, double *cmat, double *av, double *clkout);
 /* cke04: Evaluate a pointing record returned by [[ckr04]] from a CK type 4 segment. */
 int pepper_cke04(void *ctx, int needav, const double *record, double *cmat, double *av, double *clkout);
+/* cke05: Evaluate a single data record from a type 5 CK segment. */
+int pepper_cke05(void *ctx, int needav, double *record, double *cmat, double *av, double *clkout);
+/* cke06: Evaluate a single data record from a type 6 CK segment. */
+int pepper_cke06(void *ctx, int needav, double *record, double *cmat, double *av, double *clkout);
 /* ckfrot: Find the position rotation matrix from a C-kernel (CK) frame with the specified frame class ID (CK ID) to the base frame of the highest priority CK segment containing orientation data for this CK frame at the time requested. */
 int pepper_ckfrot(void *ctx, int inst, double et, double *rotate, int *ref, int *found);
 /* ckfxfm: Find the state transformation matrix from a C-kernel (CK) frame with the specified frame class ID (CK ID) to the base frame of the highest priority CK segment containing orientation and angular velocity data for this CK frame at the time requested. */
@@ -304,6 +332,14 @@ int pepper_ckobj(void *ctx, const char *ckfnm, int *ids);
 int pepper_ckopn(void *ctx, const char *fname, const char *ifname, int ncomch, int *handle);
 /* ckpfs: Evaluate pointing data from a segment for a given time. */
 int pepper_ckpfs(void *ctx, int handle, const double *descr, double sclkdp, double tol, int needav, double *cmat, double *av, double *clkout, int *found);
+/* ckw01: Add a type 1 segment to a C-kernel. */
+int pepper_ckw01(void *ctx, int handle, double begtim, double endtim, int inst, const char *ref, int avflag, const char *segid, int nrec, const double *sclkdp, const double *quats, const double *avvs);
+/* ckw02: Write a type 2 segment to a C-kernel. */
+int pepper_ckw02(void *ctx, int handle, double begtim, double endtim, int inst, const char *ref, const char *segid, int nrec, const double *start, const double *stop, const double *quats, const double *avvs, const double *rates);
+/* ckw03: Add a type 3 segment to a C-kernel. */
+int pepper_ckw03(void *ctx, int handle, double begtim, double endtim, int inst, const char *ref, int avflag, const char *segid, int nrec, const double *sclkdp, const double *quats, const double *avvs, int nints, const double *starts);
+/* ckw04a: Add data to a type 4 CK segment currently being written to the file associated with HANDLE. */
+int pepper_ckw04a(void *ctx, int handle, int npkts, int *pktsiz, double *pktdat, const double *sclkdp);
 /* ckw04b: Begin a type CK04 segment in the DAF file associated with HANDLE. */
 int pepper_ckw04b(void *ctx, int handle, double begtim, int inst, const char *ref, int avflag, const char *segid);
 /* ckw04e: End the type 04 CK segment currently being written to the DAF file associated with HANDLE. */
@@ -324,8 +360,14 @@ int pepper_convrt(void *ctx, double x, const char *in_, const char *out, double 
 int pepper_copyd(void *ctx, const double *cell, double *copy);
 /* copyi: Copy the contents of an integer cell to another cell. */
 int pepper_copyi(void *ctx, const int *cell, int *copy);
+/* countc: Count the characters in a group of lines in a text file. */
+int pepper_countc(void *ctx, int unit, int bline, int eline, int line_size, char *line, int *fresult);
 /* cvpool: Indicate whether or not any watched kernel variables that have a specified agent on their notification list have been updated. */
 int pepper_cvpool(void *ctx, const char *agent, int *update);
+/* cyadip: Cycle the elements of a double precision array forward or backward in place. */
+int pepper_cyadip(void *ctx, int nelt, const char *dir, int ncycle, double *array);
+/* cyaiip: Cycle the elements of an integer array forward or backward in place. */
+int pepper_cyaiip(void *ctx, int nelt, const char *dir, int ncycle, int *array);
 /* cyclec: Cycle the contents of a character string to the left or right. */
 int pepper_cyclec(void *ctx, const char *instr, const char *dir, int ncycle, int outstr_size, char *outstr);
 /* dacosh: Return the inverse hyperbolic cosine of a double precision argument. */
@@ -364,6 +406,8 @@ int pepper_dafcls(void *ctx, int handle);
 int pepper_dafcs(void *ctx, int handle);
 /* dafdc: Delete the entire comment area of a previously opened binary DAF attached to HANDLE. */
 int pepper_dafdc(void *ctx, int handle);
+/* dafec: Extract comments from the comment area of a binary DAF. */
+int pepper_dafec(void *ctx, int handle, int bufsiz, int *n, int buffer_n, int buffer_width, char *buffer, int *done);
 /* dafena: End the addition of data to the newest array in the current DAF. */
 int pepper_dafena(void *ctx);
 /* daffna: Find the next (forward) array in the current DAF. */
@@ -404,6 +448,8 @@ int pepper_dafopr(void *ctx, const char *fname, int *handle);
 int pepper_dafopw(void *ctx, const char *fname, int *handle);
 /* dafps: Pack (assemble) an array summary from its double precision and integer components. */
 int pepper_dafps(void *ctx, int nd, int ni, const double *dc, const int *ic, double *sum);
+/* dafra: Reorder the arrays in a DAF according to a given order vector. */
+int pepper_dafra(void *ctx, int handle, int *iorder, int n);
 /* dafrcr: Read the contents of a character record from a DAF. */
 int pepper_dafrcr(void *ctx, int handle, int recno, int crec_size, char *crec);
 /* dafrda: **Deprecated:** This routine has been superseded by the SPICELIB routines [[dafgda]] and [[dafgsr]]. */
@@ -460,6 +506,8 @@ int pepper_dascls(void *ctx, int handle);
 int pepper_dascud(void *ctx, int handle, int type, int nwords);
 /* dasdc: Delete the entire comment area of a previously opened binary DAS file. */
 int pepper_dasdc(void *ctx, int handle);
+/* dasec: Extract comments from the comment area of a binary DAS file. */
+int pepper_dasec(void *ctx, int handle, int bufsiz, int *n, int buffer_n, int buffer_width, char *buffer, int *done);
 /* dasecu: Extract comments from a previously opened binary DAS file to a previously opened text file attached to a Fortran logical unit. */
 int pepper_dasecu(void *ctx, int handle, int comlun, int *comnts);
 /* dasfnh: Return handle associated with a file name. */
@@ -476,6 +524,8 @@ int pepper_dashlu(void *ctx, int handle, int *unit);
 int pepper_dashof(void *ctx, int *fhset);
 /* dasine: Compute arc sine of a bracketed argument. */
 int pepper_dasine(void *ctx, double arg, double tol, double *fresult);
+/* dasioc: Perform Fortran reads and writes of DAS character records. */
+int pepper_dasioc(void *ctx, const char *action, int unit, int recno, int record_size, char *record);
 /* daslla: Return last DAS logical addresses of character, double precision and integer type that are currently in use in a specified DAS file. */
 int pepper_daslla(void *ctx, int handle, int *lastc, int *lastd, int *lasti);
 /* dasllc: Close the DAS file associated with a given handle, without flushing buffered data or segregating the file. */
@@ -550,17 +600,25 @@ int pepper_diags2(void *ctx, const double *symmat, double *diag, double *rotate)
 int pepper_diffd(void *ctx, const double *a, const double *b, double *c);
 /* diffi: Take the difference of two integer sets to form a third set. */
 int pepper_diffi(void *ctx, const int *a, const int *b, int *c);
+/* dlabbs: Begin a backward segment search in a DLA file. */
+int pepper_dlabbs(void *ctx, int handle, int *dladsc, int *found);
+/* dlabfs: Begin a forward segment search in a DLA file. */
+int pepper_dlabfs(void *ctx, int handle, int *dladsc, int *found);
 /* dlabns: Begin a new segment in a DLA file. */
 int pepper_dlabns(void *ctx, int handle);
 /* dlaens: End a new segment in a DLA file. */
 int pepper_dlaens(void *ctx, int handle);
+/* dlafns: Find the segment following a specified segment in a DLA file. */
+int pepper_dlafns(void *ctx, int handle, const int *dladsc, int *nxtdsc, int *found);
+/* dlafps: Find the segment preceding a specified segment in a DLA file. */
+int pepper_dlafps(void *ctx, int handle, const int *dladsc, int *prvdsc, int *found);
 /* dlaopn: Open a new DLA file and set the file type. */
 int pepper_dlaopn(void *ctx, const char *fname, const char *ftype, const char *ifname, int ncomch, int *handle);
 /* dlatdr: Compute the Jacobian matrix of the transformation from rectangular to latitudinal coordinates. */
 int pepper_dlatdr(void *ctx, double x, double y, double z, double *jacobi);
 /* dnearp: Compute the state (position and velocity) of an ellipsoid surface point nearest to the position component of a specified state. */
 int pepper_dnearp(void *ctx, const double *state, double a, double b, double c, double *dnear, double *dalt, int *found);
-/* dp2hx: Convert a double precision number to an equivalent character string using a base 16 "scientific notation."  STRLEN     P   Max number of characters allowed in output string. */
+/* dp2hx: Convert a double precision number to an equivalent character string using a base 16 "scientific notation."  ## Detailed Input  NUMBER   is the double precision number to be converted to a character string representation. */
 int pepper_dp2hx(void *ctx, double number, int hxstr_size, char *hxstr, int *hxssiz);
 /* dpfmt: Create a formatted string that represents a double precision number, using a format picture. */
 int pepper_dpfmt(void *ctx, double x, const char *pictur, int str_size, char *str);
@@ -590,24 +648,40 @@ int pepper_dsk_vertices(void *ctx, int handle, const int *dladsc, const double *
 int pepper_dskb02(void *ctx, int handle, const int *dladsc, int *nv, int *np, int *nvxtot, double *vtxbds, double *voxsiz, double *voxori, int *vgrext, int *cgscal, int *vtxnpl, int *voxnpt, int *voxnpl);
 /* dskcls: Close a DSK file. */
 int pepper_dskcls(void *ctx, int handle, int optmiz);
+/* dskd02: Fetch double precision data from a type 2 DSK segment. */
+int pepper_dskd02(void *ctx, int handle, const int *dladsc, int item, int start, int room, int *n, double *values);
+/* dskgd: Return the DSK descriptor from a DSK segment identified by a DAS handle and DLA descriptor. */
+int pepper_dskgd(void *ctx, int handle, const int *dladsc, double *dskdsc);
 /* dskgtl: Retrieve the value of a specified DSK tolerance or margin parameter. */
 int pepper_dskgtl(void *ctx, int keywrd, double *dpval);
+/* dski02: Fetch integer data from a type 2 DSK segment. */
+int pepper_dski02(void *ctx, int handle, const int *dladsc, int item, int start, int room, int *n, int *values);
+/* dskmi2: Make spatial index for a DSK type 2 segment. */
+int pepper_dskmi2(void *ctx, int nv, const double *vrtces, int np, const int *plates, double finscl, int corscl, int worksz, int voxpsz, int voxlsz, int makvtl, int spxisz, int *work, double *spaixd, int *spaixi);
 /* dskn02: Compute the unit normal vector for a specified plate from a type 2 DSK segment. */
 int pepper_dskn02(void *ctx, int handle, const int *dladsc, int plid, double *normal);
 /* dskobj: Find the set of body ID codes of all objects for which topographic data are provided in a specified DSK file. */
 int pepper_dskobj(void *ctx, const char *dskfnm, int *bodids);
 /* dskopn: Open a new DSK file for subsequent write operations. */
 int pepper_dskopn(void *ctx, const char *fname, const char *ifname, int ncomch, int *handle);
+/* dskp02: Fetch triangular plates from a type 2 DSK segment. */
+int pepper_dskp02(void *ctx, int handle, const int *dladsc, int start, int room, int *n, int *plates);
 /* dskrb2: Determine range bounds for a set of triangular plates to be stored in a type 2 DSK segment. */
 int pepper_dskrb2(void *ctx, int nv, const double *vrtces, int np, const int *plates, int corsys, const double *corpar, double *mncor3, double *mxcor3);
 /* dsksrf: Find the set of surface ID codes for all surfaces associated with a given body in a specified DSK file. */
 int pepper_dsksrf(void *ctx, const char *dskfnm, int bodyid, int *srfids);
 /* dskstl: Set the value of a specified DSK tolerance or margin parameter. */
 int pepper_dskstl(void *ctx, int keywrd, double dpval);
+/* dskv02: Fetch vertices from a type 2 DSK segment. */
+int pepper_dskv02(void *ctx, int handle, const int *dladsc, int start, int room, int *n, double *vrtces);
 /* dskw02: Write a type 2 segment to a DSK file. */
 int pepper_dskw02(void *ctx, int handle, int center, int surfid, int dclass, const char *frame, int corsys, const double *corpar, double mncor1, double mxcor1, double mncor2, double mxcor2, double mncor3, double mxcor3, double first, double last, int nv, const double *vrtces, int np, const int *plates, const double *spaixd, const int *spaixi);
 /* dskx02: Determine the plate ID and body-fixed coordinates of the intersection of a specified ray with the surface defined by a type 2 DSK plate model. */
 int pepper_dskx02(void *ctx, int handle, const int *dladsc, const double *vertex, const double *raydir, int *plid, double *xpt, int *found);
+/* dskxsi: Compute a ray-surface intercept using data provided by multiple loaded DSK segments. */
+int pepper_dskxsi(void *ctx, int pri, const char *target, int nsurf, const int *srflst, double et, const char *fixref, const double *vertex, const double *raydir, int maxd, int maxi, double *xpt, int *handle, int *dladsc, double *dskdsc, double *dc, int *ic, int *found);
+/* dskxv: Compute ray-surface intercepts for a set of rays, using data provided by multiple loaded DSK segments. */
+int pepper_dskxv(void *ctx, int pri, const char *target, int nsurf, const int *srflst, double et, const char *fixref, int nrays, const double *vtxarr, const double *dirarr, double *xptarr, int fndarr_n, int *fndarr);
 /* dskz02: Return plate model size parameters---plate count and vertex count---for a type 2 DSK segment. */
 int pepper_dskz02(void *ctx, int handle, const int *dladsc, int *nv, int *np);
 /* dsphdr: Compute the Jacobian matrix of the transformation from rectangular to spherical coordinates. */
@@ -618,6 +692,8 @@ int pepper_dtpool(void *ctx, const char *name, int *found, int *n, int type_size
 int pepper_dvsep(void *ctx, const double *s1, const double *s2, double *fresult);
 /* dwpool: Delete a name from the list of agents to notify whenever a member of a list of kernel variables is updated. */
 int pepper_dwpool(void *ctx, const char *agent);
+/* edlimb: Find the limb of a triaxial ellipsoid, viewed from a specified point. */
+int pepper_edlimb(void *ctx, double a, double b, double c, const double *viewpt, double *limb);
 /* ednmpt: Return the unique point on an ellipsoid's surface where the outward normal direction is a given vector. */
 int pepper_ednmpt(void *ctx, double a, double b, double c, const double *normal, double *point);
 /* edpnt: Scale a point so that it lies on the surface of a specified triaxial ellipsoid that is centered at the origin and aligned with the Cartesian coordinate axes. */
@@ -636,16 +712,26 @@ int pepper_ekacec(void *ctx, int handle, int segno, int recno, const char *colum
 int pepper_ekaced(void *ctx, int handle, int *segno, int recno, const char *column, int nvals, const double *dvals, int isnull);
 /* ekacei: Add data to an integer column in a specified EK record. */
 int pepper_ekacei(void *ctx, int handle, int *segno, int recno, const char *column, int nvals, const int *ivals, int isnull);
+/* ekaclc: Add an entire character column to an EK segment. */
+int pepper_ekaclc(void *ctx, int handle, int segno, const char *column, int cvals_n, int cvals_width, const char *cvals, const int *entszs, int nlflgs_n, const int *nlflgs, const int *rcptrs, int *wkindx);
+/* ekacld: Add an entire double precision column to an EK segment. */
+int pepper_ekacld(void *ctx, int handle, int segno, const char *column, const double *dvals, const int *entszs, int nlflgs_n, const int *nlflgs, const int *rcptrs, int *wkindx);
+/* ekacli: Add an entire integer column to an EK segment. */
+int pepper_ekacli(void *ctx, int handle, int segno, const char *column, const int *ivals, const int *entszs, int nlflgs_n, const int *nlflgs, const int *rcptrs, int *wkindx);
 /* ekappr: Append a new, empty record at the end of a specified E-kernel segment. */
 int pepper_ekappr(void *ctx, int handle, int segno, int *recno);
 /* ekbseg: Start a new segment in an E-kernel. */
 int pepper_ekbseg(void *ctx, int handle, const char *tabnam, int ncols, int cnames_n, int cnames_width, const char *cnames, int decls_n, int decls_width, const char *decls, int *segno);
 /* ekccnt: Return the number of distinct columns in a specified, currently loaded table. */
 int pepper_ekccnt(void *ctx, const char *table, int *ccount);
+/* ekcii: Return attribute information about a column belonging to a loaded EK table, specifying the column by table and index. */
+int pepper_ekcii(void *ctx, const char *table, int cindex, int column_size, char *column, int *attdsc);
 /* ekcls: Close an E-kernel. */
 int pepper_ekcls(void *ctx, int handle);
 /* ekdelr: Delete a specified record from a specified E-kernel segment. */
 int pepper_ekdelr(void *ctx, int handle, int segno, int *recno);
+/* ekffld: Complete a fast write operation on a new E-kernel segment. */
+int pepper_ekffld(void *ctx, int handle, int segno, int *rcptrs);
 /* ekfind: Find E-kernel data that satisfy a set of constraints. */
 int pepper_ekfind(void *ctx, const char *query, int *nmrows, int *error, int errmsg_size, char *errmsg);
 /* ekgc: Return an element of an entry in a column of character type in a specified row. */
@@ -654,6 +740,8 @@ int pepper_ekgc(void *ctx, int selidx, int row, int elment, int cdata_size, char
 int pepper_ekgd(void *ctx, int selidx, int row, int elment, double *ddata, int *null, int *found);
 /* ekgi: Return an element of an entry in a column of integer type in a specified row. */
 int pepper_ekgi(void *ctx, int selidx, int row, int elment, int *idata, int *null, int *found);
+/* ekifld: Initialize a new E-kernel segment to allow fast writing. */
+int pepper_ekifld(void *ctx, int handle, const char *tabnam, int ncols, int nrows, int cnames_n, int cnames_width, const char *cnames, int decls_n, int decls_width, const char *decls, int *segno, int *rcptrs);
 /* ekinsr: Add a new, empty record to a specified E-kernel segment at a specified index. */
 int pepper_ekinsr(void *ctx, int handle, int segno, int recno);
 /* eknelt: Return the number of elements in a specified column entry in the current row. */
@@ -670,10 +758,14 @@ int pepper_ekopr(void *ctx, const char *fname, int *handle);
 int pepper_ekops(void *ctx, int *handle);
 /* ekopw: Open an existing E-kernel file for writing. */
 int pepper_ekopw(void *ctx, const char *fname, int *handle);
+/* ekpsel: Parse the SELECT clause of an EK query, returning full particulars concerning each selected item. */
+int pepper_ekpsel(void *ctx, const char *query, int *n, int *xbegs, int *xends, int xtypes_n, int xtypes_width, char *xtypes, int xclass_n, int xclass_width, char *xclass, int tabs_n, int tabs_width, char *tabs, int cols_n, int cols_width, char *cols, int *error, int errmsg_size, char *errmsg);
 /* ekshdw: Return shadowing status of a specified EK file. */
 int pepper_ekshdw(void *ctx, int handle, int *isshad);
 /* eksrch: Search for EK events matching a specified set of constraints. */
 int pepper_eksrch(void *ctx, const int *eqryi, const char *eqryc, const double *eqryd, int *nmrows, int *semerr, int errmsg_size, char *errmsg);
+/* ekssum: Return summary information for a specified segment in a specified EK. */
+int pepper_ekssum(void *ctx, int handle, int segno, int tabnam_size, char *tabnam, int *nrows, int *ncols, int cnames_n, int cnames_width, char *cnames, int dtypes_n, int dtypes_width, char *dtypes, int *sizes, int *strlns, int indexd_n, int *indexd, int nullok_n, int *nullok);
 /* ektnam: Return the name of a specified, loaded table. */
 int pepper_ektnam(void *ctx, int n, int table_size, char *table);
 /* ekucec: Update a character column entry in a specified EK record. */
@@ -702,6 +794,8 @@ int pepper_etcal(void *ctx, double et, int calstr_size, char *calstr);
 int pepper_eul2m(void *ctx, double angle3, double angle2, double angle1, int axis3, int axis2, int axis1, double *r);
 /* eul2xf: Compute a state transformation from an Euler angle factorization of a rotation and the derivatives of those Euler angles. */
 int pepper_eul2xf(void *ctx, const double *eulang, int axisa, int axisb, int axisc, double *xform);
+/* ev2lin: **Deprecated:** This routine has been superseded by the SPICELIB routine [[evsgp4]]. */
+int pepper_ev2lin(void *ctx, double et, const double *geophs, const double *elems, double *state);
 /* evsgp4: Evaluate NORAD two-line element data for earth orbiting spacecraft. */
 int pepper_evsgp4(void *ctx, double et, const double *geophs, const double *elems, double *state);
 /* excess: Set the long error message so as to indicate the number of excess elements encountered by a routine operating on cells or on data structures based on cells. */
@@ -736,10 +830,16 @@ int pepper_frmget(void *ctx, int infrm, double et, double *xform, int *outfrm, i
 int pepper_frmnam(void *ctx, int frcode, int frname_size, char *frname);
 /* georec: Convert geodetic coordinates to rectangular coordinates. */
 int pepper_georec(void *ctx, double lon, double lat, double alt, double re, double f, double *rectan);
+/* getelm: Parse the "lines" of a two-line element set, returning the elements in units suitable for use in SPICE software. */
+int pepper_getelm(void *ctx, int frstyr, int lines_n, int lines_width, const char *lines, double *epoch, double *elems);
 /* getfat: Determine the architecture and type of SPICE kernels. */
 int pepper_getfat(void *ctx, const char *file, int arch_size, char *arch, int kertyp_size, char *kertyp);
+/* getfvn: Return the field-of-view (FOV) parameters for a specified instrument. */
+int pepper_getfvn(void *ctx, const char *inst, int room, int shape_size, char *shape, int frame_size, char *frame, double *bsight, int *n, double *bounds);
 /* gf_distance: A GF search on the observer-target distance (PEPPER; [[gfdist]] with the confinement and result windows as arrays, and without workspace). */
 int pepper_gf_distance(void *ctx, const char *target, const char *abcorr, const char *obsrvr, const char *relate, double refval, double adjust, double step, int cnfine_rows, int cnfine_cols, const double *cnfine, const double **result, int *result_rows, int *result_cols);
+/* gf_event: A GF search on a geometric quantity, with the caller's step and refinement routines (PEPPER; [[gfevnt]] with the confinement and result windows as arrays, and without workspace). */
+int pepper_gf_event(void *ctx, const char *gquant, int qnpars, int qpnams_n, int qpnams_width, const char *qpnams, int qcpars_n, int qcpars_width, const char *qcpars, const double *qdpars, const int *qipars, int qlpars_n, const int *qlpars, const char *op, double refval, double tol, double adjust, double step, int cnfine_rows, int cnfine_cols, const double *cnfine, int rpt, int bail, const double **result, int *result_rows, int *result_cols);
 /* gf_illumination: A GF search on an illumination angle (PEPPER; [[gfilum]] with the confinement and result windows as arrays, and without workspace). */
 int pepper_gf_illumination(void *ctx, const char *method, const char *angtyp, const char *target, const char *illmn, const char *fixref, const char *abcorr, const char *obsrvr, const double *spoint, const char *relate, double refval, double adjust, double step, int cnfine_rows, int cnfine_cols, const double *cnfine, const double **result, int *result_rows, int *result_cols);
 /* gf_intercept: A GF search on a coordinate of a surface intercept vector (PEPPER; [[gfsntc]] with the confinement and result windows as arrays, and without workspace). */
@@ -762,6 +862,10 @@ int pepper_gf_subpoint(void *ctx, const char *target, const char *fixref, const 
 int pepper_gf_target_in_fov(void *ctx, const char *inst, const char *target, const char *tshape, const char *tframe, const char *abcorr, const char *obsrvr, double step, int cnfine_rows, int cnfine_cols, const double *cnfine, const double **result, int *result_rows, int *result_cols);
 /* gfbail: Serve as a placeholder for an interrupt detection function. */
 int pepper_gfbail(void *ctx, int *fresult);
+/* gffove: Determine time intervals when a specified target body or ray intersects the space bounded by the field-of-view (FOV) of a specified instrument. */
+int pepper_gffove(void *ctx, const char *inst, const char *tshape, const double *raydir, const char *target, const char *tframe, const char *abcorr, const char *obsrvr, double tol, int rpt, int bail, const double *cnfine, double *result);
+/* gfocce: Determine time intervals when an observer sees one target occulted by another. */
+int pepper_gfocce(void *ctx, const char *occtyp, const char *front, const char *fshape, const char *fframe, const char *back, const char *bshape, const char *bframe, const char *abcorr, const char *obsrvr, double tol, int rpt, int bail, const double *cnfine, double *result);
 /* gfoclt: Determine time intervals when an observer sees one target body occulted by, or in transit across, another. */
 int pepper_gfoclt(void *ctx, const char *occtyp, const char *front, const char *fshape, const char *fframe, const char *back, const char *bshape, const char *bframe, const char *abcorr, const char *obsrvr, double step, const double *cnfine, double *result);
 /* gfrefn: Estimate, using a bisection method, the next abscissa value at which a state change occurs. */
@@ -782,8 +886,12 @@ int pepper_gfstep(void *ctx, double time, double *step);
 int pepper_gfstol(void *ctx, double value);
 /* gftfov: Determine time intervals when a specified ephemeris object intersects the space bounded by the field-of-view (FOV) of a specified instrument. */
 int pepper_gftfov(void *ctx, const char *inst, const char *target, const char *tshape, const char *tframe, const char *abcorr, const char *obsrvr, double step, const double *cnfine, double *result);
-/* gr2jul: Convert Year Month and Day on the  Gregorian Calendar to the Julian Calendar. */
+/* gr2jul: Convert Year Month and Day on the  Gregorian Calendar to the Julian Calendar  ## Detailed Input  YEAR     is an integer representing the year of an epoch, E, in the Gregorian calendar. */
 int pepper_gr2jul(void *ctx, int *year, int *month, int *day, int *doy);
+/* hrmesp: Evaluate, at a specified point, a Hermite interpolating polynomial for a specified set of equally spaced abscissa values and corresponding pairs of function and function derivative values. */
+int pepper_hrmesp(void *ctx, int n, double first, double step, const double *yvals, double x, double *work, double *f, double *df);
+/* hrmint: Evaluate a Hermite interpolating polynomial at a specified abscissa value. */
+int pepper_hrmint(void *ctx, int n, const double *xvals, const double *yvals, double x, double *work, double *f, double *df);
 /* hx2dp: Convert a string representing a double precision number in a base 16 "scientific notation" into its equivalent double precision number. */
 int pepper_hx2dp(void *ctx, const char *string, double *number, int *error, int errmsg_size, char *errmsg);
 /* hx2int: Convert a signed hexadecimal string representation of an integer to its equivalent integer. */
@@ -802,6 +910,16 @@ int pepper_illumg(void *ctx, const char *method, const char *target, const char 
 int pepper_ilumin(void *ctx, const char *method, const char *target, double et, const char *fixref, const char *abcorr, const char *obsrvr, const double *spoint, double *trgepc, double *srfvec, double *phase, double *incdnc, double *emissn);
 /* incnsg: Compute the points of intersection of a specified nappe of a cone and a line segment. */
 int pepper_incnsg(void *ctx, const double *apex, const double *axis, double angle, const double *endpt1, const double *endpt2, int *nxpts, double *xpt1, double *xpt2);
+/* inedpl: Find the intersection of a triaxial ellipsoid and a plane. */
+int pepper_inedpl(void *ctx, double a, double b, double c, const double *plane, double *ellips, int *found);
+/* inelpl: Find the intersection of an ellipse and a plane. */
+int pepper_inelpl(void *ctx, const double *ellips, const double *plane, int *nxpts, double *xpt1, double *xpt2);
+/* inrypl: Find the intersection of a ray and a plane. */
+int pepper_inrypl(void *ctx, const double *vertex, const double *dir, const double *plane, int *nxpts, double *xpt);
+/* inslad: Insert one or more elements into a double precision array at the indicated location. */
+int pepper_inslad(void *ctx, const double *elts, int ne, int loc, double *array, int *na);
+/* inslai: Insert one or more elements into an integer array at the indicated location. */
+int pepper_inslai(void *ctx, const int *elts, int ne, int loc, int *array, int *na);
 /* insrtd: Insert an item into a double precision set. */
 int pepper_insrtd(void *ctx, double item, double *a);
 /* insrti: Insert an item into an integer set. */
@@ -840,7 +958,7 @@ int pepper_iso2utc(void *ctx, const char *tstrng, int utcstr_size, char *utcstr,
 int pepper_isopen(void *ctx, const char *file, int *fresult);
 /* isrot: Indicate whether a 3x3 matrix is a rotation matrix. */
 int pepper_isrot(void *ctx, const double *m, double ntol, double dtol, int *fresult);
-/* jul2gr: Convert Year Month and Day on the Julian Calendar to the Gregorian Calendar. */
+/* jul2gr: Convert Year Month and Day on the Julian Calendar to the Gregorian Calendar  ## Detailed Input  YEAR     is an integer representing the year of an epoch, E, in the Julian proleptic calendar. */
 int pepper_jul2gr(void *ctx, int *year, int *month, int *day, int *doy);
 /* kdata: Return data for the nth kernel that is among a list of specified kernel types. */
 int pepper_kdata(void *ctx, int which, const char *kind, int file_size, char *file, int filtyp_size, char *filtyp, int srcfil_size, char *srcfil, int *handle, int *found);
@@ -852,7 +970,7 @@ int pepper_kernel_data(void *ctx, int which, const char *kind, const char **file
 int pepper_kernel_format(void *ctx, const char *file, const char **loader, int *loader_len, const char **format, int *format_len, int *found);
 /* kernel_info: The data of a kernel loaded through FURNSH, with file names of any length (PEPPER; [[kinfo]], which truncates to its arguments' lengths). */
 int pepper_kernel_info(void *ctx, const char *file, const char **filtyp, int *filtyp_len, const char **source, int *source_len, int *handle, int *found);
-/* kinfo: Return information about a specific kernel. */
+/* kinfo: Return information about a specific kernel  ## Detailed Input  FILE     is the name of a kernel file for which KEEPER information is desired. */
 int pepper_kinfo(void *ctx, const char *file, int filtyp_size, char *filtyp, int srcfil_size, char *srcfil, int *handle, int *found);
 /* kplfrm: Return a SPICE set containing the frame IDs of all reference frames of a given class having specifications in the kernel pool. */
 int pepper_kplfrm(void *ctx, int frmcls, int *idset);
@@ -860,12 +978,20 @@ int pepper_kplfrm(void *ctx, int frmcls, int *idset);
 int pepper_kpsolv(void *ctx, const double *evec, double *fresult);
 /* ktotal: Return the number of kernels of a specified type that are currently loaded via the FURNSH interface. */
 int pepper_ktotal(void *ctx, const char *kind, int *count);
+/* latsrf: Map array of planetocentric longitude/latitude coordinate pairs to surface points on a specified target body. */
+int pepper_latsrf(void *ctx, const char *method, const char *target, double et, const char *fixref, int npts, const double *lonlat, double *srfpts);
+/* lgresp: Evaluate a Lagrange interpolating polynomial for a specified set of coordinate pairs whose first components are equally spaced, at a specified abscissa value. */
+int pepper_lgresp(void *ctx, int n, double first, double step, const double *yvals, double *work, double x, double *fresult);
 /* lgrind: Evaluate a Lagrange interpolating polynomial, for a specified set of coordinate pairs, at a specified abscissa value. */
 int pepper_lgrind(void *ctx, int n, const double *xvals, const double *yvals, double *work, double x, double *p, double *dp);
+/* lgrint: Evaluate a Lagrange interpolating polynomial for a specified set of coordinate pairs, at a specified abscissa value. */
+int pepper_lgrint(void *ctx, int n, const double *xvals, const double *yvals, double *work, double x, double *fresult);
 /* limb_points: Limb points on a target body, without a limit on their number (PEPPER; [[limbpt]] without MAXN). */
 int pepper_limb_points(void *ctx, const char *method, const char *target, double et, const char *fixref, const char *abcorr, const char *corloc, const char *obsrvr, const double *refvec, double rolstp, int ncuts, double schstp, double soltol, const int **npts, int *npts_n, const double **points, int *points_rows, int *points_cols, const double **epochs, int *epochs_n, const double **tangts, int *tangts_rows, int *tangts_cols);
 /* loader_names: The names of the kernel loaders registered on the context's instance ([[spice_add_loader]]), in the order of registration (PEPPER). */
 int pepper_loader_names(void *ctx, const char **names, int *names_n);
+/* locln: Locate a group of lines in a text file delimited by markers. */
+int pepper_locln(void *ctx, int unit, const char *bmark, const char *emark, int line_size, char *line, int *bline, int *eline, int *found);
 /* lspcn: Compute L_s, the planetocentric longitude of the sun, as seen from a specified body. */
 int pepper_lspcn(void *ctx, const char *body, double et, const char *abcorr, double *fresult);
 /* ltime: Compute the transmission (or reception) time of a signal at a specified target, given the reception (or transmission) time at a specified observer. */
@@ -894,10 +1020,16 @@ int pepper_namfrm(void *ctx, const char *frname, int *frcode);
 int pepper_nearpt(void *ctx, const double *positn, double a, double b, double c, double *npoint, double *alt);
 /* npedln: Find nearest point on a triaxial ellipsoid to a specified line, and the distance from the ellipsoid to the line. */
 int pepper_npedln(void *ctx, double a, double b, double c, const double *linept, const double *linedr, double *pnear, double *dist);
+/* npelpt: Find the nearest point on an ellipse to a specified point, both in three-dimensional space, and find the distance between the ellipse and the point. */
+int pepper_npelpt(void *ctx, const double *point, const double *ellips, double *pnear, double *dist);
 /* nplnpt: Find the nearest point on a line to a specified point, and find the distance between the two points. */
 int pepper_nplnpt(void *ctx, const double *linpt, const double *lindir, const double *point, double *pnear, double *dist);
 /* npsgpt: Find the nearest point on a line segment to a given point. */
 int pepper_npsgpt(void *ctx, const double *ep1, const double *ep2, const double *point, double *pnear, double *dist);
+/* nvc2pl: Make a SPICE plane from a normal vector and a constant. */
+int pepper_nvc2pl(void *ctx, const double *normal, double konst, double *plane);
+/* nvp2pl: Make a SPICE plane from a normal vector and a point. */
+int pepper_nvp2pl(void *ctx, const double *normal, const double *point, double *plane);
 /* occult: Determine the occultation condition (not occulted, partially occulted, etc.) of one target relative to another target as seen by an observer at a given time. */
 int pepper_occult(void *ctx, const char *targ1, const char *shape1, const char *frame1, const char *targ2, const char *shape2, const char *frame2, const char *abcorr, const char *obsrvr, double et, int *ocltid);
 /* ordd: Return the ordinal position of a given item in a set. */
@@ -906,6 +1038,8 @@ int pepper_ordd(void *ctx, double item, const double *set, int *fresult);
 int pepper_ordi(void *ctx, int item, const int *set, int *fresult);
 /* oscelt: Determine the set of osculating conic orbital elements that corresponds to the state (position, velocity) of a body at some epoch. */
 int pepper_oscelt(void *ctx, const double *state, double et, double mu, double *elts);
+/* oscltx: Determine the set of osculating conic orbital elements that corresponds to the state (position, velocity) of a body at some epoch. */
+int pepper_oscltx(void *ctx, const double *state, double et, double mu, double *elts);
 /* partof: Solve the time of flight equation MA = D + (D**3) / 3 for the parabolic eccentric anomaly D, given mean anomaly. */
 int pepper_partof(void *ctx, double ma, double *d);
 /* pck03a: Add data to a type 03 PCK segment in the binary PCK file associated with HANDLE. */
@@ -936,7 +1070,7 @@ int pepper_pckfrm(void *ctx, const char *pckfnm, int *ids);
 int pepper_pckmat(void *ctx, int body, double et, int *ref, double *tsipm, int *found);
 /* pckopn: Create a new PCK file, returning the handle of the opened file. */
 int pepper_pckopn(void *ctx, const char *name, const char *ifname, int ncomch, int *handle);
-/* pckuds: Unpack the contents of a PCK segment descriptor. */
+/* pckuds: Unpack the contents of a PCK segment descriptor  ## Detailed Input  DESCR    is a PCK segment descriptor. */
 int pepper_pckuds(void *ctx, const double *descr, int *body, int *frame, int *type, double *first, double *last, int *begin, int *end);
 /* pckw02: Write a type 2 segment to a PCK binary file given the file handle, body-fixed frame class ID, frame, time range covered by the segment, and the Chebyshev polynomial coefficients. */
 int pepper_pckw02(void *ctx, int handle, int clssid, const char *frame, double first, double last, const char *segid, double intlen, int n, int polydg, const double *cdata, double btime);
@@ -946,6 +1080,8 @@ int pepper_pckw20(void *ctx, int handle, int clssid, const char *frame, double f
 int pepper_pgrrec(void *ctx, const char *body, double lon, double lat, double alt, double re, double f, double *rectan);
 /* phaseq: Compute the apparent phase angle for a target, observer, illuminator set of ephemeris objects. */
 int pepper_phaseq(void *ctx, double et, const char *target, const char *illmn, const char *obsrvr, const char *abcorr, double *fresult);
+/* pjelpl: Project an ellipse onto a plane, orthogonally. */
+int pepper_pjelpl(void *ctx, const double *elin, const double *plane, double *elout);
 /* plnsns: Indicate for a specified body whether planetographic and planetocentric longitude increase in the same sense. */
 int pepper_plnsns(void *ctx, int bodid, int *fresult);
 /* pltar: Compute the total area of a collection of triangular plates. */
@@ -982,6 +1118,8 @@ int pepper_prsint(void *ctx, const char *string, int *intval);
 int pepper_prtdec(void *ctx, const char *string, int *number);
 /* prtenc: Encode a nonnegative integer number into a character string, portably, using 128 as the base for encoding. */
 int pepper_prtenc(void *ctx, int number, int string_size, char *string);
+/* psv2pl: Make a SPICE plane from a point and two spanning vectors. */
+int pepper_psv2pl(void *ctx, const double *point, const double *span1, const double *span2, double *plane);
 /* pxform: Return the matrix that transforms position vectors from one specified frame to another at a specified epoch. */
 int pepper_pxform(void *ctx, const char *from_, const char *to, double et, double *rotate);
 /* pxfrm2: Return the 3x3 matrix that transforms position vectors from one specified frame at a specified epoch to another specified frame at another specified epoch. */
@@ -1008,6 +1146,10 @@ int pepper_recgeo(void *ctx, const double *rectan, double re, double f, double *
 int pepper_recpgr(void *ctx, const char *body, const double *rectan, double re, double f, double *lon, double *lat, double *alt);
 /* refchg: Return the transformation matrix from one frame to another. */
 int pepper_refchg(void *ctx, int frame1, int frame2, double et, double *rotate);
+/* remlad: Remove one or more elements from a double precision array at the indicated location. */
+int pepper_remlad(void *ctx, int ne, int loc, double *array, int *na);
+/* remlai: Remove one or more elements from an integer array at the indicated location. */
+int pepper_remlai(void *ctx, int ne, int loc, int *array, int *na);
 /* removd: Remove an item from a double precision set. */
 int pepper_removd(void *ctx, double item, double *a);
 /* removi: Remove an item from an integer set. */
@@ -1072,6 +1214,8 @@ int pepper_scid2n(void *ctx, int clkid, int clknam_size, char *clknam, int *foun
 int pepper_scn2id(void *ctx, const char *clknam, int *clkid, int *found);
 /* scpars: Parse a character representation of spacecraft clock time and encode it as a double precision number. */
 int pepper_scpars(void *ctx, int sc, const char *sclkch, int *error, int msg_size, char *msg, double *sclkdp);
+/* scpart: Get spacecraft clock partition information from a spacecraft clock kernel file. */
+int pepper_scpart(void *ctx, int sc, int *nparts, double *pstart, double *pstop);
 /* scps01: Convert a character representation of a type 1 spacecraft clock count to ticks. */
 int pepper_scps01(void *ctx, int sc, const char *clkstr, int *error, int msg_size, char *msg, double *ticks);
 /* scs2e: Convert a spacecraft clock string to ephemeris seconds past J2000 (ET). */
@@ -1182,6 +1326,8 @@ int pepper_spke03(void *ctx, double et, const double *record, double *state);
 int pepper_spke05(void *ctx, double et, const double *record, double *state);
 /* spke08: Evaluate a single SPK data record from a segment of type 8 (equally spaced discrete states, interpolated by Lagrange polynomials). */
 int pepper_spke08(void *ctx, double et, const double *record, double *state);
+/* spke09: Evaluate a single SPK data record from a segment of type 9 (discrete states, evaluated by Lagrange interpolation). */
+int pepper_spke09(void *ctx, double et, double *record, double *state);
 /* spke10: Evaluate a single SPK data record from a segment of type 10 (NORAD two-line element sets.). */
 int pepper_spke10(void *ctx, double et, const double *record, double *state);
 /* spke12: Evaluate a single data record from a type 12 SPK segment. */
@@ -1194,6 +1340,10 @@ int pepper_spke14(void *ctx, double et, const double *record, double *state);
 int pepper_spke15(void *ctx, double et, const double *recin, double *state);
 /* spke17: Evaluate a single SPK data record from a segment of type 17 (Equinoctial Elements). */
 int pepper_spke17(void *ctx, double et, const double *recin, double *state);
+/* spke18: Evaluate a single data record from a type 18 SPK segment. */
+int pepper_spke18(void *ctx, double et, double *record, double *state);
+/* spke19: Evaluate a single data record from a type 19 SPK segment. */
+int pepper_spke19(void *ctx, double et, double *record, double *state);
 /* spke20: Evaluate a single data record from an SPK or PCK segment of type 20 (Chebyshev polynomials, velocity only). */
 int pepper_spke20(void *ctx, double et, const double *record, double *xyzdot);
 /* spke21: Evaluate a single SPK data record from a segment of type 21 (Extended Difference Lines). */
@@ -1216,6 +1366,8 @@ int pepper_spkobj(void *ctx, const char *spkfnm, int *ids);
 int pepper_spkopa(void *ctx, const char *file, int *handle);
 /* spkopn: Create a new SPK file, returning the handle of the opened file. */
 int pepper_spkopn(void *ctx, const char *fname, const char *ifname, int ncomch, int *handle);
+/* spkpds: Perform routine error checks and if all check pass, pack the descriptor for an SPK segment  ## Detailed Input  BODY     is the NAIF ID code for the body of the segment. */
+int pepper_spkpds(void *ctx, int body, int center, const char *frame, int type, double first, double last, double *descr);
 /* spkpos: Return the position of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration. */
 int pepper_spkpos(void *ctx, const char *targ, double et, const char *ref, const char *abcorr, const char *obs, double *ptarg, double *lt);
 /* spkpv: Return the state (position and velocity) of a target body relative to some center of motion in a specified frame. */
@@ -1254,6 +1406,8 @@ int pepper_spks19(void *ctx, int handle, int baddr, int eaddr, double begin, dou
 int pepper_spks20(void *ctx, int handle, int baddr, int eaddr, double begin, double end);
 /* spks21: Extract a subset of the data in a SPK segment of type 21 into a new segment. */
 int pepper_spks21(void *ctx, int handle, int baddr, int eaddr, double begin, double end);
+/* spksfs: Search through loaded SPK files to find the highest-priority segment applicable to the body and time specified and buffer searched segments in the process, to attempt to avoid re-reading files. */
+int pepper_spksfs(void *ctx, int body, double et, int *handle, double *descr, int ident_size, char *ident, int *found);
 /* spkssb: Return the state (position and velocity) of a target body relative to the solar system barycenter. */
 int pepper_spkssb(void *ctx, int targ, double et, const char *ref, double *starg);
 /* spksub: Extract a subset of the data in an SPK segment into a separate segment. */
@@ -1292,6 +1446,8 @@ int pepper_spkw21(void *ctx, int handle, int body, int center, const char *frame
 int pepper_srfc2s(void *ctx, int code, int bodyid, int srfstr_size, char *srfstr, int *isname);
 /* srfcss: Translate a surface ID code, together with a body string, to the corresponding surface name. */
 int pepper_srfcss(void *ctx, int code, const char *bodstr, int srfstr_size, char *srfstr, int *isname);
+/* srfnrm: Map array of surface points on a specified target body to the corresponding unit length outward surface normal vectors. */
+int pepper_srfnrm(void *ctx, const char *method, const char *target, double et, const char *fixref, int npts, const double *srfpts, double *normls);
 /* srfrec: Convert planetocentric latitude and longitude of a surface point on a specified body to rectangular coordinates. */
 int pepper_srfrec(void *ctx, int body, double lon, double lat, double *rectan);
 /* srfs2c: Translate a surface string, together with a body string, to the corresponding surface ID code. */
@@ -1338,6 +1494,10 @@ int pepper_surfnm(void *ctx, double a, double b, double c, const double *point, 
 int pepper_surfpt(void *ctx, const double *positn, const double *u, double a, double b, double c, double *point, int *found);
 /* surfpv: Find the state (position and velocity) of the surface intercept defined by a specified ray, ray velocity, and ellipsoid. */
 int pepper_surfpv(void *ctx, const double *stvrtx, const double *stdir, double a, double b, double c, double *stx, int *found);
+/* swapad: Swap (exchange) two non-intersecting groups of contiguous elements of a double precision array. */
+int pepper_swapad(void *ctx, int n, int locn, int m, int locm, double *array);
+/* swapai: Swap (exchange) two non-intersecting groups of contiguous elements of an integer array. */
+int pepper_swapai(void *ctx, int n, int locn, int m, int locm, int *array);
 /* swpool: Add a name to the list of agents to notify whenever a member of a list of kernel variables is updated. */
 int pepper_swpool(void *ctx, const char *agent, int nnames, int names_n, int names_width, const char *names);
 /* sxform: Return the state transformation matrix from one frame to another at a specified epoch. */
@@ -1354,6 +1514,8 @@ int pepper_tcheck(void *ctx, const double *tvec, const char *type, int mods, int
 int pepper_terminator_points(void *ctx, const char *method, const char *ilusrc, const char *target, double et, const char *fixref, const char *abcorr, const char *corloc, const char *obsrvr, const double *refvec, double rolstp, int ncuts, double schstp, double soltol, const int **npts, int *npts_n, const double **points, int *points_rows, int *points_cols, const double **epochs, int *epochs_n, const double **trmvcs, int *trmvcs_rows, int *trmvcs_cols);
 /* texpyr: Expand an abbreviated year to a full year specification. */
 int pepper_texpyr(void *ctx, int *year);
+/* timdef: Set and retrieve the defaults associated with calendar input strings. */
+int pepper_timdef(void *ctx, const char *action, const char *item, int value_size, char *value);
 /* timout: Convert an input epoch represented in TDB seconds past the TDB epoch of J2000 to a character string formatted to the specifications of a user's format picture. */
 int pepper_timout(void *ctx, double et, const char *pictur, int output_size, char *output);
 /* tipbod: Return a 3x3 matrix that transforms positions in inertial coordinates to positions in body-equator-and-prime-meridian coordinates. */
@@ -1398,6 +1560,10 @@ int pepper_utc2et(void *ctx, const char *utcstr, double *et);
 int pepper_validd(void *ctx, int size, int n, double *a);
 /* validi: Create a valid set from an integer set array. */
 int pepper_validi(void *ctx, int size, int n, int *a);
+/* vprjp: Project a vector onto a specified plane, orthogonally. */
+int pepper_vprjp(void *ctx, const double *vin, const double *plane, double *vout);
+/* vprjpi: Find the vector in a specified plane that maps to a specified vector in another plane under orthogonal projection. */
+int pepper_vprjpi(void *ctx, const double *vin, const double *projpl, const double *invpl, double *vout, int *found);
 /* wncard: Return the cardinality (number of intervals) of a double precision window. */
 int pepper_wncard(void *ctx, const double *window, int *fresult);
 /* wncomd: Determine the complement of a double precision window with respect to the interval [LEFT,RIGHT]. */
@@ -1476,9 +1642,9 @@ int pepper_spice_ldpool(void *spice, const char *fname);
 int pepper_spice_pcklof(void *spice, const char *fname, int *handle);
 /* pckuof: Unload a binary PCK file so that it will no longer be searched by the readers. */
 int pepper_spice_pckuof(void *spice, int handle);
-/* remove_ephemeris: Remove a programmatic ephemeris (PEPPER): the body's other segments (files) apply again. */
+/* remove_ephemeris: remove_ephemeris. */
 int pepper_spice_remove_ephemeris(void *spice, int body);
-/* remove_frame: Remove a programmatic frame and its definition from the kernel pool (PEPPER). */
+/* remove_frame: remove_frame. */
 int pepper_spice_remove_frame(void *spice, const char *name);
 /* spklef: Load an ephemeris file for use by the readers. */
 int pepper_spice_spklef(void *spice, const char *fname, int *handle);
@@ -1486,10 +1652,14 @@ int pepper_spice_spklef(void *spice, const char *fname, int *handle);
 int pepper_spice_spkuef(void *spice, int handle);
 /* unload: Unload a SPICE kernel. */
 int pepper_spice_unload(void *spice, const char *file);
+/* alltru: Determine if all the entries in an array of logicals are .TRUE. */
+int pepper_alltru(int logcls_n, const int *logcls, int n, int *fresult);
 /* approx: Return .TRUE. */
 int pepper_approx(double x, double y, double tol, int *fresult);
 /* astrip: Remove from a character string all characters which fall between specified starting and ending characters, inclusive. */
 int pepper_astrip(const char *instr, const char *asciib, const char *asciie, int outstr_size, char *outstr);
+/* astrip_inplace: Remove the characters in an ASCII range from a string, in place: the in-place form of [[astrip]]. */
+int pepper_astrip_inplace(int string_size, char *string, const char *asciib, const char *asciie);
 /* axisar: Construct a rotation matrix that rotates vectors by a specified angle about a specified axis. */
 int pepper_axisar(const double *axis, double angle, double *r);
 /* azlrec: Convert from range, azimuth and elevation of a point to rectangular coordinates. */
@@ -1516,12 +1686,16 @@ int pepper_bsrchc(const char *value, int ndim, int array_n, int array_width, con
 int pepper_bsrchd(double value, int ndim, const double *array, int *fresult);
 /* bsrchi: Do a binary search for a given value within an integer array, assumed to be in nondecreasing order. */
 int pepper_bsrchi(int value, int ndim, const int *array, int *fresult);
+/* chbder: Return the value of a polynomial and its first NDERIV derivatives, evaluated at the input X, using the coefficients of the Chebyshev expansion of the polynomial. */
+int pepper_chbder(const double *cp, int degp, const double *x2s, double x, int nderiv, double *partdp, double *dpdxs);
 /* chbint: Return the value of a polynomial and its derivative, evaluated at the input X, using the coefficients of the Chebyshev expansion of the polynomial. */
 int pepper_chbint(const double *cp, int degp, const double *x2s, double x, double *p, double *dpdx);
 /* chbval: Return the value of a polynomial evaluated at the input X using the coefficients for the Chebyshev expansion of the polynomial. */
 int pepper_chbval(const double *cp, int degp, const double *x2s, double x, double *p);
 /* cmprss: Compress a character string by removing occurrences of more than N consecutive occurrences of a specified character. */
 int pepper_cmprss(const char *delim, int n, const char *input, int output_size, char *output);
+/* cmprss_inplace: Compress runs of a delimiter in a string, in place: the in-place form of [[cmprss]]. */
+int pepper_cmprss_inplace(const char *delim, int n, int string_size, char *string);
 /* cpos: Find the first occurrence in a string of a character belonging to a collection of characters, starting at a specified location, searching forward. */
 int pepper_cpos(const char *str, const char *chars, int start, int *fresult);
 /* cposr: Find the first occurrence in a string of a character belonging to a collection of characters, starting at a specified location, searching in reverse. */
@@ -1556,6 +1730,8 @@ int pepper_dvdot(const double *s1, const double *s2, double *fresult);
 int pepper_dvhat(const double *s1, double *sout);
 /* dvnorm: Calculate the derivative of the norm of a 3-vector. */
 int pepper_dvnorm(const double *state, double *fresult);
+/* el2cgv: Convert a SPICE ellipse to a center vector and two generating vectors. */
+int pepper_el2cgv(const double *ellips, double *center, double *smajor, double *sminor);
 /* eqchr: Return .TRUE. */
 int pepper_eqchr(const char *a, const char *b, int *fresult);
 /* eqstr: Determine whether two strings are equivalent. */
@@ -1592,6 +1768,8 @@ int pepper_isrchc(const char *value, int ndim, int array_n, int array_width, con
 int pepper_isrchd(double value, int ndim, const double *array, int *fresult);
 /* isrchi: Search for a given value within a integer array. */
 int pepper_isrchi(int value, int ndim, const int *array, int *fresult);
+/* kxtrct: Locate a keyword in a string and extract the substring from the beginning of the first word following the keyword to the beginning of the first subsequent recognized terminator of a list. */
+int pepper_kxtrct(const char *keywd, int terms_n, int terms_width, const char *terms, int nterms, int wordsq_size, char *wordsq, int *found, int substr_size, char *substr);
 /* lastnb: Return the index of the last non-blank character in a character string. */
 int pepper_lastnb(const char *string, int *fresult);
 /* lastpc: Return the index of the last printable character in a character string. */
@@ -1606,6 +1784,8 @@ int pepper_latsph(double radius, double lon, double lat, double *rho, double *co
 int pepper_lbuild(int items_n, int items_width, const char *items, int n, const char *delim, int list_size, char *list);
 /* lcase: Convert the characters in a string to lowercase. */
 int pepper_lcase(const char *in_, int out_size, char *out);
+/* lcase_inplace: Lowercase a string in place: the in-place form of [[lcase]]. */
+int pepper_lcase_inplace(int string_size, char *string);
 /* ljucrs: Left-justify, uppercase, and space-compress a character string. */
 int pepper_ljucrs(int n, const char *input, int output_size, char *output);
 /* ljust: Left-justify a character string. */
@@ -1684,6 +1864,10 @@ int pepper_ncposr(const char *str, const char *chars, int start, int *fresult);
 int pepper_nechr(const char *a, const char *b, int *fresult);
 /* nextwd: Return the next word in a given character string, and left justify the rest of the string. */
 int pepper_nextwd(const char *string, int next_size, char *next, int rest_size, char *rest);
+/* nextwd_inplace: Remove the next word from a string: the form of [[nextwd]] whose REST is the input string. */
+int pepper_nextwd_inplace(int string_size, char *string, int next_size, char *next);
+/* notru: Determine if none the entries in an array of logicals are .TRUE. */
+int pepper_notru(int logcls_n, const int *logcls, int n, int *fresult);
 /* nparsd: Parse a character string that represents a number and return a double precision value. */
 int pepper_nparsd(const char *string, double *x, int error_size, char *error, int *ptr);
 /* nparsi: Parse a character string that represents a number and return the FORTRAN-truncated integer value. */
@@ -1700,14 +1884,24 @@ int pepper_opsgni(int x, int y, int *fresult);
 int pepper_parsqs(const char *string, const char *qchar, int value_size, char *value, int *length, int *error, int errmsg_size, char *errmsg, int *ptr);
 /* pcwid: Determine the printable width of a character array. */
 int pepper_pcwid(int array_n, int array_width, const char *array, int nelt, int *fresult);
+/* pl2nvc: Return a unit normal vector and constant that define a specified plane. */
+int pepper_pl2nvc(const double *plane, double *normal, double *konst);
+/* pl2nvp: Return a unit normal vector and point that define a specified plane. */
+int pepper_pl2nvp(const double *plane, double *normal, double *point);
+/* pl2psv: Return a point and two orthogonal spanning vectors that generate a specified plane. */
+int pepper_pl2psv(const double *plane, double *point, double *span1, double *span2);
 /* pltexp: Expand a triangular plate by a specified amount. */
 int pepper_pltexp(const double *iverts, double delta, double *overts);
 /* pltnrm: Compute an outward normal vector of a triangular plate. */
 int pepper_pltnrm(const double *v1, const double *v2, const double *v3, double *normal);
+/* polyds: Compute the value of a polynomial and its first NDERIV derivatives at the value T. */
+int pepper_polyds(const double *coeffs, int deg, int nderiv, double t, double *p);
 /* pos: Find the first occurrence in a string of a substring, starting at a specified location, searching forward. */
 int pepper_pos(const char *str, const char *substr, int start, int *fresult);
 /* posr: Find the first occurrence in a string of a substring, starting at a specified location, searching in reverse. */
 int pepper_posr(const char *str, const char *substr, int start, int *fresult);
+/* prefix: Add a prefix to a character string. */
+int pepper_prefix(const char *pref, int spaces, int string_size, char *string);
 /* prodad: Return the product of the elements of a double precision array. */
 int pepper_prodad(const double *array, int n, double *fresult);
 /* prodai: Return the product of the elements of an integer array. */
@@ -1734,14 +1928,30 @@ int pepper_reclat(const double *rectan, double *radius, double *lon, double *lat
 int pepper_recrad(const double *rectan, double *range, double *ra, double *dec);
 /* recsph: Convert from rectangular coordinates to spherical coordinates. */
 int pepper_recsph(const double *rectan, double *r, double *colat, double *slon);
+/* reordd: Reorder the elements of a double precision array according to a given order vector. */
+int pepper_reordd(int *iorder, int ndim, double *array);
+/* reordi: Reorder the elements of an integer array according to a given order vector. */
+int pepper_reordi(int *iorder, int ndim, int *array);
 /* replch: Replace all occurrences of a single character with a second character. */
 int pepper_replch(const char *instr, const char *old, const char *new_, int outstr_size, char *outstr);
+/* replch_inplace: Replace every occurrence of a character in a string, in place: the in-place form of [[replch]]. */
+int pepper_replch_inplace(int string_size, char *string, const char *old, const char *new_);
 /* replwd: Replace the Nth word in a string with a new word. */
 int pepper_replwd(const char *instr, int nth, const char *new_, int outstr_size, char *outstr);
 /* repmc: Replace a marker with a character string. */
 int pepper_repmc(const char *in_, const char *marker, const char *value, int out_size, char *out);
+/* repmc_inplace: Replace a marker in a string with a character string, in place: the in-place form of [[repmc]]. */
+int pepper_repmc_inplace(int string_size, char *string, const char *marker, const char *value);
+/* repmd_inplace: Replace a marker in a string with a double precision number, in place: the in-place form of [[repmd]]. */
+int pepper_repmd_inplace(int string_size, char *string, const char *marker, double value, int sigdig);
+/* repmi_inplace: Replace a marker in a string with an integer, in place: the in-place form of [[repmi]]. */
+int pepper_repmi_inplace(int string_size, char *string, const char *marker, int value);
 /* rjust: Right justify a character string. */
 int pepper_rjust(const char *input, int output_size, char *output);
+/* rmdupd: Remove duplicate elements from a double precision array. */
+int pepper_rmdupd(int *nelt, double *array);
+/* rmdupi: Remove duplicate elements from an integer array. */
+int pepper_rmdupi(int *nelt, int *array);
 /* rtrim: Return the maximum of 1 and the location of the last non-blank character in the string. */
 int pepper_rtrim(const char *string, int *fresult);
 /* samch: Determine if two characters from different strings are the same. */
@@ -1754,8 +1964,14 @@ int pepper_sameai(const int *a1, const int *a2, int ndim, int *fresult);
 int pepper_samsbi(const char *str1, int b1, int e1, const char *str2, int b2, int e2, int *fresult);
 /* samsub: Determine whether or not two substrings are the same  The function returns .TRUE. */
 int pepper_samsub(const char *str1, int b1, int e1, const char *str2, int b2, int e2, int *fresult);
+/* scanrj: Reject those tokens descriptors whose identities are among those of a specific collection. */
+int pepper_scanrj(const int *ids, int n, int *ntokns, int *ident, int *beg, int *end);
 /* sharpr: Adjust the columns of a matrix that is "nearly" a rotation so that they are numerically unit length and orthogonal, going from left to right in the usual printed presentation of a matrix. */
 int pepper_sharpr(double *rot);
+/* shelld: Sort a double precision array using the Shell Sort algorithm. */
+int pepper_shelld(int ndim, double *array);
+/* shelli: Sort an integer array using the Shell Sort algorithm. */
+int pepper_shelli(int ndim, int *array);
 /* shiftl: Shift the contents of a character string to the left. */
 int pepper_shiftl(const char *in_, int nshift, const char *fillc, int out_size, char *out);
 /* shiftr: Shift the contents of a character string to the right. */
@@ -1766,16 +1982,24 @@ int pepper_sigdgt(const char *in_, int out_size, char *out);
 int pepper_smsgnd(double x, double y, int *fresult);
 /* smsgni: Return .TRUE. */
 int pepper_smsgni(int x, int y, int *fresult);
+/* somfls: Determine if some of the entries in an array of logicals are .FALSE. */
+int pepper_somfls(int logcls_n, const int *logcls, int n, int *fresult);
+/* somtru: Determine if some of the entries in an array of logicals are .TRUE. */
+int pepper_somtru(int logcls_n, const int *logcls, int n, int *fresult);
 /* sphcyl: Convert from spherical coordinates to cylindrical coordinates. */
 int pepper_sphcyl(double radius, double colat, double slon, double *r, double *clon, double *z);
 /* sphlat: Convert from spherical coordinates to latitudinal coordinates. */
 int pepper_sphlat(double r, double colat, double slon, double *radius, double *lon, double *lat);
 /* sphrec: Convert from spherical coordinates to rectangular coordinates. */
 int pepper_sphrec(double r, double colat, double slon, double *rectan);
+/* suffix: Add a suffix to a character string. */
+int pepper_suffix(const char *suff, int spaces, int string_size, char *string);
 /* sumad: Return the sum of the elements of a double precision array. */
 int pepper_sumad(const double *array, int n, double *fresult);
 /* sumai: Return the sum of the elements of an integer array. */
 int pepper_sumai(const int *array, int n, int *fresult);
+/* swapc: Swap the contents of two character strings. */
+int pepper_swapc(int a_size, char *a, int b_size, char *b);
 /* swapd: Swap the contents of two double precision variables. */
 int pepper_swapd(double *a, double *b);
 /* swapi: Swap the contents of two integer variables. */
@@ -1792,6 +2016,8 @@ int pepper_trace(const double *matrix, double *fresult);
 int pepper_traceg(const double *matrix, int ndim, double *fresult);
 /* ucase: Convert the characters in a string to uppercase. */
 int pepper_ucase(const char *in_, int out_size, char *out);
+/* ucase_inplace: Uppercase a string in place: the in-place form of [[ucase]]. */
+int pepper_ucase_inplace(int string_size, char *string);
 /* ucrss: Compute the normalized cross product of two 3-vectors. */
 int pepper_ucrss(const double *v1, const double *v2, double *vout);
 /* unorm: Normalize a double precision 3-vector and return its magnitude. */
@@ -1882,6 +2108,8 @@ int pepper_wdindx(const char *string, const char *word, int *fresult);
 int pepper_xf2rav(const double *xform, double *rot, double *av);
 /* xpose: Transpose a 3x3 matrix. */
 int pepper_xpose(const double *m1, double *mout);
+/* xpsgip: Transpose a matrix of arbitrary size and shape in place. */
+int pepper_xpsgip(int nrow, int ncol, double *matrix);
 
 #ifdef __cplusplus
 }

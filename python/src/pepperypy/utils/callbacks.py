@@ -20,3 +20,9 @@ SpiceUDREPI = SpiceUDREPU = SpiceUDREPF = SpiceUDBAIL = _identity
 def CallUDFUNS(f, x):
     """Call a scalar function of time."""
     return f(x)
+
+
+# SpiceyPy's ctypes function types: here they too return the function
+# unchanged (PepperyPy calls Python functions directly).
+UDFUNS = UDFUNB = UDFUNC = UDSTEP = UDREFN = UDREPI = UDREPU = UDREPF = UDBAIL = _identity
+from ..cells import SpiceCell as SpiceCellPointer  # noqa: E402,F401  (cells are passed themselves)

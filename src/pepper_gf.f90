@@ -17586,7 +17586,7 @@ contains
 !
       if ( shap1 == 'POINT' ) then
 
-         prshp1 = shap1(:shplen)
+         prshp1 = shap1
 
       else
 
@@ -17611,7 +17611,7 @@ contains
 
       if ( shap2 == 'POINT' ) then
 
-         prshp2 = shap2(:shplen)
+         prshp2 = shap2
 
       else
 

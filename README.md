@@ -87,15 +87,40 @@ PEPPER builds with [fpm](https://fpm.fortran-lang.org); the development
 environment (gfortran, fpm, Python, FORD) is managed with [pixi](https://pixi.sh):
 
 ```bash
-pixi run build          # the library
-pixi run test           # the unit tests (test/core)
-pixi run tspice         # NAIF's test suite (the tspice package), in parallel
+pixi run build          # the library (debug profile)
+pixi run test           # the unit tests (test/core), with bounds checks
+pixi run tspice         # NAIF's test suite (the tspice package), in parallel, with bounds checks
+pixi run tspice-release # NAIF's test suite against the optimized (-O3) library
 pixi run test-parallel  # queries from several OpenMP threads
 pixi run check-threads  # no thread-unsafe constructs (also run by `pixi run test`)
 pixi run bench-parallel # timings from 1, 2, 4 and 8 threads
 pixi run docs           # FORD documentation in doc/
 pixi run -e coverage coverage      # test coverage of src/ (unit tests): build/coverage/html/index.html
 pixi run -e coverage coverage-all  # the same with NAIF's test suite (tspice) too
+```
+
+The tasks name their fpm profile: `--profile debug` (bounds and
+array-temporary checks, backtraces) or `--profile release` (`-O3`). With no
+profile, fpm builds neither optimized nor checked: `fpm.toml`'s
+`[profiles] default` replaces fpm's built-in flags.
+
+To use PEPPER as an fpm dependency, give your own package its compiler
+options: fpm compiles a dependency with the root package's flags, not with
+the dependency's own. For gfortran, `-frecursive` (locals on the stack:
+without it the library is not thread-safe) and `-ffp-contract=off` (no fused
+multiply-adds: SPICELIB's arithmetic, as NAIF's tests expect); for Intel
+Fortran, `-recursive -fp-model precise`:
+
+```toml
+[dependencies]
+pepper = { git = "https://github.com/jacobwilliams/pepper" }
+
+[features]
+platform.gfortran.flags = "-frecursive -ffp-contract=off"
+platform.ifx.flags = "-recursive -fp-model precise"
+
+[profiles]
+default = ["platform"]
 ```
 
 The same tests with Intel Fortran (ifx), as the CI runs them, on any machine

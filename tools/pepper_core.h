@@ -63,6 +63,17 @@ typedef void (*pepper_scalar_fn)(void *ctx, void *user, double et, double *value
 /* A boolean function of time (GF): a condition at et, or whether the scalar
    function is decreasing at et. */
 typedef void (*pepper_bool_fn)(void *ctx, void *user, double et, int *value);
+/* GF hooks (pepper_gf_set_hooks): the step, refinement, progress report
+   and interrupt routines of GFEVNT, GFFOVE and GFOCCE. */
+typedef void (*pepper_step_fn)(void *ctx, void *user, double time, double *step);
+typedef void (*pepper_refn_fn)(void *ctx, void *user, double t1, double t2, int s1, int s2, double *t);
+/* window: n endpoints (the intervals of the window searched) */
+typedef void (*pepper_repi_fn)(void *ctx, void *user, int n, const double *window,
+                               const char *begmss, const char *endmss);
+typedef void (*pepper_repu_fn)(void *ctx, void *user, double ivbeg, double ivend, double time);
+typedef void (*pepper_repf_fn)(void *ctx, void *user);
+/* nonzero: stop the search */
+typedef int (*pepper_bail_fn)(void *ctx, void *user);
 /* The state of a programmatic body relative to its registered center, in
    its registered frame; returns 0 if none at et. ctx is the context of the
    query (NULL if it is not one of the C interface). */
@@ -119,6 +130,17 @@ int pepper_gf_user_boolean(void *ctx, pepper_scalar_fn scalar, pepper_bool_fn bo
                            const double **res, int *nres);
 /* UDDC */
 int pepper_uddc(void *ctx, pepper_scalar_fn scalar, void *user, double x, double dx, int *isdecr);
+/* UDDF */
+int pepper_uddf(void *ctx, pepper_scalar_fn scalar, void *user, double x, double dx, double *deriv);
+/* The GF hooks of a context (NULL: PEPPER's GFSTEP, GFREFN, GFREPI, GFREPU,
+   GFREPF, GFBAIL), used by GFEVNT, GFFOVE and GFOCCE until changed. */
+void pepper_gf_set_hooks(void *ctx, pepper_step_fn step, pepper_refn_fn refn, pepper_repi_fn repi,
+                         pepper_repu_fn repu, pepper_repf_fn repf, pepper_bail_fn bail, void *user);
+/* The private ZZDYNROT (SpiceyPy exports it): the rotation (column-major)
+   of a dynamic frame to its base frame *basfrm. */
+int pepper_zzdynrot(void *ctx, int infram, int center, double et, double *rotate, int *basfrm);
+/* CSPICE's FTNCLS: close a Fortran logical unit (TXTOPN, TXTOPR) */
+void pepper_ftncls(int unit);
 
 /* ---- Programmatic ephemerides and frames ---- */
 

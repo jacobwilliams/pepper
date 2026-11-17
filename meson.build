@@ -16,8 +16,9 @@ py = import('python').find_installation(pure: false)
 fc = meson.get_compiler('fortran')
 
 # -frecursive (gfortran) / -recursive (Intel): locals on the stack, for
-# reentrant, thread-safe code (see fpm.toml).
-add_project_arguments(fc.get_supported_arguments(['-frecursive', '-recursive']), language: 'fortran')
+# reentrant, thread-safe code; -ffp-contract=off: no fused multiply-adds,
+# SPICELIB's roundings (see fpm.toml).
+add_project_arguments(fc.get_supported_arguments(['-frecursive', '-recursive', '-ffp-contract=off']), language: 'fortran')
 
 # All of src/ (meson has no globbing; reconfigure after adding a source).
 # (src/legacy, SPICELIB's interface, is not needed by the Python package)

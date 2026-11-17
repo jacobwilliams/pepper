@@ -1888,6 +1888,7 @@ contains
 !        There may be additional nutation and libration (THETA) terms.
 !
          ntheta = 0
+         nphase = 0  ! PEPPER: SPICELIB keeps the last body's count (as TISBOD does not)
          na     = 0
          nd     = 0
          nw     = 0

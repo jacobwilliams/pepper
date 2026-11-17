@@ -41,8 +41,15 @@ source-form = "default"
 # and rewrites expressions that SPICELIB writes in a careful order (VPROJ
 # scales its vectors so that 1e300-long vectors do not overflow; the fast
 # model undoes that and returns Inf/NaN). -fp-model precise (/fp:precise)
-# keeps the source's arithmetic. gfortran needs no option (it does not
-# reassociate without -ffast-math).
+# keeps the source's arithmetic. gfortran does not reassociate without
+# -ffast-math, but by default it fuses a multiplication and an addition
+# into one instruction (FMA) where the processor has one (arm64, recent
+# x86-64), anywhere in a procedure, which rounds once instead of twice: the
+# last bits of results then depend on the platform and the optimizer.
+# -ffp-contract=off keeps SPICELIB's arithmetic as written, the same on
+# every platform (that of NAIF's x86-64 builds). NAIF's CSPICE for arm64,
+# built by clang, fuses within an expression (-ffp-contract=on, which
+# gfortran cannot do), so it can differ from PEPPER in the last bits.
 #
 # The library needs no large stack (its largest frame is about 64 KB), nor
 # do the tests. NAIF's tspice test code does on Windows (tspice/fpm.toml).
@@ -52,8 +59,16 @@ source-form = "default"
 # SPICELIB's ifort builds needed -assume byterecl. (Not FILE_STORAGE_SIZE:
 # Intel Fortran's is 8 bits, though it counts RECL= in 4-byte words.)
 # NAIF's tspice test code does need the option (tspice/fpm.toml).
+#
+# fpm compiles a dependency with the root package's flags, not with these:
+# a package using PEPPER (tspice too) must set -frecursive and
+# -ffp-contract=off (Intel: -recursive -fp-model precise) itself (README).
+#
+# With no --profile, fpm builds with these flags only (no -O, no checks):
+# `[profiles] default` replaces fpm's built-in flags. Use --profile debug or
+# --profile release (the pixi tasks do).
 [features]
-platform.gfortran.flags = "-frecursive"
+platform.gfortran.flags = "-frecursive -ffp-contract=off"
 platform.ifx.flags = "-recursive -fp-model precise"
 platform.ifort.flags = "-recursive -fp-model precise"
 platform.windows.ifx.flags = "/recursive /fp:precise"

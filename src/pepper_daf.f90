@@ -7411,7 +7411,7 @@ contains
 !              precision words by PACK_INTEGERS (SPICELIB translated
 !              them into the words through an EQUIVALENCE).
 !
-               dpbuf(dindex:dindex+(ni+1)/2-1) = pack_integers ( inbuf(1:ni) )
+               call pack_integers ( inbuf(1:ni), ni, dpbuf(dindex:dindex+(ni+1)/2-1) )
 
             end if
 
@@ -11793,7 +11793,7 @@ contains
 !
       m = min ( 250 - 2 * n, max ( 0, ni ) )
 
-      sum(n+1:n+(m+1)/2) = pack_integers ( ic(1:m) )
+      call pack_integers ( ic(1:m), m, sum(n+1:n+(m+1)/2) )
 
       return
       end subroutine dafps
@@ -12058,7 +12058,7 @@ contains
 !
       m = min ( 250 - 2 * n, max ( 0, ni ) )
 
-      ic(1:m) = unpack_integers ( sum(n+1:n+(m+1)/2), m )
+      call unpack_integers ( sum(n+1:n+(m+1)/2), m, ic(1:m) )
 
       return
       end subroutine dafus
@@ -14230,7 +14230,7 @@ contains
 !
                if ( k == inblen-1 ) then
 
-                  output(outpos:outpos+dpblen-1) = pack_integers ( inbufr )
+                  call pack_integers ( inbufr, size(inbufr), output(outpos:outpos+dpblen-1) )
                   outpos = outpos + dpblen
                   k = 1
 
@@ -14248,7 +14248,7 @@ contains
 !           into OUTPUT. (PEPPER: from INBUFR, by PACK_INTEGERS.)
 !
             if ( k /= 1 ) then
-               output(outpos:outpos+k/2-1) = pack_integers ( inbufr(1:k-1) )
+               call pack_integers ( inbufr(1:k-1), k-1, output(outpos:outpos+k/2-1) )
             end if
 
          else
@@ -14514,7 +14514,7 @@ contains
 !
                if ( k == inblen-1 ) then
 
-                  output(outpos:outpos+dpblen-1) = pack_integers ( inbufr )
+                  call pack_integers ( inbufr, size(inbufr), output(outpos:outpos+dpblen-1) )
                   outpos = outpos + dpblen
                   k = 1
 
@@ -14532,7 +14532,7 @@ contains
 !           into OUTPUT. (PEPPER: from INBUFR, by PACK_INTEGERS.)
 !
             if ( k /= 1 ) then
-               output(outpos:outpos+k/2-1) = pack_integers ( inbufr(1:k-1) )
+               call pack_integers ( inbufr(1:k-1), k-1, output(outpos:outpos+k/2-1) )
             end if
 
          else

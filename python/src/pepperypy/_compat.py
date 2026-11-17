@@ -103,6 +103,15 @@ def getfov(instid, room, shapelen=None, framelen=None):
     return shape, frame, bsight, len(bounds), bounds
 
 
+def getfvn(inst, room=None, shapelen=None, framelen=None):
+    """Return the field-of-view (FOV) parameters of an instrument, given by
+    name. PepperyPy: all the boundary vectors; `room` is ignored.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/getfvn_c.html"""
+    shape, frame, bsight, bounds = _ctx().fov_by_name(inst)
+    return shape, frame, bsight, len(bounds), bounds
+
+
 # ---- DAF
 
 
@@ -796,7 +805,8 @@ def chkin(module):
     """Check in a module (the program's traceback, per thread).
 
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/chkin_c.html"""
-    _trace().append(module)
+    if not _tracing_off[0]:
+        _trace().append(module)
 
 
 def chkout(module):
@@ -822,8 +832,16 @@ def trcnam(index, namlen=None):
     return _trace()[index]
 
 
+_tracing_off = [False]
+
+
 def trcoff():
-    """Turn tracing off: does nothing."""
+    """Turn tracing off, for good (as in CSPICE): the traceback is emptied
+    and later check-ins are ignored.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/trcoff_c.html"""
+    _tracing_off[0] = True
+    del _trace()[:]
 
 
 def qcktrc(lenout=None):
@@ -838,6 +856,252 @@ def tkvrsn(item='TOOLKIT'):
 
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/tkvrsn_c.html"""
     return toolkit_version
+
+
+# ---- SpiceyPy's functions on PEPPER's (results of any size, SpiceyPy's types)
+
+
+def bodvar(body, item, dim=None):
+    """Return the values of some item for any body in the kernel pool
+    (deprecated: bodvcd). PepperyPy: all the values; `dim` is ignored.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/bodvar_c.html"""
+    return _ctx().body_values_by_code(body, item)
+
+
+def ordc(item, inset):
+    """The ordinal position (from 0) of an element in a set of strings;
+    -1 if it is not in the set.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/ordc_c.html"""
+    if not isinstance(inset, SpiceCell) or not inset.is_char():
+        raise TypeError('inset must be a character SpiceCell')
+    values = list(inset)
+    return values.index(item) if item in values else -1
+
+
+def _ek_values(kind, handle, segno, recno, column):
+    ctx = _ctx()
+    values, isnull = getattr(ctx, 'ek_values_' + kind)(handle, segno, recno, column)
+    return len(values), values, bool(isnull)
+
+
+def ekrced(handle, segno, recno, column, nelts=None):
+    """Read the double precision values of a column entry of an EK record.
+    PepperyPy: all the values; `nelts` is ignored.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/ekrced_c.html"""
+    return _ek_values('real', handle, segno, recno, column)
+
+
+def ekrcei(handle, segno, recno, column, nelts=None):
+    """Read the integer values of a column entry of an EK record.
+    PepperyPy: all the values; `nelts` is ignored.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/ekrcei_c.html"""
+    return _ek_values('int', handle, segno, recno, column)
+
+
+def ekrcec(handle, segno, recno, column, lenout=None, nelts=None):
+    """Read the character values of a column entry of an EK record.
+    PepperyPy: all the values, each of its full length; `lenout` and
+    `nelts` are ignored.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/ekrcec_c.html"""
+    n, values, isnull = _ek_values('str', handle, segno, recno, column)
+    return n, list(values), isnull
+
+
+_EK_TYPES = {'CHR': 0, 'DP': 1, 'INT': 2, 'TIME': 3}
+_EK_CLASSES = {'COL': 0, 'FUNC': 1, 'EXPR': 2}
+
+
+def ekpsel(query, msglen=None, tablen=None, collen=None):
+    """Parse the SELECT clause of an EK query: the number of items, the
+    positions (from 0) of each in the query, its data type
+    (SpiceEKDataType) and class (SpiceEKExprClass), its table and column,
+    and the parse error flag and message.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/ekpsel_c.html"""
+    n, xbegs, xends, xtypes, xclass, tabs, cols, error, errmsg = _ctx().ekpsel(query)
+    if error:
+        return 0, xbegs[:0], xends[:0], np.zeros(0, np.int32), np.zeros(0, np.int32), [], [], int(error), errmsg
+    return (n, xbegs[:n] - 1, xends[:n] - 1,
+            np.array([_EK_TYPES.get(t.strip(), -1) for t in xtypes[:n]], dtype=np.int32),
+            np.array([_EK_CLASSES.get(c.strip(), -1) for c in xclass[:n]], dtype=np.int32),
+            list(tabs[:n]), list(cols[:n]), 0, errmsg)
+
+
+def ekssum(handle, segno):
+    """The summary of an EK segment (SpiceEKSegSum). PepperyPy: the
+    columns' `cclass` is 0 (SPICELIB's EKSSUM does not give it).
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/ekssum_c.html"""
+    from .utils.support_types import SpiceEKAttDsc, SpiceEKSegSum
+    tabnam, nrows, ncols, cnames, dtypes, sizes, strlns, indexd, nullok = _ctx().ekssum(handle, segno)
+    descrs = [SpiceEKAttDsc(0, _EK_TYPES.get(dtypes[i].strip(), -1), strlns[i], sizes[i], indexd[i], nullok[i])
+              for i in range(ncols)]
+    return SpiceEKSegSum(tabnam, nrows, ncols, list(cnames[:ncols]), descrs)
+
+
+def limbpt(method, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol,
+           maxn=None):
+    """Find limb points on a target body. PepperyPy: the points found (not
+    arrays of maxn); `maxn` is ignored.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/limbpt_c.html"""
+    return _ctx().limb_points(method, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts,
+                              schstp, soltol)
+
+
+def termpt(method, ilusrc, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp,
+           soltol, maxn=None):
+    """Find terminator points on a target body. PepperyPy: the points found
+    (not arrays of maxn); `maxn` is ignored.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/termpt_c.html"""
+    return _ctx().terminator_points(method, ilusrc, target, et, fixref, abcorr, corloc, obsrvr, refvec,
+                                    rolstp, ncuts, schstp, soltol)
+
+
+def uddf(udfunc, x, dx):
+    """The derivative of a scalar function of time at x.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/uddf_c.html"""
+    return _ctx().uddf(udfunc, x, dx)
+
+
+def _ek_rows(rcptrs, entszs, nlflgs, wkindx):
+    """EKACLx's per-row arrays at the segment's number of rows (that of
+    rcptrs): SPICELIB reads and writes them for every row, so shorter ones
+    are padded (with zeros, False) rather than read past their end."""
+    n = len(np.atleast_1d(rcptrs))
+
+    def pad(a, dtype):
+        a = np.array(a, dtype=dtype).reshape(-1)
+        return a if a.shape[0] >= n else np.concatenate([a, np.zeros(n - a.shape[0], dtype=dtype)])
+    return pad(entszs, np.int32), pad(nlflgs, bool), pad(wkindx, np.int32)
+
+
+def ekacli(handle, segno, column, ivals, entszs, nlflgs, rcptrs, wkindx):
+    """Add an entire integer column to an EK segment (fast load).
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/ekacli_c.html"""
+    entszs, nlflgs, wkindx = _ek_rows(rcptrs, entszs, nlflgs, wkindx)
+    return _ctx().ekacli(handle, segno, column, ivals, entszs, nlflgs, rcptrs, wkindx)
+
+
+def ekacld(handle, segno, column, dvals, entszs, nlflgs, rcptrs, wkindx):
+    """Add an entire double precision column to an EK segment (fast load).
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/ekacld_c.html"""
+    entszs, nlflgs, wkindx = _ek_rows(rcptrs, entszs, nlflgs, wkindx)
+    return _ctx().ekacld(handle, segno, column, dvals, entszs, nlflgs, rcptrs, wkindx)
+
+
+def ekaclc(handle, segno, column, vallen, cvals, entszs, nlflgs, rcptrs, wkindx):
+    """Add an entire character column to an EK segment (fast load).
+    `vallen` is ignored (the strings' own lengths are used).
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/ekaclc_c.html"""
+    entszs, nlflgs, wkindx = _ek_rows(rcptrs, entszs, nlflgs, wkindx)
+    return _ctx().ekaclc(handle, segno, column, cvals=cvals, entszs=entszs, nlflgs=nlflgs, rcptrs=rcptrs,
+                         wkindx=wkindx)
+
+
+# GF interrupts: gfinth records one (as CSPICE's SIGINT handler does),
+# gfbail reports it, gfclrh clears it. Searches that take an interrupt
+# test (gfevnt, gffove, gfocce) call the one given.
+_interrupt = [False]
+
+
+def gfinth(sigcode):
+    """Record an interrupt signal (SIGINT, 2) for the GF searches.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/gfinth_c.html"""
+    if sigcode != 2:
+        raise dynamically_instantiate_spiceyerror(
+            short='SPICE(INVALIDSIGNAL)', long=f'Signal code {sigcode} is not SIGINT (2).',
+            traceback='gfinth_c')
+    _interrupt[0] = True
+
+
+def gfclrh():
+    """Clear the GF interrupt status.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/gfclrh_c.html"""
+    _interrupt[0] = False
+
+
+def gfbail():
+    """Whether an interrupt was recorded (gfinth) and not cleared (gfclrh).
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/gfbail_c.html"""
+    return _interrupt[0]
+
+
+def gfevnt(udstep, udrefn, gquant, qnpars, lenvals, qpnams, qcpars, qdpars, qipars, qlpars, op, refval,
+           tol, adjust, rpt, udrepi, udrepu, udrepf, nintvls, bail, udbail, cnfine, result=None):
+    """Determine time intervals when a specified geometric quantity
+    satisfies a specified mathematical condition. PepperyPy: the work
+    windows are sized from the step (`nintvls` and `lenvals` are ignored);
+    with a step routine other than gfstep, from the smallest step it
+    gives at the starts of the confinement window's intervals.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/gfevnt_c.html"""
+    ctx = _ctx()
+    w = _intervals(cnfine)
+    if udstep is _core.gfstep:
+        step = ctx.gfstep(w[0, 0] if len(w) else 0.0)
+    else:
+        step = min(float(udstep(t)) for t in (w[:, 0] if len(w) else [0.0]))
+    res = ctx.gf_event(udstep, udrefn, gquant, qnpars, qpnams, qcpars, qdpars, qipars, qlpars, op, refval,
+                       tol, adjust, step, w, rpt, udrepi, udrepu, udrepf, bail, udbail)
+    return _fill(result, res)
+
+
+def ftncls(unit):
+    """Close a Fortran logical unit (a file opened by txtopn or txtopr).
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/ftncls_c.html"""
+    _core._ftncls(unit)
+
+
+def zzdynrot(typid, center, et):
+    """The rotation of a dynamic frame to its base frame, and the base
+    frame (the private ZZDYNROT; the matrix as SpiceyPy returns it).
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/zzdynrot.html"""
+    return _ctx()._zzdynrot(typid, center, et)
+
+
+def check_for_spice_error(f=None):
+    """SpiceyPy's check after a call: PepperyPy raises errors when they are
+    signaled, so this raises only an error left signaled (reset after)."""
+    if failed():
+        short = _ctx().getmsg('SHORT')
+        long = _ctx().getmsg('LONG')
+        reset()
+        raise dynamically_instantiate_spiceyerror(short=short.strip(), long=long.strip())
+
+
+def spice_error_check(f):
+    """SpiceyPy's decorator: calls `check_for_spice_error` after `f`."""
+    import functools
+
+    @functools.wraps(f)
+    def with_errcheck(*args, **kwargs):
+        res = f(*args, **kwargs)
+        check_for_spice_error(f)
+        return res
+    return with_errcheck
+
+
+def warn_deprecated_args(**kwargs):
+    """SpiceyPy's helper: warns of deprecated keyword arguments."""
+    import warnings
+    if kwargs:
+        warnings.warn(f'deprecated arguments: {", ".join(kwargs)}', DeprecationWarning, stacklevel=3)
 
 
 class KernelPool:
@@ -868,3 +1132,185 @@ class KernelPool:
         self._spice.close()
         self._spice = None
         return False
+
+
+# ---- CSPICE's checks of string arguments (CHKFSTR: an empty string is
+# SPICE(EMPTYSTRING)) for the functions above and the hand-written ones of
+# _core; the generated functions check theirs (tools/gen_capi.py, from
+# tools/cspice_empty_strings.json).
+
+_EMPTY_CHECKS = {'getfvn': ['inst'],
+    'gdpool': ['name'],
+    'gipool': ['name'],
+    'gcpool': ['name'],
+    'gnpool': ['name'],
+    'bodvrd': ['bodynm', 'item'],
+    'bodvcd': ['item'],
+    'lparse': ['list', 'delim'],
+    'lparsm': ['list', 'delims'],
+    'lparss': ['list', 'delims'],
+    'hx2dp': ['string'],
+    'gfdist': ['target', 'abcorr', 'obsrvr', 'relate'],
+    'gfposc': ['target', 'frame', 'abcorr', 'obsrvr', 'crdsys', 'coord', 'relate'],
+    'gfsubc': ['target', 'fixref', 'method', 'abcorr', 'obsrvr', 'crdsys', 'coord', 'relate'],
+    'gfsntc': ['target', 'fixref', 'method', 'abcorr', 'dref', 'crdsys', 'coord', 'relate'],
+    'gfsep': ['targ1', 'shape1', 'frame1', 'targ2', 'shape2', 'frame2', 'abcorr', 'obsrvr', 'relate'],
+    'gfoclt': ['occtyp', 'front', 'fshape', 'back', 'bshape', 'abcorr', 'obsrvr'],
+    'gfilum': ['method', 'angtyp', 'target', 'illmn', 'fixref', 'abcorr', 'obsrvr', 'relate'],
+    'gfpa': ['target', 'illmn', 'abcorr', 'obsrvr', 'relate'],
+    'gfrr': ['target', 'abcorr', 'obsrvr', 'relate'],
+    'gftfov': ['inst', 'target', 'tshape', 'abcorr', 'obsrvr'],
+    'gfrfov': ['inst', 'rframe', 'abcorr'],
+    'gfuds': ['relate'],
+    'erract': ['op'],
+    'errdev': ['op'],
+    'errprt': ['op'],
+    'setmsg': ['msg'],
+    'errch': ['marker', 'string'],
+    'errdp': ['marker'],
+    'errint': ['marker'],
+    'sigerr': ['msg'],
+    'getmsg': ['option'],
+    'chkin': ['module'],
+    'chkout': ['module'],
+    'tkvrsn': ['item'],
+    'ekrced': ['column'],
+    'ekrcei': ['column'],
+    'ekrcec': ['column'],
+    'ekpsel': ['query'],
+    'limbpt': ['method', 'target', 'fixref', 'abcorr', 'corloc', 'obsrvr'],
+    'termpt': ['method', 'ilusrc', 'target', 'fixref', 'abcorr', 'corloc', 'obsrvr'],
+    'gfevnt': ['gquant', 'op'],
+    'furnsh': ['file'],
+    'pdpool': ['name'],
+    'pipool': ['name'],
+    'pcpool': ['name']}
+
+# CSPICE's names of arguments that PepperyPy's parameters spell differently
+_ALIASES = {'frame': ('inframe',), 'frame1': ('inframe1',), 'frame2': ('inframe2',), 'illmn': ('illumn',),
+            'list': ('inlist',), 'msg': ('message',), 'file': ('path',), 'delims': ('delim',),
+            'item': ('item',), 'string': ('string',)}
+
+
+def _with_checks(f, cname, cargs):
+    import functools
+    import inspect
+    try:
+        params = list(inspect.signature(f).parameters)
+    except (TypeError, ValueError):
+        return f
+    where = {}
+    for a in cargs:
+        for cand in (a,) + _ALIASES.get(a, ()):
+            if cand in params:
+                where[a] = (cand, params.index(cand))
+                break
+    if not where:
+        return f
+
+    @functools.wraps(f)
+    def checked(*args, **kwargs):
+        for a, (pn, i) in where.items():
+            v = kwargs[pn] if pn in kwargs else (args[i] if i < len(args) else None)
+            if isinstance(v, (str, bytes)) and len(v) == 0:
+                _core._empty_string(cname, a)
+        return f(*args, **kwargs)
+    return checked
+
+
+for _name, _cargs in _EMPTY_CHECKS.items():
+    _f = globals().get(_name) or getattr(_core, _name, None)
+    if _f is not None:
+        globals()[_name] = _with_checks(_f, _name, _cargs)
+del _name, _cargs, _f
+
+
+# ---- the vectorized forms whose results have a size per element (SpiceyPy's
+# cyice limbpt_v, termpt_v, getelm_v): loops in Python over the scalar forms
+
+
+def _padded(rows, width):
+    """Per-element arrays as one array (n, width, ...), zeros past each one's
+    own elements."""
+    first = np.asarray(rows[0]) if rows else np.zeros(0)
+    out = np.zeros((len(rows), width) + first.shape[1:], dtype=first.dtype)
+    for i, r in enumerate(rows):
+        r = np.asarray(r)
+        out[i, :r.shape[0]] = r
+    return out
+
+
+limbpt_s = limbpt
+termpt_s = termpt
+getelm_s = _core.getelm
+
+
+def limbpt_v(method, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol,
+             maxn=None):
+    """`limbpt` at each epoch of `et` (an array): arrays (n, ncuts) of the
+    points' counts and (n, m, ...) of the points, epochs and tangents, where m
+    is the most points found at an epoch (cyice: maxn); zeros past an epoch's
+    points. `maxn` is ignored."""
+    res = [limbpt_s(method, target, t, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol)
+           for t in np.atleast_1d(et)]
+    m = max([len(r[1]) for r in res] + [ncuts])
+    return tuple(_padded([r[k] for r in res], m if k else ncuts) for k in range(4))
+
+
+def termpt_v(method, ilusrc, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol,
+             maxn=None):
+    """`termpt` at each epoch of `et` (an array): arrays (n, ncuts) of the
+    points' counts and (n, m, ...) of the points, epochs and tangents, where m
+    is the most points found at an epoch (cyice: maxn); zeros past an epoch's
+    points. `maxn` is ignored."""
+    res = [termpt_s(method, ilusrc, target, t, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp,
+                    soltol) for t in np.atleast_1d(et)]
+    m = max([len(r[1]) for r in res] + [ncuts])
+    return tuple(_padded([r[k] for r in res], m if k else ncuts) for k in range(4))
+
+
+def getelm_v(frstyr, lines):
+    """`getelm` for each pair of lines of `lines` ((n, 2)): epochs (n,) and
+    elements (n, 10). `frstyr`: one year, or one per pair."""
+    lines = np.asarray(lines).reshape(-1, 2)
+    years = np.broadcast_to(np.asarray(frstyr), (lines.shape[0],))
+    res = [getelm_s(int(y), [str(x) for x in pair]) for y, pair in zip(years, lines)]
+    return np.array([r[0] for r in res]), np.array([r[1] for r in res]).reshape(-1, 10)
+
+
+def limbpt(method, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol,
+           maxn=None):
+    """Find limb points on a target body. PepperyPy: the points found (not
+    arrays of maxn); `maxn` is ignored. With an array for `et`: `limbpt_v`.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/limbpt_c.html"""
+    if np.ndim(et):
+        return limbpt_v(method, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol)
+    return limbpt_s(method, target, float(et), fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp,
+                    soltol)
+
+
+def termpt(method, ilusrc, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp,
+           soltol, maxn=None):
+    """Find terminator points on a target body. PepperyPy: the points found
+    (not arrays of maxn); `maxn` is ignored. With an array for `et`:
+    `termpt_v`.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/termpt_c.html"""
+    if np.ndim(et):
+        return termpt_v(method, ilusrc, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts,
+                        schstp, soltol)
+    return termpt_s(method, ilusrc, target, float(et), fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts,
+                    schstp, soltol)
+
+
+def getelm(frstyr, lines):
+    """Parse the two lines of a NORAD two-line element set. With pairs of
+    lines ((n, 2)): `getelm_v`.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/getelm_c.html"""
+    if np.ndim(lines) > 1:
+        return getelm_v(frstyr, lines)
+    if isinstance(frstyr, np.ndarray):
+        frstyr = frstyr.item()
+    return getelm_s(int(frstyr), lines)

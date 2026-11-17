@@ -18,10 +18,15 @@ Writes:
   python/COVERAGE.md                    SpiceyPy's functions against PepperyPy's
 
 A procedure is wrapped when all its arguments are of a kind the generator
-knows (scalars; strings in and out; arrays of fixed size or sized by an
-integer argument; assumed-shape arrays in; allocatable results). The others
-are listed in COVERAGE.md; a few have hand-written wrappers (the core,
-python/src/pepperypy/_compat.py).
+knows: scalars; strings in, out and in/out; arrays of fixed size (also
+named sizes: planes, ellipses) or sized by integer arguments; assumed-size
+arrays in, in/out, and out (sized by OUT_SIZES); arrays of strings and of
+logicals; workspace (WORK, made by the wrapper); assumed-shape arrays in;
+allocatable results; the GF step, refinement, report and interrupt
+routines (the context's hooks, set from Python). The others are listed in
+COVERAGE.md; a few have hand-written wrappers (the core,
+python/src/pepperypy/_compat.py). String arguments that CSPICE checks
+(tools/cspice_empty_strings.json) raise SPICE(EMPTYSTRING) when empty.
 
 The Python signatures follow SpiceyPy's where SpiceyPy has the function
 (it is imported to read them): its parameter names, and its extra
@@ -55,6 +60,8 @@ EXCLUDE_SPICE = {'furnsh', 'pcpool', 'pdpool', 'pipool', 'lmpool', 'add_ephemeri
                  'load_kernel',  # hand-written (the builder: pepper_builder_*, KernelBuilder)
                  'write_kernel',  # hand-written (its optional ck_file and text_file)
                  'remove_loader'}  # kernel loaders are Fortran types: not registered from C or Python
+# Private routines SpiceyPy exports.
+ZZ_WRAPPED = set()   # (zzdynrot: pepper_zzdynrot, hand-written)
 # Shims generated, Python wrappers written by hand (_core.pyx).
 NO_PYTHON = {'kclear', 'remove_ephemeris', 'remove_frame'}
 
@@ -76,6 +83,7 @@ ZERO_BASED_IN = {
     'lx4dec': ['first'], 'lx4num': ['first'], 'lx4sgn': ['first'], 'lx4uns': ['first'], 'lxqstr': ['first'],
     'dasadc': ['bpos', 'epos'], 'dasudc': ['bpos', 'epos'], 'dasrdc': ['bpos', 'epos'],
     'stpool': ['nth'],
+    'dskd02': ['start'], 'dski02': ['start'],
 }
 # CSPICE numbers EK segments and records from 0.
 EK_INDICES = {'segno', 'recno'}
@@ -95,9 +103,10 @@ ZERO_BASED_OUT = {
 # Arrays of vectors in the Fortran (k, n) layout that CSPICE's callers write
 # as rows (n, k), although their dimensions are fixed (else a fixed k x k
 # array is a matrix).
-ROWS = {'pltexp': ['iverts', 'overts']}
+ROWS = {'pltexp': ['iverts', 'overts'], 'dskb02': ['vtxbds']}
 # Outputs SpiceyPy does not return.
-DROP_OUTPUTS = {'dp2hx': ['hxssiz']}
+DROP_OUTPUTS = {'dp2hx': ['hxssiz'], 'dskd02': ['n'], 'dski02': ['n'], 'dskp02': ['n'], 'dskv02': ['n'],
+                'scpart': ['nparts'], 'ekffld': ['rcptrs']}
 # The sizes of assumed-size results ({x}: the value of the integer input x).
 OUT_SIZES = {
     'dafus': {'dc': '{nd}', 'ic': '{ni}'},
@@ -110,6 +119,23 @@ OUT_SIZES = {
     'ckgr02': {'record': '10'},
     'ckgr03': {'record': '8'},
     'dafgs': {'sum': '128'},     # the largest summary (_compat.dafgs takes SpiceyPy's n)
+    'dlabbs': {'dladsc': '8'}, 'dlabfs': {'dladsc': '8'}, 'dlafns': {'nxtdsc': '8'}, 'dlafps': {'prvdsc': '8'},
+    'dskgd': {'dskdsc': '24'},
+    'dskd02': {'values': '{room}'}, 'dski02': {'values': '{room}'},
+    'dskp02': {'plates': '{room}'}, 'dskv02': {'vrtces': '{room}'},
+    'dskxv': {'xptarr': '{nrays}', 'fndarr': '{nrays}'},
+    'dskxsi': {'dladsc': '8', 'dskdsc': '24', 'dc': '{maxd}', 'ic': '{maxi}'},
+    'ev2lin': {'state': '6'}, 'oscltx': {'elts': '20'}, 'spkpds': {'descr': '5'}, 'spksfs': {'descr': '5'},
+    'scpart': {'pstart': '9999', 'pstop': '9999'},   # MXPART
+    'getfvn': {'bounds': '{room}'},
+    'latsrf': {'srfpts': '{npts}'}, 'srfnrm': {'normls': '{npts}'},
+    'chbder': {'dpdxs': '{nderiv} + 1'}, 'polyds': {'p': '{nderiv} + 1'},
+    'ekifld': {'rcptrs': '{nrows}'},
+    'dafec': {'buffer': '{bufsiz}'}, 'dasec': {'buffer': '{bufsiz}'},
+    'dskmi2': {'spaixi': '{spxisz}'},
+    # (wrapped in _compat.py for SpiceyPy's types)
+    'ekpsel': {x: '50' for x in ('xbegs', 'xends', 'xtypes', 'xclass', 'tabs', 'cols')},   # MAXSEL
+    'ekssum': {x: '100' for x in ('cnames', 'dtypes', 'sizes', 'strlns', 'indexd', 'nullok')},   # MXCLSG
 }
 
 # The routines that release the GIL while PEPPER works: searches, geometry,
@@ -125,6 +151,45 @@ LONG_CALLS = re.compile(r'^(gf|dsk|ek|dla|limbpt|termpt|sincpt|subpnt|subslr|sub
 
 # SpiceyPy returns these found flags as the result (no NotFoundError).
 FOUND_IS_RESULT = {'expool', 'daffna', 'daffpa', 'dskx02'}
+
+# Dimensions named by parameters: their values. Planes, ellipses and EK
+# attribute descriptors are passed and returned as SpiceyPy's types.
+CONST_DIMS = {'ubpl': '4', 'ubel': '9', 'adscsz': '6', 'ixdfix': '10'}
+WRAP_DIMS = {'ubpl': 'Plane', 'ubel': 'Ellipse', 'adscsz': 'SpiceEKAttDsc'}
+# Assumed-size arrays that are SpiceyPy types (by argument name).
+WRAP_NAMES = {'dladsc': 'SpiceDLADescr', 'nxtdsc': 'SpiceDLADescr', 'prvdsc': 'SpiceDLADescr',
+              'dskdsc': 'SpiceDSKDescr'}
+# The GF routines given to GFEVNT, GFFOVE, GFOCCE: the C interface's hook
+# routine for each interface, and its slot in Context._gf_hooks_on.
+GF_HOOKS = {'gf_step': ('capi_gf_step', 'step'), 'gf_refine': ('capi_gf_refn', 'refn'),
+            'gf_rep_init': ('capi_gf_repi', 'repi'), 'gf_rep_update': ('capi_gf_repu', 'repu'),
+            'gf_rep_final': ('capi_gf_repf', 'repf'), 'gf_bail': ('capi_gf_bail', 'bail')}
+# Workspace arrays: made by the wrapper, not arguments in Python (their
+# size: {x} is the value of the integer input x).
+WORK = {
+    'chbder': {'partdp': '3 * ({nderiv} + 1)'},
+    'lgrind': {'work': '4 * {n}'}, 'lgrint': {'work': '4 * {n}'}, 'lgresp': {'work': '4 * {n}'},
+    'hrmint': {'work': '4 * {n}'}, 'hrmesp': {'work': '4 * {n}'},
+    'dskmi2': {'work': '2 * {worksz}'},
+}
+# Integer inputs SpiceyPy does not take: their value.
+FIXED_IN = {'dskxsi': {'maxd': '1', 'maxi': '1'}}
+# Counts SpiceyPy takes from an array: the array (its number of elements,
+# or of rows for a list of vectors).
+COUNT_OF = {'spkw18': {'n': 'epochs'}, 'dskmi2': {'nv': 'vrtces', 'np': 'plates'}, 'dskrb2': {'nv': 'vrtces', 'np': 'plates'}, 'dskxsi': {'nsurf': 'srflst'},
+            'dskxv': {'nsurf': 'srflst', 'nrays': 'vtxarr'}, 'latsrf': {'npts': 'lonlat'},
+            'srfnrm': {'npts': 'srfpts'}}
+# Results returned as their first n elements ({x}: the output x, or a number).
+SLICE = {
+    'getfvn': {'bounds': 'n'}, 'scpart': {'pstart': 'nparts', 'pstop': 'nparts'}, 'oscltx': {'elts': '11'},
+    'dskd02': {'values': 'n'}, 'dski02': {'values': 'n'}, 'dskp02': {'plates': 'n'}, 'dskv02': {'vrtces': 'n'},
+}
+# The width of the strings of an array of strings out.
+STRARR_WIDTH = 1024
+# CSPICE's checks of string arguments (CHKFSTR): an empty string signals
+# SPICE(EMPTYSTRING). From CSPICE N0067's sources (tools/cspice_empty_strings.json).
+import json as _json  # noqa: E402
+EMPTY_CHECKS = _json.loads((Path(__file__).resolve().parent / 'cspice_empty_strings.json').read_text())
 
 
 def extent(d):
@@ -145,6 +210,8 @@ class Arg:
     deferred: bool = False   # character(:)
     doc: str = ''
     kind: str = ''      # classification (see classify)
+    wrap: str = ''      # the SpiceyPy type of the array (Plane, Ellipse, ...)
+    proc: tuple = None  # a GF routine: (the C interface's hook routine, its slot)
 
     @property
     def rank(self):
@@ -214,6 +281,23 @@ def parse_decls(lines, args):
 
 
 def make_arg(name, t, dims, doc):
+    wrap = ''
+    for k, d in enumerate(dims):
+        if d in WRAP_DIMS:
+            wrap = WRAP_DIMS[d]
+        if d in CONST_DIMS:
+            dims[k] = CONST_DIMS[d]
+        elif d.startswith('0:') and d != '0:*' and not re.fullmatch(r'0:-?\d+', d):
+            dims[k] = d[2:] + '+1'      # 0:n has n + 1 elements
+        elif d == '0:*':
+            dims[k] = '*'
+    if name in WRAP_NAMES:
+        wrap = WRAP_NAMES[name]
+    m = re.match(r'procedure\((\w+)\)', t)
+    if m:
+        hook = GF_HOOKS.get(m.group(1).lower())
+        return Arg(name=name, ftype='gfproc' if hook else 'other', intent='in', dims=[], doc=doc,
+                   proc=hook)
     m = re.search(r'intent\((in|out|inout)\)', t)
     intent = m.group(1) if m else ''
     # An optional output is always passed by the shim (so always made); an
@@ -233,11 +317,39 @@ def make_arg(name, t, dims, doc):
     else:
         ftype = 'other'
     return Arg(name=name, ftype=ftype, intent=intent, dims=dims, alloc='allocatable' in t,
-               deferred=t.startswith('character(:)'), doc=doc)
+               deferred=t.startswith('character(:)'), doc=doc, wrap=wrap)
 
 
 HEADER = re.compile(r'^\s*(?:recursive\s+)?module\s+(?:(integer\(ip\)|real\(wp\)|logical)\s+)?'
                     r'(subroutine|function)\s+(\w+)\s*\(([^)]*)\)', re.I)
+
+
+_IMPL_DOCS = None
+
+
+def impl_docs():
+    """The docstrings of the procedures in the submodules (the summaries are
+    there, not in the interfaces): name -> lines."""
+    global _IMPL_DOCS
+    if _IMPL_DOCS is None:
+        _IMPL_DOCS = {}
+        head = re.compile(r'^\s*(?:\w+(?:\(\w+\))?\s+)*module\s+(?:\w+(?:\(\w+\))?\s+)*(?:subroutine|function)\s+(\w+)',
+                          re.I)
+        for f in sorted((ROOT / 'src').glob('*.f90')):
+            if f.name == 'pepper_instance_module.f90':
+                continue
+            lines = f.read_text().split('\n')
+            for i, l in enumerate(lines):
+                m = head.match(l)
+                if not m:
+                    continue
+                doc = []
+                k = i - 1
+                while k >= 0 and lines[k].strip().startswith('!>'):
+                    doc.insert(0, lines[k].strip()[2:].strip())
+                    k -= 1
+                _IMPL_DOCS.setdefault(m.group(1).lower(), doc)
+    return _IMPL_DOCS
 
 
 def parse_context_interfaces():
@@ -266,6 +378,8 @@ def parse_context_interfaces():
             while not re.match(r'\s*end\s+(subroutine|function)', lines[j], re.I):
                 j += 1
             decl = parse_decls(lines[i + 1:j], set(args))
+            if not doc:
+                doc = impl_docs().get(name.lower(), [])
             ifs[name.lower()] = (kind.lower(), rtype, args, decl, doc)
             i = j
         i += 1
@@ -369,16 +483,34 @@ def classify(p):
     names = {a.name for a in p.args}
     int_in = {a.name for a in p.args if a.ftype == 'int' and a.intent == 'in' and not a.dims}
     allargs = p.args + ([p.result] if p.result else [])
+    sized = OUT_SIZES.get(p.name, {})
+    work = WORK.get(p.name, {})
+
+    def size_ok(expr):
+        return all(n in int_in for n in re.findall(r'\{(\w+)\}', expr))
+
     for a in allargs:
+        if a.ftype == 'gfproc':
+            if p.owner != 'ctx':
+                return f'argument {a.name}: GF routine'
+            a.kind = 'hook'
+            continue
         if a.ftype == 'other' or a.intent in ('', 'optional'):
             return f'argument {a.name}: unsupported type'
         if a.name in ('ctx', 'self', 'fresult') and a is not p.result:
             return f'argument {a.name}'
+        if a.name in work:
+            if a.ftype not in ('real', 'int') or not size_ok(work[a.name]):
+                return f'argument {a.name}: workspace'
+            a.kind = 'work'
+            continue
         if a.ftype == 'char':
             if a.deferred and a.alloc and a.intent == 'out' and not a.dims and p.owner == 'ctx':
                 a.kind = 'astr_out'
-            elif a.dims == ['*'] and a.intent == 'in':
+            elif a.rank == 1 and (a.dims[0] == '*' or a.dims[0].isdigit()) and a.intent == 'in':
                 a.kind = 'strarr_in'
+            elif a.dims == ['*'] and a.intent == 'out' and a.name in sized and size_ok(sized[a.name]):
+                a.kind = 'strarr_out'
             elif a.dims:
                 return f'argument {a.name}: array of strings'
             elif a.intent == 'in':
@@ -386,7 +518,7 @@ def classify(p):
             elif a.intent == 'out':
                 a.kind = 'str_out'
             else:
-                return f'argument {a.name}: string in/out'
+                a.kind = 'str_inout'
         elif a.ftype == 'string':
             if a.alloc and a.intent == 'out' and a.dims == [':'] and p.owner == 'ctx':
                 a.kind = 'strlist_out'
@@ -408,22 +540,31 @@ def classify(p):
             if a.ftype not in ('real', 'int'):
                 return f'argument {a.name}: cell of {a.ftype}'
             a.kind = 'cell'
-        elif a.dims == ['*'] and a.intent == 'out' and a.name in OUT_SIZES.get(p.name, {}) \
-                and a.ftype in ('real', 'int'):
+        elif a.ftype == 'logical':
+            if a.intent == 'in' and a.rank == 1 and (a.dims[0] == '*' or a.dims[0].isdigit()):
+                a.kind = 'logarr_in'
+            elif a.intent == 'out' and a.dims == ['*'] and a.name in sized and size_ok(sized[a.name]):
+                a.kind = 'logarr_out'
+            else:
+                return f'argument {a.name}: logical array'
+        elif a.dims[-1] == '*' and a.intent == 'out' and a.name in sized and size_ok(sized[a.name]) \
+                and a.ftype in ('real', 'int') and (a.rank == 1 or (a.rank == 2 and extent(a.dims[0]).isdigit())):
             a.kind = 'ptr_out'
         elif a.dims[-1] == '*':
-            if a.intent != 'in' or a.ftype not in ('real', 'int') or a.rank > 2:
+            if a.intent not in ('in', 'inout') or a.ftype not in ('real', 'int') or a.rank > 2:
                 return f'argument {a.name}: assumed size {a.intent}'
-            if a.rank == 2 and not (a.dims[0].isdigit() or a.dims[0] in int_in):
+            if a.intent == 'inout' and a.rank != 1:
+                return f'argument {a.name}: assumed size inout'
+            if a.rank == 2 and not (extent(a.dims[0]).isdigit() or a.dims[0] in int_in):
                 return f'argument {a.name}: dimension {a.dims[0]}'
-            a.kind = 'ptr_in'
+            a.kind = 'ptr_in' if a.intent == 'in' else 'ptr_inout'
         else:
-            if a.ftype == 'logical':
-                return f'argument {a.name}: logical array'
             if a.rank > 2:
                 return f'argument {a.name}: rank {a.rank}'
             for d in a.dims:
-                if not (d.isdigit() or d in int_in or re.fullmatch(r'-?\d+:-?\d+', d)):
+                if not (d.isdigit() or re.fullmatch(r'-?\d+:-?\d+', d) or
+                        (re.fullmatch(r'[\w*+\- ]+', d) and all(x in int_in or x.isdigit()
+                                                               for x in re.findall(r'\w+', d)))):
                     return f'argument {a.name}: dimension {d}'
             a.kind = 'arr_' + a.intent
     return ''
@@ -479,9 +620,22 @@ def derivable(p, a, given):
     a Python expression on their parameters' names, or None."""
     if a.ftype != 'int' or a.dims or a.intent != 'in':
         return None
+    if a.name in FIXED_IN.get(p.name, {}):
+        return FIXED_IN[p.name][a.name]
+    src = COUNT_OF.get(p.name, {}).get(a.name)
+    if src:
+        b = next((x for x in p.args if x.name == src and x in given), None)
+        if b is None:
+            return None
+        return f'(np.shape({given[b]})[0] if np.ndim({given[b]}) > 1 else np.size({given[b]}))' \
+            if b.rank > 1 else f'np.size({given[b]})'
     arrays = [b for b in p.args if b is not a and b in given and b.kind in ('arr_in', 'arr_inout', 'ptr_in',
-                                                                          'strarr_in', 'shape_in')]
+                                                                          'strarr_in', 'shape_in', 'logarr_in')]
     for b in arrays:
+        for d in b.dims:
+            m = re.fullmatch(r'(\d+)\*(\w+)', d)
+            if m and m.group(2) == a.name and b.rank == 1:
+                return f'(np.size({given[b]}) // {m.group(1)})'
         if a.name in b.dims:
             k = b.dims.index(a.name)
             if b.rank == 2 and b.dims[0].isdigit() and k == 1:     # rows (n, k)
@@ -506,7 +660,7 @@ def python_params(p, spy):
     them: vnormg(v) for VNORMG(V, NDIM))."""
     p.derived = {}
     cellouts = [a for a in p.args if a.kind == 'cell' and a.intent in ('out', 'inout')]
-    required = [a for a in p.args if a.intent in ('in', 'inout') and a not in cellouts]
+    required = [a for a in p.args if a.intent in ('in', 'inout') and a not in cellouts and a.kind != 'work']
     withcells = [a for a in p.args if a in required or a in cellouts]
     if p.name in spy:
         params, vec = spy[p.name]
@@ -679,7 +833,7 @@ def fortran_shim(p):
             dummies.append(n)
             decls.append(f'{FTYPE_C[a.ftype]}, intent({a.intent}) :: {n}(-5:*)  !! {doc} (a cell: the control area first)')
             callargs.append(n)
-        elif k in ('ptr_in', 'ptr_out'):
+        elif k in ('ptr_in', 'ptr_out', 'ptr_inout'):
             dummies.append(n)
             decls.append(f'{FTYPE_C[a.ftype]}, intent({a.intent}) :: {n}({",".join(a.dims)})  !! {doc}')
             callargs.append(n)
@@ -690,6 +844,46 @@ def fortran_shim(p):
             decls.append(f'character(kind=c_char), intent(in) :: {n}(*)  !! {doc}')
             locs.append(f'character(:), allocatable :: f_{n}(:)')
             pre.append(f'call c_to_f_array({n}, {n}_n, {n}_width, f_{n})')
+            callargs.append(f'f_{n}')
+        elif k == 'hook':
+            callargs.append(a.proc[0])
+        elif k == 'work':
+            dummies.append(n)
+            decls.append(f'{FTYPE_C[a.ftype]}, intent(inout) :: {n}(*)  !! workspace')
+            callargs.append(n)
+        elif k == 'str_inout':
+            dummies += [f'{n}_size', n]
+            decls.append(f'integer(c_int), value :: {n}_size  !! the size of {n} (with the NUL)')
+            decls.append(f'character(kind=c_char), intent(inout) :: {n}({n}_size)  !! {doc}')
+            locs.append(f'character(len=max({n}_size - 1, 1)) :: f_{n}')
+            locs.append(f'character(:), allocatable :: t_{n}')
+            pre.append(f'call c_to_f({n}, t_{n})')
+            pre.append(f'f_{n} = t_{n}')
+            post.append(f'call f_to_c(f_{n}, {n}_size, {n})')
+            callargs.append(f'f_{n}')
+        elif k == 'strarr_out':
+            dummies += [f'{n}_n', f'{n}_width', n]
+            decls.append(f'integer(c_int), value :: {n}_n  !! the number of strings {n} holds')
+            decls.append(f'integer(c_int), value :: {n}_width  !! the size of each (with the NUL)')
+            decls.append(f'character(kind=c_char), intent(out) :: {n}({n}_n * {n}_width)  !! {doc}')
+            locs.append(f'character(len=max({n}_width - 1, 1)) :: f_{n}(max({n}_n, 1))')
+            locs.append(f'integer :: i_{n}')
+            pre.append(f"f_{n} = ' '")
+            post.append(f'do i_{n} = 1, {n}_n')
+            post.append(f'   call f_to_c(f_{n}(i_{n}), {n}_width, {n}((i_{n} - 1) * {n}_width + 1:i_{n} * {n}_width))')
+            post.append('end do')
+            callargs.append(f'f_{n}')
+        elif k in ('logarr_in', 'logarr_out'):
+            io = k[7:]
+            dummies += [f'{n}_n', n]
+            decls.append(f'integer(c_int), value :: {n}_n  !! the number of flags in {n}')
+            decls.append(f'integer(c_int), intent({io}) :: {n}(max({n}_n, 1))  !! {doc} (0: false)')
+            locs.append(f'logical :: f_{n}(max({n}_n, 1))')
+            if io == 'in':
+                pre.append(f'f_{n} = {n} /= 0')
+            else:
+                pre.append(f'f_{n} = .false.')
+                post.append(f'{n} = merge(1_c_int, 0_c_int, f_{n})')
             callargs.append(f'f_{n}')
         elif k == 'shape_in':
             if a.rank == 1:
@@ -835,6 +1029,18 @@ def c_params(p):
             ps += [f'int {n}_n', f'int {n}_width', f'const char *{n}']
         elif k in ('arr_out', 'arr_inout', 'ptr_out'):
             ps.append(f'{t} *{n}')
+        elif k == 'work':
+            ps.append(f'{t} *{n}')
+        elif k == 'str_inout':
+            ps += [f'int {n}_size', f'char *{n}']
+        elif k == 'strarr_out':
+            ps += [f'int {n}_n', f'int {n}_width', f'char *{n}']
+        elif k == 'logarr_in':
+            ps += [f'int {n}_n', f'const int *{n}']
+        elif k == 'logarr_out':
+            ps += [f'int {n}_n', f'int *{n}']
+        elif k == 'ptr_inout':
+            ps.append(f'{t} *{n}')
         elif k == 'shape_in':
             if a.rank == 1:
                 ps += [f'int {n}_n', f'const {t} *{n}']
@@ -887,13 +1093,27 @@ def clean(s):
     return (s or '').replace('[[', '`').replace(']]', '`').replace('"', "'").replace('\\', '/').strip()
 
 
+def csize(expr):
+    """A size expression ({x}: the integer input x) in Cython."""
+    return re.sub(r'\{(\w+)\}', r'_c_\1', expr)
+
+
+def cdims(dims):
+    """Fixed dimensions (numbers, ranges, expressions of integer inputs) in Cython."""
+    out = []
+    for d in dims:
+        e = extent(d)
+        out.append(e if e.lstrip('-').isdigit() else re.sub(r'([a-z_]\w*)', r'_c_\1', e))
+    return ', '.join(out)
+
+
 def cython_method(p, spy, where):
     """A method (where = 'ctx' or 'spice') or a module-level function ('pure')."""
     params, aligned, vec = python_params(p, spy)
     allargs = p.args + ([p.result] if p.result else [])
     found = next((a for a in p.args if a.name in ('found', 'isname') and a.kind == 'num_out'
                   and a.ftype == 'logical' and p.name not in FOUND_IS_RESULT), None)
-    outs = [a for a in allargs if a.intent in ('out', 'inout') and a is not found]
+    outs = [a for a in allargs if a.intent in ('out', 'inout') and a is not found and a.kind != 'work']
     sig = []
     for pn, a, d in params:
         sig.append(f'{pn}={d}' if d is not None else pn)
@@ -915,12 +1135,54 @@ def cython_method(p, spy, where):
     cdefs = []
     conv = []
     results = []
+    hooks = {}
+    checks = []
     for a in allargs:
         n = a.name
         pn = pymap.get(id(a), n)
         k = a.kind
         t = CTYPE.get(a.ftype)
-        if k == 'str_in':
+        dt = 'NPY_DOUBLE' if a.ftype == 'real' else 'NPY_INT32'
+        ct = 'double' if a.ftype == 'real' else 'int'
+        if k == 'str_in' and n in EMPTY_CHECKS.get(p.name, ()) and id(a) in pymap:
+            checks.append(f'if not {pn}: _empty_string({p.name!r}, {n!r})')
+        if k == 'hook':
+            hooks[a.proc[1]] = pn
+        elif k == 'work':
+            conv.append(f'cdef cnp.ndarray _a_{n} = _empty({dt}, max(<int>({csize(WORK[p.name][n])}), 1), -1)')
+            cargs.append(f'<{ct}*>cnp.PyArray_DATA(_a_{n})')
+        elif k == 'str_inout':
+            conv.append(f"cdef bytearray _ba_{n} = bytearray(_b({pn} if {pn} is not None else '')[:{STR_OUT_SIZE - 1}]"
+                        f".ljust({STR_OUT_SIZE}, b'\\0'))")
+            conv.append(f'cdef char *_c_{n} = _ba_{n}')
+            cargs += [str(STR_OUT_SIZE), f'_c_{n}']
+            results.append((a, f'_s(_c_{n})'))
+        elif k == 'strarr_out':
+            conv.append(f'cdef int _n_{n} = max(<int>({csize(OUT_SIZES[p.name][n])}), 1)')
+            conv.append(f'cdef bytearray _ba_{n} = bytearray(_n_{n} * {STRARR_WIDTH})')
+            conv.append(f'cdef char *_c_{n} = _ba_{n}')
+            cargs += [f'_n_{n}', str(STRARR_WIDTH), f'_c_{n}']
+            results.append((a, f'_strs(_ba_{n}, _n_{n}, {STRARR_WIDTH})'))
+        elif k == 'logarr_in':
+            conv.append(f'cdef cnp.ndarray _a_{n} = _rows(np.asarray({pn}).astype(bool).astype(np.int32), NPY_INT32, 1)')
+            cargs += [f'<int>cnp.PyArray_DIM(_a_{n}, 0)', f'<const int*>cnp.PyArray_DATA(_a_{n})']
+        elif k == 'logarr_out':
+            conv.append(f'cdef int _n_{n} = max(<int>({csize(OUT_SIZES[p.name][n])}), 0)')
+            conv.append(f'cdef cnp.ndarray _a_{n} = _empty(NPY_INT32, max(_n_{n}, 1), -1)')
+            cargs += [f'_n_{n}', f'<int*>cnp.PyArray_DATA(_a_{n})']
+            results.append((a, f'(_a_{n}[:_n_{n}] != 0)'))
+        elif k == 'ptr_inout':
+            conv.append(f'cdef cnp.ndarray _a_{n} = _rows(np.array({pn}, dtype=np.float64 if {dt} == NPY_DOUBLE '
+                        f'else np.int32), {dt}, 1)')
+            cargs.append(f'<{ct}*>cnp.PyArray_DATA(_a_{n})')
+            results.append((a, f'_a_{n}'))
+        elif k == 'ptr_out' and a.rank == 2:
+            conv.append(f'cdef int _n_{n} = max(<int>({csize(OUT_SIZES[p.name][n])}), 1)')
+            conv.append(f'cdef cnp.ndarray _a_{n} = np.zeros((_n_{n}, {extent(a.dims[0])}), '
+                        f'dtype=np.float64 if {dt} == NPY_DOUBLE else np.int32)')
+            cargs.append(f'<{ct}*>cnp.PyArray_DATA(_a_{n})')
+            results.append((a, f'_a_{n}'))
+        elif k == 'str_in':
             conv.append(f'cdef bytes _b_{n} = _b({pn})')
             cdefs.append(f'cdef const char *_c_{n} = _b_{n}')
             cargs.append(f'_c_{n}')
@@ -986,7 +1248,7 @@ def cython_method(p, spy, where):
                     results.append((a, f'_a_{n}'))
             cargs.append(f'<{ct}*>cnp.PyArray_DATA(_a_{n})')
         elif k.startswith('arr_'):
-            dims = ', '.join(extent(d) if extent(d).lstrip('-').isdigit() else f'_c_{d}' for d in a.dims)
+            dims = cdims(a.dims)
             dt = 'NPY_DOUBLE' if a.ftype == 'real' else 'NPY_INT32'
             ct = 'double' if a.ftype == 'real' else 'int'
             if k == 'arr_out':
@@ -1009,8 +1271,8 @@ def cython_method(p, spy, where):
         elif k == 'ptr_out':
             dt = 'NPY_DOUBLE' if a.ftype == 'real' else 'NPY_INT32'
             ct = 'double' if a.ftype == 'real' else 'int'
-            size = re.sub(r'\{(\w+)\}', r'_c_\1', OUT_SIZES[p.name][a.name])
-            conv.append(f'cdef cnp.ndarray _a_{n} = _empty({dt}, max(<int>({size}), 0), -1)')
+            size = csize(OUT_SIZES[p.name][a.name])
+            conv.append(f'cdef cnp.ndarray _a_{n} = _empty({dt}, max(<int>({size}), 1), -1)')
             cargs.append(f'<{ct}*>cnp.PyArray_DATA(_a_{n})')
             results.append((a, f'_a_{n}'))
         elif k == 'ptr_in':
@@ -1066,7 +1328,10 @@ def cython_method(p, spy, where):
     lines += [c.replace('cdef const char *', 'cdef const char *') for c in strptrs]
     lines += [c for c in conv if not c.startswith('cdef bytes')]
     callexpr = f'{p.cname}({", ".join(cargs)})'
+    lines = checks + lines
     if where == 'ctx':
+        if hooks:
+            lines.append('_hk = self._gf_hooks_on(' + ', '.join(f'{k}={v}' for k, v in hooks.items()) + ')')
         lines.append('self._enter()')
         lines.append('try:')
         if LONG_CALLS.search(p.name):
@@ -1077,6 +1342,8 @@ def cython_method(p, spy, where):
         lines.append('    if _st:')
         lines.append('        self._raise()')
         lines.append('finally:')
+        if hooks:
+            lines.append('    self._gf_hooks_off()')
         lines.append('    self._leave()')
     elif where == 'spice':
         lines.append('self._check()')
@@ -1087,7 +1354,19 @@ def cython_method(p, spy, where):
         lines.append('        self._raise()')
     else:
         lines.append(f'{callexpr}')
-    ret = [r for a, r in results]
+    drop = set(DROP_OUTPUTS.get(p.name, ()))
+    sl = SLICE.get(p.name, {})
+    names_out = {a.name for a in allargs}
+    ret = []
+    for a, r in results:
+        if a.name in drop and a.kind != 'num_out':
+            continue
+        if a.name in sl:
+            m = sl[a.name]
+            r = f'{r}[:{"_c_" + m if m in names_out else m}]'
+        if a.wrap:
+            r = f'{a.wrap}._from_array({r})'
+        ret.append(r)
     if found:
         lines.append(f'return _found({p.name!r}, ({", ".join(ret)}{"," if len(ret) == 1 else ""}), _c_{found.name} != 0)')
     elif not ret:
@@ -1106,6 +1385,290 @@ def cython_method(p, spy, where):
         out.append(f'{ind}    {l}')
     out.append('')
     return '\n'.join(out), params, aligned, vec
+
+
+# The vectorized routines (SpiceyPy's cyice `_v` functions): the arguments
+# looped over together (numbers, rows of vectors, or strings), broadcast as
+# NumPy broadcasts (a single value is used for every element).
+VECTORIZED = {
+    'ckgp': ('sclkdp',), 'ckgpav': ('sclkdp',), 'convrt': ('x',), 'deltet': ('epoch',), 'et2lst': ('et',),
+    'et2utc': ('et',), 'etcal': ('et',), 'fovray': ('et',), 'fovtrg': ('et',), 'lspcn': ('et',),
+    'pxform': ('et',), 'scdecd': ('sclkdp',), 'scencd': ('sclkch',), 'sce2c': ('et',), 'sce2s': ('et',),
+    'scs2e': ('sclkch',), 'sct2e': ('sclkdp',), 'spkapo': ('et',), 'spkcpo': ('et',), 'spkcpt': ('et',),
+    'spkcvo': ('et',), 'spkcvt': ('et',), 'spkez': ('et',), 'spkezp': ('et',), 'spkezr': ('et',),
+    'spkgeo': ('et',), 'spkgps': ('et',), 'spkpos': ('et',), 'spkpvn': ('et',), 'spkssb': ('et',),
+    'str2et': ('timstr',), 'sincpt': ('et',), 'subpnt': ('et',), 'subslr': ('et',), 'sxform': ('et',),
+    'timout': ('et',), 'trgsep': ('et',), 'unitim': ('epoch',), 'utc2et': ('utcstr',),
+    'azlcpo': ('et', 'obspos'), 'occult': ('et',), 'phaseq': ('et',), 'tangpt': ('et',),
+    'conics': ('elts', 'et'), 'evsgp4': ('et', 'elems'), 'oscelt': ('state', 'et'),
+    'illumf': ('et', 'spoint'), 'illumg': ('et', 'spoint'), 'ilumin': ('et', 'spoint'),
+    'xfmsta': ('istate',), 'srfrec': ('lon', 'lat'),
+    'georec': ('lon', 'lat', 'alt'), 'pgrrec': ('lon', 'lat', 'alt'),
+    'azlrec': ('range', 'az', 'el'), 'radrec': ('range', 'ra', 'dec'),
+    'cyllat': ('r', 'clon', 'z'), 'cylrec': ('r', 'clon', 'z'), 'cylsph': ('r', 'clon', 'z'),
+    'latcyl': ('radius', 'lon', 'lat'), 'latrec': ('radius', 'lon', 'lat'), 'latsph': ('radius', 'lon', 'lat'),
+    'sphcyl': ('radius', 'colat', 'slon'), 'sphlat': ('r', 'colat', 'slon'), 'sphrec': ('r', 'colat', 'slon'),
+    'recazl': ('rectan',), 'reccyl': ('rectan',), 'recgeo': ('rectan',), 'reclat': ('rectan',),
+    'recpgr': ('rectan',), 'recrad': ('rectan',), 'recsph': ('rectan',),
+    # PepperyPy's, beyond cyice's: propagation, frames, aberration-corrected
+    # states, SCLK, ellipsoid geometry, Jacobians, rotations
+    'prop2b': ('pvinit', 'dt'), 'eqncpv': ('et',), 'dpspce': ('et',),
+    'tipbod': ('et',), 'tisbod': ('et',), 'bodeul': ('et',), 'pxfrm2': ('etfrom', 'etto'),
+    'ckfrot': ('et',), 'ckfxfm': ('et',),
+    'spkltc': ('et', 'stobs'), 'spkacs': ('et',), 'spkaps': ('et', 'stobs', 'accobs'), 'spkapp': ('et', 'sobs'),
+    'sce2t': ('et',),
+    'nearpt': ('positn',), 'surfpt': ('positn', 'u'), 'surfnm': ('point',), 'npedln': ('linept', 'linedr'),
+    'edpnt': ('p',),
+    'drdlat': ('r', 'lon', 'lat'), 'drdcyl': ('r', 'clon', 'z'), 'drdsph': ('r', 'colat', 'slon'),
+    'drdgeo': ('lon', 'lat', 'alt'), 'drdpgr': ('lon', 'lat', 'alt'), 'drdazl': ('range', 'az', 'el'),
+    'dlatdr': ('x', 'y', 'z'), 'dcyldr': ('x', 'y', 'z'), 'dsphdr': ('x', 'y', 'z'), 'dgeodr': ('x', 'y', 'z'),
+    'dpgrdr': ('x', 'y', 'z'), 'dazldr': ('x', 'y', 'z'),
+    'axisar': ('axis', 'angle'), 'rotate': ('angle',), 'rotvec': ('v1', 'angle'),
+    'eul2m': ('angle3', 'angle2', 'angle1'), 'eul2xf': ('eulang',), 'stelab': ('pobj', 'vobs'),
+    'stlabx': ('pobj', 'vobs'),
+    # over matrices (n, 3, 3) or (n, 6, 6)
+    'm2eul': ('r',), 'xf2eul': ('xform',), 'm2q': ('r',), 'q2m': ('q',), 'xf2rav': ('xform',),
+    'rav2xf': ('rot', 'av'), 'raxisa': ('matrix',), 'invstm': ('mat',),
+}
+# Those beyond SpiceyPy's cyice (the docs say so).
+VEC_PEPPER = {'prop2b', 'eqncpv', 'dpspce', 'tipbod', 'tisbod', 'bodeul', 'pxfrm2', 'ckfrot', 'ckfxfm', 'spkltc',
+              'spkacs', 'spkaps', 'spkapp', 'sce2t', 'nearpt', 'surfpt', 'surfnm', 'npedln', 'edpnt', 'drdlat',
+              'drdcyl', 'drdsph', 'drdgeo', 'drdpgr', 'drdazl', 'dlatdr', 'dcyldr', 'dsphdr', 'dgeodr', 'dpgrdr',
+              'dazldr', 'axisar', 'rotate', 'rotvec', 'eul2m', 'eul2xf', 'stelab', 'stlabx', 'm2eul', 'xf2eul',
+              'm2q', 'q2m', 'xf2rav', 'rav2xf', 'raxisa', 'invstm'}
+# Routines evaluated at every pair (epoch, vector) of their two arrays, as
+# cyice does: results (n epochs, m vectors, ...).
+VEC_OUTER = {'azlcpo', 'illumf', 'illumg', 'ilumin'}
+# Coordinates returned as an (n, 3) array (as cyice does), not three arrays.
+VEC_STACKED = {'cyllat', 'cylsph', 'latcyl', 'latsph', 'recazl', 'reccyl', 'recgeo', 'reclat', 'recpgr',
+               'recrad', 'recsph', 'sphcyl', 'sphlat'}
+VEC_STR_SIZE = 256   # the buffer of each string result of a vectorized routine
+
+
+def cython_vec_method(p, spy):
+    """`<name>_v`: the routine at each element of arrays, in a C loop over
+    PEPPER's C interface with the GIL released. The other arguments are
+    those of the scalar function; the results are arrays whose first
+    dimension is the number of elements (a found flag is returned last, as
+    an array). (method code, module-level function), or None if the
+    routine's arguments do not allow it."""
+    vnames = VECTORIZED.get(p.name)
+    if not vnames or p.owner not in ('ctx', 'pure'):
+        return None
+    allargs = p.args + ([p.result] if p.result else [])
+    if any(a.kind not in ('str_in', 'num_in', 'arr_in', 'num_out', 'arr_out', 'str_out') for a in allargs):
+        return None
+    vecs = [next((a for a in p.args if a.name == v), None) for v in vnames]
+    if None in vecs or any(a.kind not in ('num_in', 'str_in', 'arr_in') or
+                           (a.kind == 'arr_in' and not all(extent(d).isdigit() for d in a.dims))
+                           for a in vecs):
+        return None
+    params, aligned, _ = python_params(p, spy)
+    pymap = {id(a): pn for pn, a, d in params if a is not None}
+    if any(id(a) not in pymap for a in vecs):
+        return None
+    ctx = p.owner == 'ctx'
+    outer = p.name in VEC_OUTER and len(vecs) == 2
+
+    def index(a):
+        """The element of a looped argument at step _i of the loop."""
+        if not outer:
+            return '_i'
+        return '(_i // _n2)' if a is vecs[0] else '(_i % _n2)'
+
+    checks, decl, conv, cargs, results = [], [], [], (['self._ptr'] if ctx else []), []
+    sizes = []      # the number of elements of each looped argument
+    found = None
+    nout = []
+    have_n = False
+    stacked = None
+    for a in allargs:
+        n = a.name
+        pn = pymap.get(id(a), n)
+        k = a.kind
+        t = CTYPE.get(a.ftype)
+        ct = 'double' if a.ftype == 'real' else 'int'
+        npt = 'np.float64' if a.ftype == 'real' else 'np.int32'
+        if a in vecs and k == 'num_in':
+            conv.append(f'cdef cnp.ndarray _v_{n} = np.ascontiguousarray({pn}, dtype={npt}).reshape(-1)')
+            conv.append(f'cdef const {ct} *_pv_{n} = <const {ct}*>cnp.PyArray_DATA(_v_{n})')
+            conv.append(f'cdef Py_ssize_t _s_{n} = 0 if _v_{n}.shape[0] == 1 else 1')
+            sizes.append(f'_v_{n}.shape[0]')
+            cargs.append(f'_pv_{n}[{index(a)} * _s_{n}]' + (' + 1' if n in ZERO_BASED_IN.get(p.name, ()) else ''))
+        elif a in vecs and k == 'arr_in' and a.rank == 2:
+            # matrices (n, rows, columns), each passed in Fortran order
+            r_, c_ = extent(a.dims[0]), extent(a.dims[1])
+            conv.append(f'cdef cnp.ndarray _v_{n} = np.asarray({pn}, dtype={npt})')
+            conv.append(f'if _v_{n}.ndim == 2: _v_{n} = _v_{n}.reshape(1, _v_{n}.shape[0], _v_{n}.shape[1])')
+            conv.append(f'if _v_{n}.ndim != 3 or _v_{n}.shape[1] != {r_} or _v_{n}.shape[2] != {c_}: '
+                        f'raise ValueError("{pn}: expected {r_}x{c_} matrices")')
+            conv.append(f'_v_{n} = np.ascontiguousarray(_v_{n}.transpose(0, 2, 1))')
+            conv.append(f'cdef const {ct} *_pv_{n} = <const {ct}*>cnp.PyArray_DATA(_v_{n})')
+            conv.append(f'cdef Py_ssize_t _s_{n} = 0 if _v_{n}.shape[0] == 1 else {int(r_) * int(c_)}')
+            sizes.append(f'_v_{n}.shape[0]')
+            cargs.append(f'_pv_{n} + {index(a)} * _s_{n}')
+        elif a in vecs and k == 'arr_in':
+            m = extent(a.dims[0])
+            conv.append(f'cdef cnp.ndarray _v_{n} = np.ascontiguousarray({pn}, dtype={npt})')
+            conv.append(f'if _v_{n}.ndim == 1: _v_{n} = _v_{n}.reshape(1, -1)')
+            conv.append(f'if _v_{n}.ndim != 2 or _v_{n}.shape[1] != {m}: '
+                        f'raise ValueError("{pn}: expected vectors of {m} values")')
+            conv.append(f'cdef const {ct} *_pv_{n} = <const {ct}*>cnp.PyArray_DATA(_v_{n})')
+            conv.append(f'cdef Py_ssize_t _s_{n} = 0 if _v_{n}.shape[0] == 1 else {m}')
+            sizes.append(f'_v_{n}.shape[0]')
+            cargs.append(f'_pv_{n} + {index(a)} * _s_{n}')
+        elif a in vecs:     # strings
+            checks.append(f'if np.ndim({pn}) != 1: raise ValueError("{pn}: expected a 1-D array of strings")')
+            conv.append(f'cdef bytes _bv_{n}')
+            conv.append(f'cdef int _nv_{n}, _wv_{n}')
+            conv.append(f'_bv_{n}, _nv_{n}, _wv_{n} = _strblock({pn})')
+            conv.append(f'cdef const char *_pv_{n} = _bv_{n}')
+            conv.append(f'cdef Py_ssize_t _s_{n} = 0 if _nv_{n} == 1 else _wv_{n}')
+            sizes.append(f'_nv_{n}')
+            cargs.append(f'_pv_{n} + _i * _s_{n}')
+        elif k == 'str_in':
+            if n in EMPTY_CHECKS.get(p.name, ()):
+                checks.append(f'if not {pn}: _empty_string({p.name!r}, {n!r})')
+            conv.append(f'cdef bytes _b_{n} = _b({pn})')
+            conv.append(f'cdef const char *_c_{n} = _b_{n}')
+            cargs.append(f'_c_{n}')
+        elif k == 'num_in':
+            if a.ftype == 'logical':
+                decl.append(f'cdef int _c_{n} = 1 if {pn} else 0')
+            elif n in ZERO_BASED_IN.get(p.name, ()):
+                decl.append(f'cdef {t} _c_{n} = {pn} + 1')
+            else:
+                decl.append(f'cdef {t} _c_{n} = {pn}')
+            cargs.append(f'_c_{n}')
+        elif k == 'arr_in':
+            conv.append(f'cdef cnp.ndarray _a_{n} = _input({pn}, {"NPY_DOUBLE" if a.ftype == "real" else "NPY_INT32"}, '
+                        f'{cdims(a.dims)}{"" if a.rank == 2 else ", -1"}, False)')
+            conv.append(f'cdef const {ct} *_p_{n} = <const {ct}*>cnp.PyArray_DATA(_a_{n})')
+            cargs.append(f'_p_{n}')
+        else:
+            if not sizes:
+                return None     # (outputs follow the inputs)
+            if not have_n:
+                if outer:
+                    conv.append(f'cdef Py_ssize_t _n1 = {sizes[0]}')
+                    conv.append(f'cdef Py_ssize_t _n2 = {sizes[1]}')
+                    conv.append('cdef Py_ssize_t _n = _n1 * _n2')
+                else:
+                    conv.append(f'cdef Py_ssize_t _n = _vlen([{", ".join(sizes)}])')
+                have_n = True
+            if k == 'num_out' and p.name in VEC_STACKED:
+                # the coordinates go straight into the columns of one (n, k) array
+                if stacked is None:
+                    stacked = [a2 for a2 in allargs if a2.kind == 'num_out']
+                    conv.append(f'cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), {len(stacked)}), dtype={npt})')
+                    conv.append(f'cdef {t} *_q_stack = <{t}*>cnp.PyArray_DATA(_o_stack)')
+                    results.append('_o_stack[:_n]')
+                cargs.append(f'_q_stack + _i * {len(stacked)} + {stacked.index(a)}')
+            elif k == 'num_out':
+                conv.append(f'cdef cnp.ndarray _o_{n} = np.empty(max(_n, 1), dtype={npt})')
+                conv.append(f'cdef {t} *_q_{n} = <{t}*>cnp.PyArray_DATA(_o_{n})')
+                cargs.append(f'_q_{n} + _i')
+                r = f'_o_{n}[:_n]'
+                if a.ftype == 'logical':
+                    r = f'({r} != 0)'
+                elif n in ZERO_BASED_OUT.get(p.name, ()):
+                    r = f'({r} - 1)'
+                if n in ('found', 'isname') and a.ftype == 'logical':
+                    found = r
+                else:
+                    results.append(r)
+                    nout.append(a)
+            elif k == 'arr_out':
+                ext = [extent(d) for d in a.dims]
+                if not all(x.isdigit() for x in ext):
+                    return None
+                size = math.prod(int(x) for x in ext)
+                conv.append(f'cdef cnp.ndarray _o_{n} = np.empty((max(_n, 1), {size}), dtype={npt})')
+                conv.append(f'cdef {ct} *_q_{n} = <{ct}*>cnp.PyArray_DATA(_o_{n})')
+                cargs.append(f'_q_{n} + _i * {size}')
+                if a.rank == 1:
+                    results.append(f'_o_{n}[:_n]')
+                else:   # Fortran's column-major matrices: (n, rows, columns)
+                    results.append(f'np.ascontiguousarray(_o_{n}[:_n].reshape(_n, {ext[1]}, {ext[0]})'
+                                   f'.transpose(0, 2, 1))')
+            elif k == 'str_out':
+                conv.append(f'cdef bytearray _ba_{n} = bytearray(max(_n, 1) * {VEC_STR_SIZE})')
+                conv.append(f'cdef char *_q_{n} = _ba_{n}')
+                cargs += [str(VEC_STR_SIZE), f'_q_{n} + _i * {VEC_STR_SIZE}']
+                results.append(f'np.array(_strs(_ba_{n}, _n, {VEC_STR_SIZE}), dtype=np.str_)')
+    if outer:   # (n epochs, m vectors, ...)
+        results = [f'_outer({r}, _n1, _n2)' for r in results]
+        found = f'_outer({found}, _n1, _n2)' if found else None
+    numeric = [pymap[id(a)] for a in vecs if a.kind == 'num_in']
+    if numeric and len(numeric) == len(vecs):
+        checks.append(f'if {" and ".join(f"np.ndim({x}) == 0" for x in numeric)}: '
+                      f'raise ValueError("expected an array (a scalar is {p.name}\'s)")')
+    lines = checks + decl + ['cdef Py_ssize_t _i', 'cdef int _st = 0'] + conv
+    call = f'{p.cname}({", ".join(cargs)})'
+    if ctx:
+        lines += ['self._enter()', 'try:', '    with nogil:', '        for _i in range(_n):',
+                  f'            _st = {call}', '            if _st:', '                break',
+                  '    if _st:', '        self._raise()', 'finally:', '    self._leave()']
+    else:
+        lines += ['with nogil:', '    for _i in range(_n):', f'        {call}']
+    if found:   # SpiceyPy's (cyice's) found handling
+        lines.append(f'return _found_v({p.name!r}, ({", ".join(results)},), {found})')
+    else:
+        lines.append(f'return {results[0]}' if len(results) == 1 else f'return {", ".join(results)}')
+    # the looped arguments and the dimensions of one element, for the dispatch
+    vinfo = [(pymap[id(a)], a.rank if a.kind == 'arr_in' else 0) for a in vecs]
+    vlist = ', '.join(f'`{pymap[id(a)]}`' for a in vecs)
+    doc = (f'`{p.name}` at each element of {vlist} (arrays{", broadcast together" if len(vecs) > 1 else ""}), '
+           f'in a C loop with the GIL released'
+           f'{" (PepperyPy\'s; SpiceyPy\'s cyice has none)" if p.name in VEC_PEPPER else f" (SpiceyPy\'s cyice `{p.name}_v`)"}.\n\n'
+           f'The other arguments are those of `{p.name}`. The results are arrays whose first dimension is the '
+           f'number of elements. {"A found flag false at any element raises NotFoundError (the flags are returned last under `no_found_check`)." if found else ""}'.rstrip())
+    psig = ', '.join(f'{pn}={d}' if d is not None else pn for pn, a, d in params)
+    if ctx:
+        out = [f'    def {p.name}_v({", ".join(["self"] + ([psig] if psig else []))}):',
+               f'        """{doc}"""'.replace('\n', '\n        ')]
+        out += ['        ' + l for l in lines]
+        out.append('')
+        module = (f'def {p.name}_v({psig}):\n'
+                  f'    """{doc}"""\n'
+                  f'    return _context().{p.name}_v({", ".join(pn for pn, a, d in params)})\n')
+        return '\n'.join(out), module, vinfo
+    out = [f'def {p.name}_v({psig}):', f'    """{doc}"""'.replace('\n', '\n    ')]
+    out += ['    ' + l for l in lines]
+    out.append('')
+    return None, '\n'.join(out), vinfo
+
+
+def dispatcher(p, params, vinfo, scalar, doc):
+    """`<name>`: `<name>_v` when a looped argument is an array of elements,
+    else the scalar routine (`scalar`: the call expression's function), as
+    SpiceyPy's cyice dispatches."""
+    sig = ', '.join(f'{pn}={d}' if d is not None else pn for pn, a, d in params)
+    looped = {pn for pn, d in vinfo}
+    call = ', '.join(pn for pn, a, d in params)
+    scall = ', '.join(f'_sc({pn})' if pn in looped else pn for pn, a, d in params)
+    test = ' or '.join(f'_isvec({pn}, {d})' for pn, d in vinfo)
+    names = ', '.join(f'`{pn}`' for pn, d in vinfo)
+    doc = doc.rstrip() + (f'\n\n    With arrays for {names}: `{p.name}_v`. `{p.name}_s` is always the scalar form.')
+    return (f'def {p.name}({sig}):\n'
+            f'    """{doc}"""\n'
+            f'    if {test}:\n'
+            f'        return {p.name}_v({call})\n'
+            f'    return {scalar}({scall})\n')
+
+
+def inline_dispatcher(p, params, vinfo, code):
+    """`dispatcher` for a routine without a context: the scalar function's
+    own body after the test (no second Python call)."""
+    a = code.index('"""') + 3
+    b = code.index('"""', a)
+    names = ', '.join(f'`{pn}`' for pn, d in vinfo)
+    extra = f'\n\n    With arrays for {names}: `{p.name}_v`. `{p.name}_s` is always the scalar form.'
+    call = ', '.join(pn for pn, a_, d in params)
+    test = ' or '.join(f'_isvec({pn}, {d})' for pn, d in vinfo)
+    lines = [f'    if {test}:', f'        return {p.name}_v({call})']
+    lines += [f'    {pn} = _sc({pn})' for pn, d in vinfo]
+    return code[:b].rstrip() + extra + '"""\n' + '\n'.join(lines) + code[b + 3:]
 
 
 def module_function(p, params, where, doc):
@@ -1136,7 +1699,7 @@ def main():
     skipped = {}
     for group, procs, excl in (('ctx', ctx, EXCLUDE_CTX), ('spice', spice, EXCLUDE_SPICE), ('pure', math_, set())):
         for name, p in sorted(procs.items()):
-            if name.startswith('zz') or name in excl or keyword.iskeyword(name):
+            if (name.startswith('zz') and name not in ZZ_WRAPPED) or name in excl or keyword.iskeyword(name):
                 continue
             if name in wrapped:
                 continue
@@ -1212,6 +1775,7 @@ def main():
                      '    """The kernel changes of an instance (generated)."""', '']
     functions = ['# Generated by tools/gen_capi.py; do not edit. The module-level functions.', '']
     info = {}
+    vectorized = []
     for p in wrapped.values():
         if p.name in NO_PYTHON:
             continue
@@ -1220,12 +1784,30 @@ def main():
         doc = py_doc(p, params, aligned, None, None)
         if p.owner == 'ctx':
             ctx_methods.append(code)
-            functions.append(module_function(p, params, 'ctx', code.split('"""')[1].replace('\n        ', '\n    ')))
+            fdoc = code.split('"""')[1].replace('\n        ', '\n    ')
+            v = cython_vec_method(p, spy)
+            if v:
+                ctx_methods.append(v[0])
+                functions.append(v[1])
+                # <name>_s, and <name> dispatching to <name>_s or <name>_v
+                functions.append(module_function(p, params, 'ctx', fdoc).replace(
+                    f'def {p.name}(', f'def {p.name}_s(', 1))
+                functions.append(dispatcher(p, params, v[2], f'_context().{p.name}', fdoc))
+                vectorized.append(p.name)
+            else:
+                functions.append(module_function(p, params, 'ctx', fdoc))
         elif p.owner == 'spice':
             spice_methods.append(code)
             functions.append(module_function(p, params, 'spice', code.split('"""')[1].replace('\n        ', '\n    ')))
         else:
-            functions.append(code)
+            v = cython_vec_method(p, spy)
+            if v:
+                functions.append(code.replace(f'def {p.name}(', f'def {p.name}_s(', 1))
+                functions.append(v[1])
+                functions.append(inline_dispatcher(p, params, v[2], code))
+                vectorized.append(p.name)
+            else:
+                functions.append(code)
     for name, (value, doc) in sorted(consts.items()):
         functions.append(f'def {name}():\n    """{doc or name} (a constant)."""\n    return {value!r}\n')
     (pkg / '_context_methods.pxi').write_text('\n'.join(ctx_methods))
@@ -1240,6 +1822,8 @@ def main():
         f'GENERATED = {names!r}\n'
         '#: Those whose Python signature follows SpiceyPy\'s.\n'
         f'ALIGNED = {sorted(n for n, (p, al, v) in info.items() if al)!r}\n'
+        '#: The routines with a vectorized form (<name>_v, a C loop).\n'
+        f'VECTORIZED = {sorted(vectorized)!r}\n'
         '#: Not generated, and why.\n'
         f'SKIPPED = {dict(sorted(skipped.items()))!r}\n')
     print(f'{len(wrapped)} wrapped ({sum(1 for p in wrapped.values() if p.owner == "ctx")} context, '

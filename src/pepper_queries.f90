@@ -391,8 +391,12 @@ contains
    !> A segment is identified by its file and its addresses in the file,
    !> from the unpacked descriptor. (The packed descriptor's integer
    !> components are not numbers: as reals they are denormals or NaNs, which
-   !> do not compare as their bits do.)
+   !> do not compare as their bits do.) The addresses are the last word of
+   !> an SPK descriptor (ND = 2, NI = 6): only that word is unpacked to look
+   !> a segment up, as it is done at every epoch; the whole descriptor only
+   !> for a new segment.
    recursive integer(ip) function segment_slot ( ctx, q, handle, descr ) result ( k )
+      use pepper_packing, only: unpack_integers
       class(pepper_context), intent(inout) :: ctx  !! the context
       type(state_query), intent(inout) :: q  !! the query
       integer(ip), intent(in) :: handle  !! the segment's file
@@ -401,12 +405,14 @@ contains
       real(wp) :: dc(2)
       real(wp) :: trailer(4)
       integer(ip) :: ic(6)
-      call dafus ( ctx, descr, 2, 6, dc, ic )
+      integer(ip) :: addr(2)
+      call unpack_integers ( descr(5:5), 2, addr )
       do k = 1, q%nsegs
          if (       q%segs(k)%handle == handle &
-              .and. q%segs(k)%begin  == ic(5) &
-              .and. q%segs(k)%last   == ic(6) ) return
+              .and. q%segs(k)%begin  == addr(1) &
+              .and. q%segs(k)%last   == addr(2) ) return
       end do
+      call dafus ( ctx, descr, 2, 6, dc, ic )
       if ( .not. allocated ( q%segs ) ) allocate ( q%segs(8) )
       if ( q%nsegs == size(q%segs) ) then
          allocate ( tmp(2*size(q%segs)) )

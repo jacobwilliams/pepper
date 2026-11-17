@@ -33,6 +33,9 @@ PepperyPy is Cython extension modules over PEPPER's C interface (no
 ctypes): a call costs a fraction of a microsecond, 3 to 5 times less than
 SpiceyPy's (see Speed).
 
+Moving code from SpiceyPy: see the [porting guide](../guides/spiceypy_porting.md)
+(what differs, and why).
+
 PepperyPy is not SpiceyPy, and is not supported by SpiceyPy's maintainers,
 nor by NAIF. See [LICENSE](LICENSE).
 
@@ -140,6 +143,19 @@ The results are SPKEZR's, PXFORM's and SXFORM's to the last bit. Where
 SpiceyPy accepts a list of epochs (`spkezr`, `spkpos`, `et2utc`, `str2et`,
 ...), so does PepperyPy, with the same result shapes.
 
+For 117 routines there are also `<name>_v` functions: the routine at each
+element of arrays, in a C loop with the GIL released
+(`spice.subpnt_v(method, target, ets, ...)`, `ctx.reclat_v(points)`,
+`spice.m2q_v(matrices)`). 71 are SpiceyPy's cyice's (the SPK and CK
+queries, time and SCLK conversions, geometry, coordinate conversions);
+46 are PepperyPy's (propagation, frames, aberration corrections,
+ellipsoids, Jacobians, rotations and matrices; see the
+[list](../guides/spiceypy_porting.md#vectorized-functions-beyond-cyice)). For each, `<name>_s` is the scalar function and
+`<name>` dispatches to either by its arguments, as cyice does: code
+written for cyice runs with `import pepperypy as cyice` (see the
+[porting guide](../guides/spiceypy_porting.md#cyice-import-pepperypy-as-cyice),
+and its [speed comparisons](../guides/spiceypy_porting.md#speed)).
+
 ## Results of any size
 
 PEPPER's procedures that return results of any size are methods and
@@ -231,35 +247,37 @@ loader='NAME')` names one. See the [guide](../guides/ephemeris_data.md#from-c-an
 
 ## Speed
 
-`pixi run -e python py-bench` (Apple M-series, 10 CPUs, Python 3.13 with the
-GIL, SpiceyPy 8.3.0 with CSPICE N0067; DE405 subset, 20000 random epochs;
-µs per epoch):
+`pixi run -e python py-bench` (Apple M5, 10 CPUs, Python 3.13 with the GIL,
+SpiceyPy 8.3.0 with CSPICE N0067; DE405 subset, 20000 random epochs; µs per
+epoch, the best of five runs):
 
 | Operation | SpiceyPy | PepperyPy | Speedup | PepperyPy, kernels in memory | Speedup |
 |---|--:|--:|--:|--:|--:|
-| `spkezr` Moon from Earth, J2000, NONE, one call per epoch | 2.87 | 0.84 | 3.4× | 0.63 | 4.6× |
-| `spkezr` Mars barycenter from Earth, ECLIPJ2000, LT+S, one call per epoch | 4.86 | 1.69 | 2.9× | 1.28 | 3.8× |
-| `pxform` J2000 to IAU_EARTH, one call per epoch | 2.05 | 0.72 | 2.8× | | |
-| `str2et` | 6.39 | 4.21 | 1.5× | | |
-| `vnorm` | 0.60 | 0.21 | 2.9× | | |
-| `spkezr` Moon, an array of epochs | 2.15 | 0.88 | 2.4× | 0.73 | 2.9× |
-| Moon from Earth: prepared query, one batch (SpiceyPy: an array of epochs) | 2.15 | 0.19 | 11× | 0.13 | 17× |
-| Mars barycenter, LT+S: prepared query, one batch (SpiceyPy: one call per epoch) | 4.86 | 0.61 | 8.0× | 0.61 | 8.0× |
-| J2000 to IAU_EARTH: prepared rotation, one batch (SpiceyPy: one call per epoch) | 2.05 | 0.32 | 6.4× | | |
+| `spkezr` Moon from Earth, J2000, NONE, one call per epoch | 2.69 | 0.89 | 3.0× | 0.60 | 4.5× |
+| `spkezr` Mars barycenter from Earth, ECLIPJ2000, LT+S, one call per epoch | 4.45 | 1.69 | 2.6× | 1.26 | 3.5× |
+| `pxform` J2000 to IAU_EARTH, one call per epoch | 1.83 | 0.71 | 2.6× | | |
+| `str2et` | 5.67 | 3.75 | 1.5× | | |
+| `vnorm` | 0.53 | 0.19 | 2.8× | | |
+| `spkezr` Moon, an array of epochs (PepperyPy: `spkezr_v`) | 1.97 | 0.19 | 10× | 0.13 | 16× |
+| Moon from Earth: prepared query, one batch (SpiceyPy: an array of epochs) | 1.97 | 0.18 | 11× | 0.13 | 15× |
+| Mars barycenter, LT+S: prepared query, one batch (SpiceyPy: one call per epoch) | 4.45 | 0.62 | 7.2× | 0.60 | 7.4× |
+| J2000 to IAU_EARTH: prepared rotation, one batch (SpiceyPy: one call per epoch) | 1.83 | 0.31 | 5.9× | | |
 
 SpiceyPy has no prepared queries: their rows compare with its fastest way
-to compute the same results.
+to compute the same results. For PepperyPy's vectorized functions against
+SpiceyPy's cyice, see the
+[porting guide](../guides/spiceypy_porting.md#speed).
 
 Threads (Mars barycenter, LT+S, kernels in memory; the epochs split among
 the threads, each with its own context). The speedups are over SpiceyPy's
-4.86 µs, one call per epoch, from one thread (CSPICE is not thread-safe):
+4.45 µs, one call per epoch, from one thread (CSPICE is not thread-safe):
 
 | Threads | one call per epoch | Speedup | prepared batches | Speedup |
 |--:|--:|--:|--:|--:|
-| 1 | 1.19 | 4.1× | 0.62 | 7.8× |
-| 2 | 1.19 | 4.1× | 0.29 | 17× |
-| 4 | 1.23 | 4.0× | 0.20 | 24× |
-| 8 | 1.19 | 4.1× | 0.16 | 30× |
+| 1 | 1.18 | 3.8× | 0.60 | 7.4× |
+| 2 | 1.18 | 3.8× | 0.31 | 14× |
+| 4 | 1.18 | 3.8× | 0.16 | 28× |
+| 8 | 1.18 | 3.8× | 0.13 | 33× |
 
 - A call keeps the GIL unless it is a long one (GF searches, geometry,
   DSK, EK, loading and coverage, batches of a prepared query): releasing
@@ -271,6 +289,10 @@ the threads, each with its own context). The speedups are over SpiceyPy's
 - About 0.4 µs of a short call is Python's: the call, finding the thread's
   context, encoding the strings, making the result arrays. A prepared query
   pays it once per batch.
+- PEPPER is built without fused multiply-adds (`-ffp-contract=off`), for
+  SPICELIB's roundings on every platform. On arm64 this costs 6–10% in
+  batches of SPK states (Chebyshev evaluations); calls one at a time hardly
+  notice it.
 
 ## Differences from SpiceyPy
 

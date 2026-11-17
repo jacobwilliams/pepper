@@ -1821,7 +1821,7 @@ contains
 !     The two integers of DPVALU's bits (PEPPER: UNPACK_INTEGERS;
 !     SPICELIB: an EQUIVALENCE).
 !
-      iequiv = unpack_integers ( [ dpvalu ], 2 )
+      call unpack_integers ( [ dpvalu ], 2, iequiv )
 
 !
 !     Examine the integer pairs, to identify the binary

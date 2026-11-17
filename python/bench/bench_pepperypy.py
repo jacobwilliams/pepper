@@ -1,5 +1,6 @@
 """PepperyPy against SpiceyPy: the cost of a call from Python (one at a
-time, vectorized, prepared queries in batches) and queries from threads.
+time, vectorized, prepared queries in batches) and queries from threads;
+then PepperyPy's vectorized functions (<name>_v) against SpiceyPy's cyice.
 
     pixi run -e python py-bench
 
@@ -18,6 +19,11 @@ import numpy as np
 import pepperypy
 import spiceypy
 from spiceypy.tests import gettestkernels as gtk
+
+try:
+    from spiceypy import cyice
+except ImportError:     # SpiceyPy before 8
+    cyice = None
 
 
 def best(f, n, repeat=5):
@@ -72,7 +78,7 @@ def main():
     row('spkezr Moon from Earth, J2000, NONE (an array of epochs)',
         best(lambda: spiceypy.spkezr('MOON', ets, 'J2000', 'NONE', 'EARTH'), n),
         best(lambda: pepperypy.spkezr('MOON', ets, 'J2000', 'NONE', 'EARTH'), n),
-        best(lambda: mctx.spkezr('MOON', ets, 'J2000', 'NONE', 'EARTH'), n))
+        best(lambda: mctx.spkezr_v('MOON', ets, 'J2000', 'NONE', 'EARTH'), n))
 
     # prepared queries, one call for all the epochs
     q = ctx.prepare_state('MOON', 'EARTH', 'J2000', 'NONE')
@@ -117,6 +123,60 @@ def main():
         fastest = min(x for x in (ppy, pmem) if x is not None)
         speed = '–' if spy is None else f'{spy / fastest:.1f}×'
         print(f'| {name} | {fmt(spy)} | {fmt(ppy)} | {fmt(pmem)} | {speed} |')
+    if cyice is not None:
+        vectorized(ets)
+
+
+def vectorized(ets):
+    """SpiceyPy's cyice against PepperyPy's <name>_v (C loops with the GIL
+    released), the same arguments; and PepperyPy's in threads."""
+    n = len(ets)
+    utc = cyice.et2utc_v(ets, 'ISOC', 3)
+    rect = np.random.default_rng(2).normal(size=(n, 3)) * 7000.0
+    lat = [np.ascontiguousarray(c) for c in cyice.reclat_v(rect).T]   # (cyice: contiguous arrays)
+    cases = [
+        ('spkezr_v', ('MOON', ets, 'J2000', 'LT+S', 'EARTH')),
+        ('spkpos_v', ('MOON', ets, 'J2000', 'LT+S', 'EARTH')),
+        ('spkgeo_v', (301, ets, 'J2000', 399)),
+        ('spkssb_v', (499, ets, 'J2000')),
+        ('pxform_v', ('J2000', 'IAU_EARTH', ets)),
+        ('sxform_v', ('J2000', 'IAU_EARTH', ets)),
+        ('subpnt_v', ('NEAR POINT/ELLIPSOID', 'MOON', ets, 'IAU_MOON', 'LT+S', 'EARTH')),
+        ('subslr_v', ('NEAR POINT/ELLIPSOID', 'MOON', ets, 'IAU_MOON', 'LT+S', 'EARTH')),
+        ('et2utc_v', (ets, 'ISOC', 3)),
+        ('timout_v', (ets, 'YYYY-MON-DD HR:MN:SC.### ::TDB')),
+        ('str2et_v', (utc,)),
+        ('utc2et_v', (utc,)),
+        ('deltet_v', (ets, 'ET')),
+        ('reclat_v', (rect,)),
+        ('latrec_v', tuple(lat)),
+        ('recgeo_v', (rect, 6378.1366, 0.00335)),
+    ]
+    print(f'\nVectorized, {n} epochs or points: µs per element\n')
+    print("| Function | SpiceyPy's cyice (µs) | PepperyPy (µs) | Speedup |")
+    print('|---|--:|--:|--:|')
+    for name, args in cases:
+        f_s, f_p = getattr(cyice, name, None), getattr(pepperypy, name)
+        if f_s is None:
+            continue
+        ts, tp = best(lambda: f_s(*args), n), best(lambda: f_p(*args), n)
+        print(f'| `{name}` | {ts:.3g} | {tp:.3g} | {ts / tp:.1f}× |')
+
+    # PepperyPy's in threads (cyice cannot: CSPICE is not thread-safe)
+    args = ('NEAR POINT/ELLIPSOID', 'MOON', ets, 'IAU_MOON', 'LT+S', 'EARTH')
+    one = best(lambda: pepperypy.subpnt_v(*args), n)
+    print(f'\n`subpnt_v` split over threads (PepperyPy only), µs per element\n')
+    print('| Threads | PepperyPy (µs) | Speedup |')
+    print('|--:|--:|--:|')
+    for nt in (1, 2, 4, min(8, os.cpu_count() or 4)):
+        chunks = np.array_split(ets, nt)
+
+        def work(chunk):
+            pepperypy.subpnt_v('NEAR POINT/ELLIPSOID', 'MOON', chunk, 'IAU_MOON', 'LT+S', 'EARTH')
+
+        with ThreadPoolExecutor(nt) as pool:
+            t = best(lambda: list(pool.map(work, chunks)), n)
+        print(f'| {nt} | {t:.3g} | {one / t:.1f}× |')
 
 
 if __name__ == '__main__':

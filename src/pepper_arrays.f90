@@ -2465,8 +2465,8 @@ contains
 !     March down the array to find the last element equal to the
 !     closet value.
 !
-      do while (       lstcld   < n                   .and. &
-                array( lstcld ) == array( lstcld + 1 ))
+      do while ( lstcld < n )
+         if ( .not. ( array( lstcld ) == array( lstcld + 1 ) ) ) exit
 
          lstcld = lstcld + 1
 
@@ -2668,8 +2668,8 @@ contains
 !     March down the array to find the last element equal to the
 !     closet value.
 !
-      do while (         lstcli < n                     .and. &
-                array( lstcli ) == array( lstcli + 1 ))
+      do while ( lstcli < n )
+         if ( .not. ( array( lstcli ) == array( lstcli + 1 ) ) ) exit
 
          lstcli = lstcli + 1
 
