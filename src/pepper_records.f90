@@ -8421,11 +8421,11 @@ contains
 !        located in the last two "integer" positions of the descriptor.
 !
          if ( nieven ) then
-            itemp(1:2) = unpack_integers ( descr(ioffst:ioffst), 2 )
+            call unpack_integers ( descr(ioffst:ioffst), 2, itemp(1:2) )
             begin = itemp(1)
             end   = itemp(2)
          else
-            itemp = unpack_integers ( descr(ioffst:ioffst+2-1), 4 )
+            call unpack_integers ( descr(ioffst:ioffst+2-1), 4, itemp )
             begin = itemp(2)
             end   = itemp(3)
          end if
@@ -8492,11 +8492,11 @@ contains
 !        located in the last two "integer" positions of the descriptor.
 !
          if ( nieven ) then
-            itemp(1:2) = unpack_integers ( descr(ioffst:ioffst), 2 )
+            call unpack_integers ( descr(ioffst:ioffst), 2, itemp(1:2) )
             begin = itemp(1)
             end   = itemp(2)
          else
-            itemp = unpack_integers ( descr(ioffst:ioffst+2-1), 4 )
+            call unpack_integers ( descr(ioffst:ioffst+2-1), 4, itemp )
             begin = itemp(2)
             end   = itemp(3)
          end if

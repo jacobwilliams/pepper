@@ -78,7 +78,7 @@ def main():
     row('spkezr Moon from Earth, J2000, NONE (an array of epochs)',
         best(lambda: spiceypy.spkezr('MOON', ets, 'J2000', 'NONE', 'EARTH'), n),
         best(lambda: pepperypy.spkezr('MOON', ets, 'J2000', 'NONE', 'EARTH'), n),
-        best(lambda: mctx.spkezr('MOON', ets, 'J2000', 'NONE', 'EARTH'), n))
+        best(lambda: mctx.spkezr_v('MOON', ets, 'J2000', 'NONE', 'EARTH'), n))
 
     # prepared queries, one call for all the epochs
     q = ctx.prepare_state('MOON', 'EARTH', 'J2000', 'NONE')

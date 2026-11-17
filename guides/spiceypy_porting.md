@@ -269,7 +269,7 @@ in CSPICE: later check-ins are ignored.
 
 ## Speed
 
-PepperyPy is faster than SpiceyPy from Python: about 2–3× for one call,
+PepperyPy is faster than SpiceyPy from Python: about 1.5–3× for one call,
 and far more for arrays of epochs, which PepperyPy evaluates in one C loop
 where SpiceyPy loops in Python. Its vectorized functions are as fast as
 SpiceyPy's cyice, or faster, and unlike cyice they can run in several
@@ -286,44 +286,45 @@ ratios depend on the CPU and the compilers.
 
 | Call | SpiceyPy (µs) | PepperyPy (µs) | Speedup |
 |---|--:|--:|--:|
-| `spkezr` Moon from Earth, J2000, NONE | 2.60 | 1.15 | 2.3× |
-| `spkezr` Mars barycenter from Earth, ECLIPJ2000, LT+S | 4.30 | 2.31 | 1.9× |
-| `pxform` J2000 to IAU_EARTH | 1.79 | 0.70 | 2.6× |
-| `str2et` | 5.58 | 3.82 | 1.5× |
-| `vnorm` | 0.52 | 0.18 | 2.8× |
+| `spkezr` Moon from Earth, J2000, NONE | 2.69 | 0.89 | 3.0× |
+| `spkezr` Mars barycenter from Earth, ECLIPJ2000, LT+S | 4.45 | 1.69 | 2.6× |
+| `pxform` J2000 to IAU_EARTH | 1.83 | 0.71 | 2.6× |
+| `str2et` | 5.67 | 3.75 | 1.5× |
+| `vnorm` | 0.53 | 0.19 | 2.8× |
 
 With the kernels in memory (`furnsh(..., in_memory=True)` on a `Spice`
-instance) `spkezr` takes 0.82 and 1.84 µs.
+instance) `spkezr` takes 0.60 and 1.26 µs.
 
 **An array of epochs** (`spkezr('MOON', ets, 'J2000', 'NONE', 'EARTH')`):
-SpiceyPy 1.88 µs per epoch, PepperyPy 0.33 (5.6×). PepperyPy's `spkezr`
-with an array calls `spkezr_v`, a prepared query.
+SpiceyPy 1.97 µs per epoch, PepperyPy 0.19 (10×; 0.13 with the kernels in
+memory). PepperyPy's `spkezr` with an array calls `spkezr_v`, a prepared
+query.
 
 **Vectorized: SpiceyPy's cyice against PepperyPy's `_v` functions**, the
 same arguments:
 
 | Function | cyice (µs) | PepperyPy (µs) | Speedup |
 |---|--:|--:|--:|
-| `spkezr_v` | 2.43 | 1.19 | 2.0× |
-| `spkpos_v` | 1.52 | 1.52 | 1.0× |
-| `spkgeo_v` | 0.672 | 0.692 | 1.0× |
-| `spkssb_v` | 0.491 | 0.341 | 1.4× |
-| `pxform_v` | 0.420 | 0.296 | 1.4× |
-| `sxform_v` | 0.459 | 0.326 | 1.4× |
-| `subpnt_v` | 5.94 | 5.26 | 1.1× |
-| `subslr_v` | 16.0 | 14.4 | 1.1× |
-| `et2utc_v` | 1.49 | 0.679 | 2.2× |
-| `timout_v` | 2.45 | 2.19 | 1.1× |
-| `str2et_v` | 4.89 | 2.14 | 2.3× |
-| `utc2et_v` | 4.62 | 1.82 | 2.5× |
-| `deltet_v` | 0.691 | 0.052 | 13× |
-| `recgeo_v` | 1.47 | 1.18 | 1.2× |
-| `reclat_v` | 0.028 | 0.031 | 0.9× |
-| `latrec_v` | 0.010 | 0.017 | 0.6× |
+| `spkezr_v` | 2.53 | 0.743 | 3.4× |
+| `spkpos_v` | 1.58 | 1.02 | 1.6× |
+| `spkgeo_v` | 0.708 | 0.439 | 1.6× |
+| `spkssb_v` | 0.514 | 0.176 | 2.9× |
+| `pxform_v` | 0.440 | 0.311 | 1.4× |
+| `sxform_v` | 0.478 | 0.339 | 1.4× |
+| `subpnt_v` | 6.13 | 4.41 | 1.4× |
+| `subslr_v` | 16.8 | 11.5 | 1.5× |
+| `et2utc_v` | 1.52 | 0.689 | 2.2× |
+| `timout_v` | 2.51 | 2.23 | 1.1× |
+| `str2et_v` | 5.00 | 2.16 | 2.3× |
+| `utc2et_v` | 4.69 | 1.89 | 2.5× |
+| `deltet_v` | 0.711 | 0.057 | 12× |
+| `recgeo_v` | 1.56 | 1.22 | 1.3× |
+| `reclat_v` | 0.032 | 0.029 | 1.1× |
+| `latrec_v` | 0.010 | 0.018 | 0.6× |
 
 The simplest coordinate conversions take a few nanoseconds per element
 either way (`reclat_v` varies between 0.9× and 1.2× from run to run);
-`latrec_v` takes 7 ns more: PepperyPy's loop calls the Fortran routine
+`latrec_v` takes 8 ns more: PepperyPy's loop calls the Fortran routine
 through its C interface, cyice calls CSPICE's C function directly. Either
 is far below the cost of anything else in a program.
 
@@ -335,13 +336,13 @@ The 20,000 epochs of `subpnt_v` split over threads:
 
 | Threads | µs per element | Speedup |
 |--:|--:|--:|
-| 1 | 5.07 | 1.0× |
-| 2 | 2.64 | 1.9× |
-| 4 | 1.40 | 3.6× |
-| 8 | 1.01 | 5.0× |
+| 1 | 4.34 | 1.0× |
+| 2 | 2.25 | 1.9× |
+| 4 | 1.20 | 3.6× |
+| 8 | 0.88 | 4.9× |
 
-Prepared state queries from memory scale the same way: 0.97 µs per epoch
-on one thread, 0.22 on eight.
+Prepared state queries from memory scale the same way: 0.60 µs per epoch
+on one thread, 0.13 on eight.
 
 ## Running SpiceyPy's tests against PepperyPy
 
