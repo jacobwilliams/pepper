@@ -11450,6 +11450,54 @@ contains
       c_pepper_tparse = status_of(c_)
    end function c_pepper_tparse
 
+   !> C interface of `tpartv`: Parse the components of a time string and return a vector of the components of that string.
+   integer(c_int) function c_pepper_tpartv ( ctx, string, tvec, ntvec, type_size, type, modify_n, modify_width, &
+         modify, mods, yabbrv, succes, pictur_size, pictur, error_size, error ) bind(c, name='pepper_tpartv')
+      integer(c_int), value :: modify_n  !! the number of strings modify holds
+      integer(c_int), value :: modify_width  !! the size of each (with the NUL)
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: string(*)  !! A string to be parsed as a time
+      real(c_double), intent(out) :: tvec(*)  !! A vector giving the components of the time.
+      integer(c_int), intent(out) :: ntvec  !! The number of components supplied for TVEC
+      integer(c_int), value :: type_size  !! the size of type (with the NUL)
+      character(kind=c_char), intent(out) :: type(*)  !! The type of the "time vector" TVEC
+      character(kind=c_char), intent(out) :: modify(modify_n * modify_width)  !! A list of modifiers present in STRING.
+      integer(c_int), intent(out) :: mods  !! A logical indicating the presence of a modifier
+      integer(c_int), intent(out) :: yabbrv  !! A logical indicating that a year was abbreviated
+      integer(c_int), intent(out) :: succes  !! A logical indicating whether STRING was parsed.
+      integer(c_int), value :: pictur_size  !! the size of pictur (with the NUL)
+      character(kind=c_char), intent(out) :: pictur(*)  !! A time format picture associated with STRING
+      integer(c_int), value :: error_size  !! the size of error (with the NUL)
+      character(kind=c_char), intent(out) :: error(*)  !! A diagnostic message if STRING couldn't be parsed
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_string
+      character(len=max(type_size - 1, 1)) :: f_type
+      character(len=max(modify_width - 1, 1)) :: f_modify(max(modify_n, 1))
+      integer :: i_modify
+      logical :: f_mods
+      logical :: f_yabbrv
+      logical :: f_succes
+      character(len=max(pictur_size - 1, 1)) :: f_pictur
+      character(len=max(error_size - 1, 1)) :: f_error
+      c_ => context_of(ctx)
+      call c_to_f(string, f_string)
+      f_type = ' '
+      f_modify = ' '
+      f_pictur = ' '
+      f_error = ' '
+      call c_%tpartv(f_string, tvec, ntvec, f_type, f_modify, f_mods, f_yabbrv, f_succes, f_pictur, f_error)
+      call f_to_c(f_type, type_size, type)
+      do i_modify = 1, modify_n
+         call f_to_c(f_modify(i_modify), modify_width, modify((i_modify - 1) * modify_width + 1:i_modify * modify_width))
+      end do
+      mods = merge(1_c_int, 0_c_int, f_mods)
+      yabbrv = merge(1_c_int, 0_c_int, f_yabbrv)
+      succes = merge(1_c_int, 0_c_int, f_succes)
+      call f_to_c(f_pictur, pictur_size, pictur)
+      call f_to_c(f_error, error_size, error)
+      c_pepper_tpartv = status_of(c_)
+   end function c_pepper_tpartv
+
    !> C interface of `tpictr`: Create a time format picture suitable for use by the routine [[timout]] from a given sample time string.
    integer(c_int) function c_pepper_tpictr ( ctx, sample, pictur_size, pictur, ok, errmsg_size, errmsg ) bind(c, &
          name='pepper_tpictr')
@@ -11523,6 +11571,22 @@ contains
       call c_%tsetyr(year)
       c_pepper_tsetyr = status_of(c_)
    end function c_pepper_tsetyr
+
+   !> C interface of `ttrans`: Transform a time vector from one representation and system to another.
+   integer(c_int) function c_pepper_ttrans ( ctx, from, to, tvec ) bind(c, name='pepper_ttrans')
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: from(*)  !! description of a time vector.
+      character(kind=c_char), intent(in) :: to(*)  !! description of a time vector.
+      real(c_double), intent(inout) :: tvec(10)  !! time vector representing an epoch.
+      type(capi_context), pointer :: c_
+      character(:), allocatable :: f_from
+      character(:), allocatable :: f_to
+      c_ => context_of(ctx)
+      call c_to_f(from, f_from)
+      call c_to_f(to, f_to)
+      call c_%ttrans(f_from, f_to, tvec)
+      c_pepper_ttrans = status_of(c_)
+   end function c_pepper_ttrans
 
    !> C interface of `twovec`: Find the transformation to the right-handed frame having a given vector as a specified axis and having a second given vector lying in a specified coordinate plane.
    integer(c_int) function c_pepper_twovec ( ctx, axdef, indexa, plndef, indexp, mout ) bind(c, name='pepper_twovec')

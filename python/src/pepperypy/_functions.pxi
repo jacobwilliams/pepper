@@ -9265,6 +9265,15 @@ def tparse(instring, lenout=None):
     :return: Equivalent UTC seconds past J2000.; Descriptive error message."""
     return _context().tparse(instring, lenout)
 
+def tpartv(string):
+    """Parse the components of a time string and return a vector of the components of that string. Also return an array of any modifiers present in the input string; these may alter the interpretation of the components.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/tpartv.html
+    
+    :param string: A string to be parsed as a time
+    :return: A vector giving the components of the time.; The number of components supplied for TVEC; The type of the 'time vector' TVEC; A list of modifiers present in STRING.; A logical indicating the presence of a modifier; A logical indicating that a year was abbreviated; A logical indicating whether STRING was parsed.; A time format picture associated with STRING; A diagnostic message if STRING couldn't be parsed"""
+    return _context().tpartv(string)
+
 def tpictr(sample, lenout=None, lenerr=None):
     """Create a time format picture suitable for use by the routine `timout` from a given sample time string.
     
@@ -9327,6 +9336,17 @@ def tsetyr(year):
     
     :param year: Lower bound on the 100 year interval of expansion"""
     return _context().tsetyr(year)
+
+def ttrans(from_, to, tvec):
+    """Transform a time vector from one representation and system to another.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ttrans.html
+    
+    :param from_: description of a time vector.
+    :param to: description of a time vector.
+    :param tvec: time vector representing an epoch.
+    :return: time vector representing an epoch."""
+    return _context().ttrans(from_, to, tvec)
 
 def twovec(axdef, indexa, plndef, indexp):
     """Find the transformation to the right-handed frame having a given vector as a specified axis and having a second given vector lying in a specified coordinate plane.

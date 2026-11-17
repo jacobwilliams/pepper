@@ -220,6 +220,38 @@ def test_any_size_results(spice):
     assert ctx.body_name(301) == 'MOON'
 
 
+# ---- time strings below STR2ET
+
+
+def test_tpartv(spice):
+    """TPARTV: the components, type, modifiers and picture of a time string,
+    and a diagnostic (not an exception) for one it cannot parse."""
+    ctx = spice.context()
+    tvec, ntvec, type_, modify, mods, yabbrv, succes, pictur, error = ctx.tpartv('2000 JAN 01 12:00:00 TDB')
+    assert succes and error == '' and not yabbrv
+    assert type_ == 'YMD' and ntvec == 6 and list(tvec) == [2000, 1, 1, 12, 0, 0]
+    assert mods and modify == ['', '', '', '', 'TDB']   # ERA, WDAY, ZONE, AMPM, SYSTEM
+    assert pictur.startswith('YYYY MON DD HR:MN:SC')
+    tvec, ntvec, type_, *_ = pepperypy.tpartv('JD 2451545.0')
+    assert type_ == 'JD' and ntvec == 1 and tvec[0] == 2451545.0
+    tvec, ntvec, *_, succes, pictur, error = ctx.tpartv('nonsense')
+    assert not succes and ntvec == 0 and len(tvec) == 0 and 'unrecognizable' in error
+
+
+def test_ttrans(spice):
+    """TTRANS: a short time vector is padded to MXCOMP; YMD to TDB is
+    STR2ET's epoch; an unknown representation raises."""
+    ctx = spice.context()
+    tvec = ctx.tpartv('2000 JAN 01 12:00:00')[0]
+    out = ctx.ttrans('YMD', 'TDB', tvec)
+    assert out.shape == (10,) and out[0] == ctx.str2et('2000 JAN 01 12:00:00')
+    assert list(ctx.ttrans('YMD', 'YD', [2000, 3, 1, 0, 0, 0])[:5]) == [2000, 61, 0, 0, 0]
+    with pytest.raises(ValueError):
+        ctx.ttrans('YMD', 'TDB', np.zeros(11))
+    with pytest.raises(pepperypy.exceptions.SpiceyError):
+        ctx.ttrans('XYZ', 'TDB', [1.0])
+
+
 # ---- GF searches with Python functions
 
 

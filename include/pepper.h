@@ -1532,12 +1532,16 @@ int pepper_tostdo(void *ctx, const char *line);
 int pepper_tparch(void *ctx, const char *type);
 /* tparse: Parse a time string and return seconds past the J2000 epoch on a formal calendar. */
 int pepper_tparse(void *ctx, const char *string, double *sp2000, int errmsg_size, char *errmsg);
+/* tpartv: Parse the components of a time string and return a vector of the components of that string. */
+int pepper_tpartv(void *ctx, const char *string, double *tvec, int *ntvec, int type_size, char *type, int modify_n, int modify_width, char *modify, int *mods, int *yabbrv, int *succes, int pictur_size, char *pictur, int error_size, char *error);
 /* tpictr: Create a time format picture suitable for use by the routine [[timout]] from a given sample time string. */
 int pepper_tpictr(void *ctx, const char *sample, int pictur_size, char *pictur, int *ok, int errmsg_size, char *errmsg);
 /* trgsep: Compute the angular separation in radians between two spherical or point objects. */
 int pepper_trgsep(void *ctx, double et, const char *targ1, const char *shape1, const char *frame1, const char *targ2, const char *shape2, const char *frame2, const char *obsrvr, const char *abcorr, double *fresult);
 /* tsetyr: Set the lower bound on the 100 year range. */
 int pepper_tsetyr(void *ctx, int year);
+/* ttrans: Transform a time vector from one representation and system to another. */
+int pepper_ttrans(void *ctx, const char *from_, const char *to, double *tvec);
 /* twovec: Find the transformation to the right-handed frame having a given vector as a specified axis and having a second given vector lying in a specified coordinate plane. */
 int pepper_twovec(void *ctx, const double *axdef, int indexa, const double *plndef, int indexp, double *mout);
 /* twovxf: Find the state transformation from a base frame to the right-handed frame defined by two state vectors: one state vector defining a specified axis and a second state vector defining a specified coordinate plane. */

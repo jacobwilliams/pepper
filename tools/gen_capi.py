@@ -125,6 +125,7 @@ OUT_SIZES = {
     'dskp02': {'plates': '{room}'}, 'dskv02': {'vrtces': '{room}'},
     'dskxv': {'xptarr': '{nrays}', 'fndarr': '{nrays}'},
     'dskxsi': {'dladsc': '8', 'dskdsc': '24', 'dc': '{maxd}', 'ic': '{maxi}'},
+    'tpartv': {'tvec': '10', 'modify': '5'},   # (TTRANS's MXCOMP; ERA ... SYSTEM)
     'ev2lin': {'state': '6'}, 'oscltx': {'elts': '20'}, 'spkpds': {'descr': '5'}, 'spksfs': {'descr': '5'},
     'scpart': {'pstart': '9999', 'pstop': '9999'},   # MXPART
     'getfvn': {'bounds': '{room}'},
@@ -154,7 +155,7 @@ FOUND_IS_RESULT = {'expool', 'daffna', 'daffpa', 'dskx02'}
 
 # Dimensions named by parameters: their values. Planes, ellipses and EK
 # attribute descriptors are passed and returned as SpiceyPy's types.
-CONST_DIMS = {'ubpl': '4', 'ubel': '9', 'adscsz': '6', 'ixdfix': '10'}
+CONST_DIMS = {'ubpl': '4', 'ubel': '9', 'adscsz': '6', 'ixdfix': '10', 'mxcomp': '10'}
 WRAP_DIMS = {'ubpl': 'Plane', 'ubel': 'Ellipse', 'adscsz': 'SpiceEKAttDsc'}
 # Assumed-size arrays that are SpiceyPy types (by argument name).
 WRAP_NAMES = {'dladsc': 'SpiceDLADescr', 'nxtdsc': 'SpiceDLADescr', 'prvdsc': 'SpiceDLADescr',
@@ -179,9 +180,12 @@ FIXED_IN = {'dskxsi': {'maxd': '1', 'maxi': '1'}}
 COUNT_OF = {'spkw18': {'n': 'epochs'}, 'dskmi2': {'nv': 'vrtces', 'np': 'plates'}, 'dskrb2': {'nv': 'vrtces', 'np': 'plates'}, 'dskxsi': {'nsurf': 'srflst'},
             'dskxv': {'nsurf': 'srflst', 'nrays': 'vtxarr'}, 'latsrf': {'npts': 'lonlat'},
             'srfnrm': {'npts': 'srfpts'}}
+# Fixed-size vectors in that may be given short (padded with zeros): the
+# time vectors of TTRANS (MXCOMP = 10; YMD has 6 components, JD 1).
+PAD_IN = {'ttrans': {'tvec'}}
 # Results returned as their first n elements ({x}: the output x, or a number).
 SLICE = {
-    'getfvn': {'bounds': 'n'}, 'scpart': {'pstart': 'nparts', 'pstop': 'nparts'}, 'oscltx': {'elts': '11'},
+    'getfvn': {'bounds': 'n'}, 'tpartv': {'tvec': 'ntvec'}, 'scpart': {'pstart': 'nparts', 'pstop': 'nparts'}, 'oscltx': {'elts': '11'},
     'dskd02': {'values': 'n'}, 'dski02': {'values': 'n'}, 'dskp02': {'plates': 'n'}, 'dskv02': {'vrtces': 'n'},
 }
 # The width of the strings of an array of strings out.
@@ -1255,7 +1259,8 @@ def cython_method(p, spy, where):
                 conv.append(f'cdef cnp.ndarray _a_{n} = _empty({dt}, {dims}{"" if a.rank == 2 else ", -1"})')
                 results.append((a, f'_a_{n}'))
             else:
-                conv.append(f'cdef cnp.ndarray _a_{n} = _input({pn}, {dt}, {dims}{"" if a.rank == 2 else ", -1"}, {"True" if k == "arr_inout" else "False"})')
+                src = f'_padded({pn}, {dims})' if n in PAD_IN.get(p.name, ()) else pn
+                conv.append(f'cdef cnp.ndarray _a_{n} = _input({src}, {dt}, {dims}{"" if a.rank == 2 else ", -1"}, {"True" if k == "arr_inout" else "False"})')
                 if k == 'arr_inout':
                     results.append((a, f'_a_{n}'))
             cargs.append(f'<{ct}*>cnp.PyArray_DATA(_a_{n})')

@@ -20055,6 +20055,39 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _c_sp2000, _s(_c_errmsg)
 
+    def tpartv(self, string):
+        """Parse the components of a time string and return a vector of the components of that string. Also return an array of any modifiers present in the input string; these may alter the interpretation of the components.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/tpartv.html
+        
+        :param string: A string to be parsed as a time
+        :return: A vector giving the components of the time.; The number of components supplied for TVEC; The type of the 'time vector' TVEC; A list of modifiers present in STRING.; A logical indicating the presence of a modifier; A logical indicating that a year was abbreviated; A logical indicating whether STRING was parsed.; A time format picture associated with STRING; A diagnostic message if STRING couldn't be parsed"""
+        cdef int _c_ntvec = 0
+        cdef char _c_type[1024]
+        cdef int _c_mods = 0
+        cdef int _c_yabbrv = 0
+        cdef int _c_succes = 0
+        cdef char _c_pictur[1024]
+        cdef char _c_error[1024]
+        cdef int _st = 0
+        cdef bytes _b_string = _b(string)
+        cdef const char *_c_string = _b_string
+        cdef cnp.ndarray _a_tvec = _empty(NPY_DOUBLE, max(<int>(10), 1), -1)
+        _c_type[0] = 0
+        cdef int _n_modify = max(<int>(5), 1)
+        cdef bytearray _ba_modify = bytearray(_n_modify * 1024)
+        cdef char *_c_modify = _ba_modify
+        _c_pictur[0] = 0
+        _c_error[0] = 0
+        self._enter()
+        try:
+            _st = pepper_tpartv(self._ptr, _c_string, <double*>cnp.PyArray_DATA(_a_tvec), &_c_ntvec, 1024, _c_type, _n_modify, 1024, _c_modify, &_c_mods, &_c_yabbrv, &_c_succes, 1024, _c_pictur, 1024, _c_error)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_tvec[:_c_ntvec], _c_ntvec, _s(_c_type), _strs(_ba_modify, _n_modify, 1024), (_c_mods != 0), (_c_yabbrv != 0), (_c_succes != 0), _s(_c_pictur), _s(_c_error)
+
     def tpictr(self, sample, lenout=None, lenerr=None):
         """Create a time format picture suitable for use by the routine `timout` from a given sample time string.
         
@@ -20199,6 +20232,30 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return None
+
+    def ttrans(self, from_, to, tvec):
+        """Transform a time vector from one representation and system to another.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ttrans.html
+        
+        :param from_: description of a time vector.
+        :param to: description of a time vector.
+        :param tvec: time vector representing an epoch.
+        :return: time vector representing an epoch."""
+        cdef int _st = 0
+        cdef bytes _b_from = _b(from_)
+        cdef bytes _b_to = _b(to)
+        cdef const char *_c_from = _b_from
+        cdef const char *_c_to = _b_to
+        cdef cnp.ndarray _a_tvec = _input(_padded(tvec, 10), NPY_DOUBLE, 10, -1, True)
+        self._enter()
+        try:
+            _st = pepper_ttrans(self._ptr, _c_from, _c_to, <double*>cnp.PyArray_DATA(_a_tvec))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_tvec
 
     def twovec(self, axdef, indexa, plndef, indexp):
         """Find the transformation to the right-handed frame having a given vector as a specified axis and having a second given vector lying in a specified coordinate plane.

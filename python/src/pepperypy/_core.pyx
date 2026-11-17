@@ -190,6 +190,15 @@ cdef cnp.ndarray _input(object x, int dt, int d1, int d2, bint copy):
     return a
 
 
+cdef object _padded(object x, int n):
+    """A vector of at most n values, padded with zeros to n (TTRANS's time
+    vectors: fewer components than MXCOMP)."""
+    a = np.asarray(x, dtype=np.float64).reshape(-1)
+    if a.shape[0] > n:
+        raise ValueError(f'expected at most {n} values, got {a.shape[0]}')
+    return np.concatenate((a, np.zeros(n - a.shape[0])))
+
+
 cdef cnp.ndarray _vrows(object x, int dt, int k, int n, bint copy):
     """A list of n vectors of k values: rows (n, k), the memory of Fortran's
     (k, n)."""
