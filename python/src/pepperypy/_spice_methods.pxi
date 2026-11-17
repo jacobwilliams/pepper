@@ -10,6 +10,7 @@ cdef class _SpiceRoutines(_SpiceBase):
         
         :param name: Common name of some body.
         :param code: Integer code for that body."""
+        if not name: _empty_string('boddef', 'name')
         cdef int _c_code = code
         cdef int _st = 0
         cdef bytes _b_name = _b(name)
@@ -29,6 +30,7 @@ cdef class _SpiceRoutines(_SpiceBase):
         
         :param filename: Name of the CK file to be loaded.
         :return: Loaded file's handle."""
+        if not filename: _empty_string('cklpf', 'fname')
         cdef int _c_handle = 0
         cdef int _st = 0
         cdef bytes _b_fname = _b(filename)
@@ -77,6 +79,7 @@ cdef class _SpiceRoutines(_SpiceBase):
         https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dvpool.html
         
         :param name: Name of the variable to be deleted."""
+        if not name: _empty_string('dvpool', 'name')
         cdef int _st = 0
         cdef bytes _b_name = _b(name)
         cdef const char *_c_name = _b_name
@@ -95,6 +98,7 @@ cdef class _SpiceRoutines(_SpiceBase):
         
         :param fname: Name of EK file to load.
         :return: File handle of loaded EK file."""
+        if not fname: _empty_string('eklef', 'fname')
         cdef int _c_handle = 0
         cdef int _st = 0
         cdef bytes _b_fname = _b(fname)
@@ -129,6 +133,7 @@ cdef class _SpiceRoutines(_SpiceBase):
         https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ldpool.html
         
         :param filename: Name of the text kernel file."""
+        if not filename: _empty_string('ldpool', 'fname')
         cdef int _st = 0
         cdef bytes _b_fname = _b(filename)
         cdef const char *_c_fname = _b_fname
@@ -147,6 +152,7 @@ cdef class _SpiceRoutines(_SpiceBase):
         
         :param filename: Name of the file to be loaded.
         :return: Loaded file's handle."""
+        if not filename: _empty_string('pcklof', 'fname')
         cdef int _c_handle = 0
         cdef int _st = 0
         cdef bytes _b_fname = _b(filename)
@@ -182,6 +188,7 @@ cdef class _SpiceRoutines(_SpiceBase):
         
         :param filename: Name of the file to be loaded.
         :return: Loaded file's handle."""
+        if not filename: _empty_string('spklef', 'fname')
         cdef int _c_handle = 0
         cdef int _st = 0
         cdef bytes _b_fname = _b(filename)
@@ -218,6 +225,7 @@ cdef class _SpiceRoutines(_SpiceBase):
         :param filename: The name of a kernel to unload."""
         if _iterable(filename):
             return _stack([self.unload(_v) for _v in filename])
+        if not filename: _empty_string('unload', 'file')
         cdef int _st = 0
         cdef bytes _b_file = _b(filename)
         cdef const char *_c_file = _b_file

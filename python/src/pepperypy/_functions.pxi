@@ -186,6 +186,17 @@ def ccifrm(frclss, clssid, lenout=None):
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().ccifrm(frclss, clssid, lenout)
 
+def cgv2el(center, vec1, vec2):
+    """Form a SPICE ellipse from a center vector and two generating vectors.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cgv2el.html
+    
+    :param center: Center and two generating vectors for an ellipse.
+    :param vec1: Center and two generating vectors for an ellipse.
+    :param vec2: Center and two generating vectors for an ellipse.
+    :return: The SPICE ellipse defined by the input vectors."""
+    return _context().cgv2el(center, vec1, vec2)
+
 def chbase():
     """Return the base value used to encode unsigned integer values in character strings.
     
@@ -319,6 +330,26 @@ def cke04(needav, record):
     :param record: Data type 4 pointing record.
     :return: C-matrix.; Angular velocity vector.; SCLK associated with C-matrix."""
     return _context().cke04(needav, record)
+
+def cke05(needav, record):
+    """Evaluate a single data record from a type 5 CK segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cke05.html
+    
+    :param needav: .TRUE. if angular velocity is requested.
+    :param record: Data type 5 record.
+    :return: Data type 5 record.; C-matrix.; Angular velocity vector.; SCLK associated with C-matrix."""
+    return _context().cke05(needav, record)
+
+def cke06(needav, record):
+    """Evaluate a single data record from a type 6 CK segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cke06.html
+    
+    :param needav: .TRUE. if angular velocity is requested.
+    :param record: Data type 6 record.
+    :return: Data type 6 record.; C-matrix.; Angular velocity vector.; SCLK associated with C-matrix."""
+    return _context().cke06(needav, record)
 
 def ckfrot(inst, et):
     """Find the position rotation matrix from a C-kernel (CK) frame with the specified frame class ID (CK ID) to the base frame of the highest priority CK segment containing orientation data for this CK frame at the time requested.
@@ -514,6 +545,76 @@ def ckpfs(handle, descr, sclkdp, tol, needav):
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().ckpfs(handle, descr, sclkdp, tol, needav)
 
+def ckw01(handle, begtim, endtim, inst, ref, avflag, segid, nrec, sclkdp, quats, avvs):
+    """Add a type 1 segment to a C-kernel.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckw01.html
+    
+    :param handle: Handle of an open CK file.
+    :param begtim: The beginning encoded SCLK of the segment.
+    :param endtim: The ending encoded SCLK of the segment.
+    :param inst: The NAIF instrument ID code.
+    :param ref: The reference frame of the segment.
+    :param avflag: .TRUE. if the segment will contain angular velocity.
+    :param segid: Segment identifier.
+    :param nrec: Number of pointing records.
+    :param sclkdp: Encoded SCLK times.
+    :param quats: SPICE quaternions representing instrument pointing.
+    :param avvs: Angular velocity vectors."""
+    return _context().ckw01(handle, begtim, endtim, inst, ref, avflag, segid, nrec, sclkdp, quats, avvs)
+
+def ckw02(handle, begtim, endtim, inst, ref, segid, nrec, start, stop, quats, avvs, rates):
+    """Write a type 2 segment to a C-kernel.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckw02.html
+    
+    :param handle: Handle of an open CK file.
+    :param begtim: The beginning encoded SCLK of the segment.
+    :param endtim: The ending encoded SCLK of the segment.
+    :param inst: The NAIF instrument ID code.
+    :param ref: The reference frame of the segment.
+    :param segid: Segment identifier.
+    :param nrec: Number of pointing records.
+    :param start: Encoded SCLK interval start times.
+    :param stop: Encoded SCLK interval stop times.
+    :param quats: SPICE quaternions representing instrument pointing.
+    :param avvs: Angular velocity vectors.
+    :param rates: Number of seconds per tick for each interval."""
+    return _context().ckw02(handle, begtim, endtim, inst, ref, segid, nrec, start, stop, quats, avvs, rates)
+
+def ckw03(handle, begtim, endtim, inst, ref, avflag, segid, nrec, sclkdp, quats, avvs, nints, starts):
+    """Add a type 3 segment to a C-kernel.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckw03.html
+    
+    :param handle: Handle of an open CK file.
+    :param begtim: Beginning encoded SCLK of the segment.
+    :param endtim: Ending encoded SCLK of the segment.
+    :param inst: NAIF instrument ID code.
+    :param ref: Reference frame of the segment.
+    :param avflag: .TRUE. if the segment will contain angular velocity.
+    :param segid: Segment identifier.
+    :param nrec: Number of pointing records.
+    :param sclkdp: Encoded SCLK times.
+    :param quats: SPICE quaternions representing instrument pointing.
+    :param avvs: Angular velocity vectors.
+    :param nints: Number of intervals.
+    :param starts: Encoded SCLK interval start times."""
+    return _context().ckw03(handle, begtim, endtim, inst, ref, avflag, segid, nrec, sclkdp, quats, avvs, nints, starts)
+
+def ckw04a(handle, npkts, pktsiz, pktdat, sclkdp):
+    """Add data to a type 4 CK segment currently being written to the file associated with HANDLE. See also `ckw04b` and `ckw04e`.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckw04a.html
+    
+    :param handle: The handle of an DAF file opened for writing.
+    :param npkts: Number of data packets to write to a segment.
+    :param pktsiz: The numbers of values in the data packets (PEPPER: changed in place)
+    :param pktdat: The data packets. (PEPPER: packed in place)
+    :param sclkdp: The SCLK times associated with the data packets.
+    :return: The numbers of values in the data packets (PEPPER: changed in place); The data packets. (PEPPER: packed in place)"""
+    return _context().ckw04a(handle, npkts, pktsiz, pktdat, sclkdp)
+
 def ckw04b(handle, begtim, inst, ref, avflag, segid):
     """Begin a type CK04 segment in the DAF file associated with HANDLE. See also `ckw04a` and `ckw04e`.
     
@@ -640,6 +741,18 @@ def copyi(cell, copy=None):
     :return: New cell."""
     return _context().copyi(cell, copy)
 
+def countc(unit, bline, eline, line):
+    """Count the characters in a group of lines in a text file.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/countc.html
+    
+    :param unit: Logical unit connected to text file.
+    :param bline: Beginning line number.
+    :param eline: Ending line number.
+    :param line: Workspace.
+    :return: Workspace.; the result"""
+    return _context().countc(unit, bline, eline, line)
+
 def cvpool(agent):
     """Indicate whether or not any watched kernel variables that have a specified agent on their notification list have been updated.
     
@@ -648,6 +761,30 @@ def cvpool(agent):
     :param agent: Name of the agent to check for notices.
     :return: .TRUE. if variables for AGENT have been updated."""
     return _context().cvpool(agent)
+
+def cyadip(nelt, dir, ncycle, array):
+    """Cycle the elements of a double precision array forward or backward in place.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cyadip.html
+    
+    :param nelt: Number of elements.
+    :param dir: Direction to cycle: 'F' or 'B'.
+    :param ncycle: Number of times to cycle.
+    :param array: Array to be cycled/cycled array.
+    :return: Array to be cycled/cycled array."""
+    return _context().cyadip(nelt, dir, ncycle, array)
+
+def cyaiip(nelt, dir, ncycle, array):
+    """Cycle the elements of an integer array forward or backward in place.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cyaiip.html
+    
+    :param nelt: Number of elements.
+    :param dir: Direction to cycle: 'F' or 'B'.
+    :param ncycle: Number of times to cycle.
+    :param array: Array to be cycled/cycled array.
+    :return: Array to be cycled/cycled array."""
+    return _context().cyaiip(nelt, dir, ncycle, array)
 
 def cyclec(instr, dir, ncycle):
     """Cycle the contents of a character string to the left or right.
@@ -816,6 +953,17 @@ def dafdc(handle):
     
     :param handle: The handle of a binary DAF opened for writing."""
     return _context().dafdc(handle)
+
+def dafec(handle, bufsiz, lenout=None):
+    """Extract comments from the comment area of a binary DAF.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dafec.html
+    
+    :param handle: Handle of binary DAF opened with read access.
+    :param bufsiz: Maximum size, in lines, of BUFFER.
+    :param lenout: (SpiceyPy compatibility; ignored)
+    :return: Number of extracted comment lines.; Buffer where extracted comment lines are placed.; Indicates whether all comments have been extracted."""
+    return _context().dafec(handle, bufsiz, lenout)
 
 def dafena():
     """End the addition of data to the newest array in the current DAF.
@@ -1007,6 +1155,17 @@ def dafps(nd, ni, dc, ic):
     :param ic: Integer components.
     :return: Array summary."""
     return _context().dafps(nd, ni, dc, ic)
+
+def dafra(handle, iorder, n):
+    """Reorder the arrays in a DAF according to a given order vector.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dafra.html
+    
+    :param handle: Handle of DAF.
+    :param iorder: Order vector.
+    :param n: Dimension of IORDER.
+    :return: Order vector."""
+    return _context().dafra(handle, iorder, n)
 
 def dafrcr(handle, recno):
     """Read the contents of a character record from a DAF.
@@ -1282,6 +1441,17 @@ def dasdc(handle):
     :param handle: The handle of a binary DAS file opened for writing."""
     return _context().dasdc(handle)
 
+def dasec(handle, bufsiz=256, buflen=None):
+    """Extract comments from the comment area of a binary DAS file.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dasec.html
+    
+    :param handle: Handle of binary DAS file open with read access.
+    :param bufsiz: Maximum size, in lines, of BUFFER.
+    :param buflen: (SpiceyPy compatibility; ignored)
+    :return: Number of comments extracted from the DAS file.; Buffer in which extracted comments are placed.; Indicates whether all comments have been extracted."""
+    return _context().dasec(handle, bufsiz, buflen)
+
 def dasecu(handle, comlun):
     """Extract comments from a previously opened binary DAS file to a previously opened text file attached to a Fortran logical unit.
     
@@ -1356,6 +1526,18 @@ def dasine(arg, tol):
     :param tol: Tolerance.
     :return: the result"""
     return _context().dasine(arg, tol)
+
+def dasioc(action, unit, recno, record):
+    """Perform Fortran reads and writes of DAS character records.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dasioc.html
+    
+    :param action: Action to take (read or write).
+    :param unit: Fortran unit connected to DAS file.
+    :param recno: Number of record to read or write.
+    :param record: DAS character record.
+    :return: DAS character record."""
+    return _context().dasioc(action, unit, recno, record)
 
 def daslla(handle):
     """Return last DAS logical addresses of character, double precision and integer type that are currently in use in a specified DAS file.
@@ -1743,6 +1925,26 @@ def diffi(a, b, c=None):
     :return: Difference of A and B."""
     return _context().diffi(a, b, c)
 
+def dlabbs(handle):
+    """Begin a backward segment search in a DLA file.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dlabbs.html
+    
+    :param handle: Handle of open DLA file.
+    :return: Descriptor of last segment in DLA file.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+    return _context().dlabbs(handle)
+
+def dlabfs(handle):
+    """Begin a forward segment search in a DLA file.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dlabfs.html
+    
+    :param handle: Handle of open DLA file.
+    :return: Descriptor of first segment in DLA file.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+    return _context().dlabfs(handle)
+
 def dlabns(handle):
     """Begin a new segment in a DLA file.
     
@@ -1758,6 +1960,28 @@ def dlaens(handle):
     
     :param handle: Handle of open DLA file."""
     return _context().dlaens(handle)
+
+def dlafns(handle, descr):
+    """Find the segment following a specified segment in a DLA file.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dlafns.html
+    
+    :param handle: Handle of open DLA file.
+    :param descr: Descriptor of a segment in DLA file.
+    :return: Descriptor of next segment in DLA file.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+    return _context().dlafns(handle, descr)
+
+def dlafps(handle, descr):
+    """Find the segment preceding a specified segment in a DLA file.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dlafps.html
+    
+    :param handle: Handle of open DLA file.
+    :param descr: Descriptor of a segment in DLA file.
+    :return: Descriptor of previous segment in DLA file.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+    return _context().dlafps(handle, descr)
 
 def dlaopn(fname, ftype, ifname, ncomch):
     """Open a new DLA file and set the file type.
@@ -1951,6 +2175,29 @@ def dskcls(handle, optmiz=False):
     :param optmiz: Flag indicating whether to segregate the DSK."""
     return _context().dskcls(handle, optmiz)
 
+def dskd02(handle, dladsc, item, start, room):
+    """Fetch double precision data from a type 2 DSK segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskd02.html
+    
+    :param handle: DSK file handle.
+    :param dladsc: DLA descriptor.
+    :param item: Keyword identifying item to fetch.
+    :param start: Start index.
+    :param room: Amount of room in output array.
+    :return: Number of values returned.; Array containing requested item."""
+    return _context().dskd02(handle, dladsc, item, start, room)
+
+def dskgd(handle, dladsc):
+    """Return the DSK descriptor from a DSK segment identified by a DAS handle and DLA descriptor.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskgd.html
+    
+    :param handle: Handle of a DSK file.
+    :param dladsc: DLA segment descriptor.
+    :return: DSK segment descriptor."""
+    return _context().dskgd(handle, dladsc)
+
 def dskgtl(keywrd):
     """Retrieve the value of a specified DSK tolerance or margin parameter.
     
@@ -1959,6 +2206,36 @@ def dskgtl(keywrd):
     :param keywrd: Code specifying parameter to retrieve.
     :return: Value of parameter."""
     return _context().dskgtl(keywrd)
+
+def dski02(handle, dladsc, item, start, room):
+    """Fetch integer data from a type 2 DSK segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dski02.html
+    
+    :param handle: DSK file handle.
+    :param dladsc: DLA descriptor.
+    :param item: Keyword identifying item to fetch.
+    :param start: Start index.
+    :param room: Amount of room in output array.
+    :return: Number of values returned.; Array containing requested item."""
+    return _context().dski02(handle, dladsc, item, start, room)
+
+def dskmi2(vrtces, plates, finscl, corscl, worksz, voxpsz, voxlsz, makvtl, spxisz):
+    """Make spatial index for a DSK type 2 segment. The index is returned as a pair of arrays, one of type INTEGER and one of type DOUBLE PRECISION. These arrays are suitable for use with the DSK type 2 writer `dskw02`.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskmi2.html
+    
+    :param vrtces: Vertices.
+    :param plates: Plates.
+    :param finscl: Fine voxel scale.
+    :param corscl: Coarse voxel scale.
+    :param worksz: Workspace size.
+    :param voxpsz: Voxel-plate pointer array size.
+    :param voxlsz: Voxel-plate list array size.
+    :param makvtl: Vertex-plate list flag.
+    :param spxisz: Spatial index integer component size.
+    :return: Double precision component of spatial index.; Integer component of spatial index."""
+    return _context().dskmi2(vrtces, plates, finscl, corscl, worksz, voxpsz, voxlsz, makvtl, spxisz)
 
 def dskn02(handle, dladsc, plid):
     """Compute the unit normal vector for a specified plate from a type 2 DSK segment.
@@ -1992,19 +2269,29 @@ def dskopn(fname, ifname, ncomch):
     :return: Handle assigned to the opened DSK file."""
     return _context().dskopn(fname, ifname, ncomch)
 
-def dskrb2(nv, vrtces, np, plates, corsys, corpar):
+def dskp02(handle, dladsc, start, room):
+    """Fetch triangular plates from a type 2 DSK segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskp02.html
+    
+    :param handle: DSK file handle.
+    :param dladsc: DLA descriptor.
+    :param start: Start index.
+    :param room: Amount of room in output array.
+    :return: Number of plates returned.; Array containing plates."""
+    return _context().dskp02(handle, dladsc, start, room)
+
+def dskrb2(vrtces, plates, corsys, corpar):
     """Determine range bounds for a set of triangular plates to be stored in a type 2 DSK segment.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskrb2.html
     
-    :param nv: Number of vertices.
     :param vrtces: Vertices.
-    :param np: Number of plates.
     :param plates: Plates.
     :param corsys: DSK coordinate system code.
     :param corpar: DSK coordinate system parameters.
     :return: Lower bound on range of third coordinate.; Upper bound on range of third coordinate."""
-    return _context().dskrb2(nv, vrtces, np, plates, corsys, corpar)
+    return _context().dskrb2(vrtces, plates, corsys, corpar)
 
 def dsksrf(dsk, bodyid, srfids=None):
     """Find the set of surface ID codes for all surfaces associated with a given body in a specified DSK file.
@@ -2025,6 +2312,18 @@ def dskstl(keywrd, dpval):
     :param keywrd: Code specifying parameter to modify.
     :param dpval: New value of parameter."""
     return _context().dskstl(keywrd, dpval)
+
+def dskv02(handle, dladsc, start, room):
+    """Fetch vertices from a type 2 DSK segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskv02.html
+    
+    :param handle: DSK file handle.
+    :param dladsc: DLA descriptor.
+    :param start: Start index.
+    :param room: Amount of room in output array.
+    :return: Number of vertices returned.; Array containing vertices."""
+    return _context().dskv02(handle, dladsc, start, room)
 
 def dskw02(handle, center, surfid, dclass, fname, corsys, corpar, mncor1, mxcor1, mncor2, mxcor2, mncor3, mxcor3, first, last, vrtces, plates, spaixd, spaixi):
     """Write a type 2 segment to a DSK file.
@@ -2063,6 +2362,37 @@ def dskx02(handle, dladsc, vertex, raydir):
     :param raydir: Ray direction in the body fixed frame.
     :return: ID code of the plate intersected by the ray.; Intercept.; Flag indicating whether intercept exists."""
     return _context().dskx02(handle, dladsc, vertex, raydir)
+
+def dskxsi(pri, target, srflst, et, fixref, vertex, raydir):
+    """Compute a ray-surface intercept using data provided by multiple loaded DSK segments. Return information about the source of the data defining the surface on which the intercept was found: DSK handle, DLA and DSK descriptors, and DSK data type-dependent parameters.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskxsi.html
+    
+    :param pri: Data prioritization flag.
+    :param target: Target body name.
+    :param srflst: Surface ID list.
+    :param et: Epoch, expressed as seconds past J2000 TDB.
+    :param fixref: Name of target body-fixed reference frame.
+    :param vertex: Vertex of ray.
+    :param raydir: Direction vector of ray.
+    :return: Intercept point.; Handle of segment contributing surface data.; DLA descriptor of segment.; DSK descriptor of segment.; Double precision component of source info.; Integer component of source info.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+    return _context().dskxsi(pri, target, srflst, et, fixref, vertex, raydir)
+
+def dskxv(pri, target, srflst, et, fixref, vtxarr, dirarr):
+    """Compute ray-surface intercepts for a set of rays, using data provided by multiple loaded DSK segments.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskxv.html
+    
+    :param pri: Data prioritization flag.
+    :param target: Target body name.
+    :param srflst: Surface ID list.
+    :param et: Epoch, expressed as seconds past J2000 TDB.
+    :param fixref: Name of target body-fixed reference frame.
+    :param vtxarr: Array of vertices of rays.
+    :param dirarr: Array of direction vectors of rays.
+    :return: Intercept point array.; Found flag array."""
+    return _context().dskxv(pri, target, srflst, et, fixref, vtxarr, dirarr)
 
 def dskz02(handle, dladsc):
     """Return plate model size parameters---plate count and vertex count---for a type 2 DSK segment.
@@ -2112,6 +2442,18 @@ def dwpool(agent):
     
     :param agent: The name of an agent to be notified after updates."""
     return _context().dwpool(agent)
+
+def edlimb(a, b, c, viewpt):
+    """Find the limb of a triaxial ellipsoid, viewed from a specified point.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/edlimb.html
+    
+    :param a: Length of ellipsoid semi-axis lying on the x-axis.
+    :param b: Length of ellipsoid semi-axis lying on the y-axis.
+    :param c: Length of ellipsoid semi-axis lying on the z-axis.
+    :param viewpt: Location of viewing point.
+    :return: Limb of ellipsoid as seen from viewing point."""
+    return _context().edlimb(a, b, c, viewpt)
 
 def ednmpt(a, b, c, normal):
     """Return the unique point on an ellipsoid's surface where the outward normal direction is a given vector.
@@ -2227,6 +2569,55 @@ def ekacei(handle, segno, recno, column, nvals, ivals, isnull):
     :return: Index of segment containing record. (PEPPER: changed by the routine, an input in SPICELIB's table)"""
     return _context().ekacei(handle, segno, recno, column, nvals, ivals, isnull)
 
+def ekaclc(handle, segno, column, vallen=None, cvals=None, entszs=None, nlflgs=None, rcptrs=None, wkindx=None):
+    """Add an entire character column to an EK segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekaclc.html
+    
+    :param handle: EK file handle.
+    :param segno: Number of segment to add column to.
+    :param column: Column name.
+    :param vallen: (SpiceyPy compatibility; ignored)
+    :param cvals: Character values to add to column.
+    :param entszs: Array of sizes of column entries.
+    :param nlflgs: Array of null flags for column entries.
+    :param rcptrs: Record pointers for segment.
+    :param wkindx: Work space for column index.
+    :return: Work space for column index."""
+    return _context().ekaclc(handle, segno, column, vallen, cvals, entszs, nlflgs, rcptrs, wkindx)
+
+def ekacld(handle, segno, column, dvals, entszs, nlflgs, rcptrs, wkindx):
+    """Add an entire double precision column to an EK segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekacld.html
+    
+    :param handle: EK file handle.
+    :param segno: Number of segment to add column to.
+    :param column: Column name.
+    :param dvals: Double precision values to add to column.
+    :param entszs: Array of sizes of column entries.
+    :param nlflgs: Array of null flags for column entries.
+    :param rcptrs: Record pointers for segment.
+    :param wkindx: Work space for column index.
+    :return: Work space for column index."""
+    return _context().ekacld(handle, segno, column, dvals, entszs, nlflgs, rcptrs, wkindx)
+
+def ekacli(handle, segno, column, ivals, entszs, nlflgs, rcptrs, wkindx):
+    """Add an entire integer column to an EK segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekacli.html
+    
+    :param handle: EK file handle.
+    :param segno: Number of segment to add column to.
+    :param column: Column name.
+    :param ivals: Integer values to add to column.
+    :param entszs: Array of sizes of column entries.
+    :param nlflgs: Array of null flags for column entries.
+    :param rcptrs: Record pointers for segment.
+    :param wkindx: Work space for column index.
+    :return: Work space for column index."""
+    return _context().ekacli(handle, segno, column, ivals, entszs, nlflgs, rcptrs, wkindx)
+
 def ekappr(handle, segno):
     """Append a new, empty record at the end of a specified E-kernel segment.
     
@@ -2258,6 +2649,17 @@ def ekccnt(table):
     :return: Count of distinct, currently loaded columns."""
     return _context().ekccnt(table)
 
+def ekcii(table, cindex, lenout=None):
+    """Return attribute information about a column belonging to a loaded EK table, specifying the column by table and index.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekcii.html
+    
+    :param table: Name of table containing column.
+    :param cindex: Index of column whose attributes are to be found.
+    :param lenout: (SpiceyPy compatibility; ignored)
+    :return: Name of column.; Column attribute descriptor."""
+    return _context().ekcii(table, cindex, lenout)
+
 def ekcls(handle):
     """Close an E-kernel.
     
@@ -2276,6 +2678,17 @@ def ekdelr(handle, segno, recno):
     :param recno: Record number. (PEPPER: changed by the routine, an input in SPICELIB's table)
     :return: Record number. (PEPPER: changed by the routine, an input in SPICELIB's table)"""
     return _context().ekdelr(handle, segno, recno)
+
+def ekffld(handle, segno, rcptrs):
+    """Complete a fast write operation on a new E-kernel segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekffld.html
+    
+    :param handle: File handle.
+    :param segno: Segment number.
+    :param rcptrs: Record pointers. (PEPPER: changed by the routine, an input in SPICELIB's table)
+    :return: Record pointers. (PEPPER: changed by the routine, an input in SPICELIB's table)"""
+    return _context().ekffld(handle, segno, rcptrs)
 
 def ekfind(query, lenout=None):
     """Find E-kernel data that satisfy a set of constraints.
@@ -2323,6 +2736,22 @@ def ekgi(selidx, row, element):
     :return: Integer element of column entry.; Flag indicating whether column entry was null.
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().ekgi(selidx, row, element)
+
+def ekifld(handle, tabnam, ncols, nrows, cnmlen=None, cnames=None, declen=None, decls=None):
+    """Initialize a new E-kernel segment to allow fast writing.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekifld.html
+    
+    :param handle: File handle.
+    :param tabnam: Table name.
+    :param ncols: Number of columns in the segment.
+    :param nrows: Number of rows in the segment.
+    :param cnmlen: (SpiceyPy compatibility; ignored)
+    :param cnames: Names of columns.
+    :param declen: (SpiceyPy compatibility; ignored)
+    :param decls: Declarations of columns.
+    :return: Segment number.; Array of record pointers."""
+    return _context().ekifld(handle, tabnam, ncols, nrows, cnmlen, cnames, declen, decls)
 
 def ekinsr(handle, segno, recno):
     """Add a new, empty record to a specified E-kernel segment at a specified index.
@@ -2398,6 +2827,18 @@ def ekopw(fname):
     :return: Handle attached to EK file."""
     return _context().ekopw(fname)
 
+def ekpsel(query, msglen=None, tablen=None, collen=None):
+    """Parse the SELECT clause of an EK query, returning full particulars concerning each selected item.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekpsel.html
+    
+    :param query: EK query.
+    :param msglen: (SpiceyPy compatibility; ignored)
+    :param tablen: (SpiceyPy compatibility; ignored)
+    :param collen: (SpiceyPy compatibility; ignored)
+    :return: Number of items in SELECT clause of QUERY.; Begin positions of expressions in SELECT clause.; End positions of expressions in SELECT clause.; Data types of expressions.; Classes of expressions.; Names of tables qualifying SELECT columns.; Names of columns in SELECT clause of QUERY.; Error flag.; Parse error message."""
+    return _context().ekpsel(query, msglen, tablen, collen)
+
 def ekshdw(handle):
     """Return shadowing status of a specified EK file. THIS IS A STUB ROUTINE.
     
@@ -2417,6 +2858,16 @@ def eksrch(eqryi, eqryc, eqryd):
     :param eqryd: D.p. component of encoded query.
     :return: Number of rows matching query constraints.; Flag indicating whether semantic error occurred.; Message describing semantic error, if any."""
     return _context().eksrch(eqryi, eqryc, eqryd)
+
+def ekssum(handle, segno):
+    """Return summary information for a specified segment in a specified EK.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekssum.html
+    
+    :param handle: Handle of EK.
+    :param segno: Number of segment to be summarized.
+    :return: Name of table containing segment.; Number of rows in segment.; Number of columns in segment.; Names of columns in segment.; Data types of columns in segment.; Entry sizes of columns in segment.; String lengths of columns in segment.; Flags indicating whether columns are indexed.; Flags indicating whether columns allow nulls."""
+    return _context().ekssum(handle, segno)
 
 def ektnam(n, lenout=None):
     """Return the name of a specified, loaded table.
@@ -2586,6 +3037,17 @@ def eul2xf(eulang, axisa, axisb, axisc):
     :param axisc: Axis C of the Euler angle factorization.
     :return: A state transformation matrix."""
     return _context().eul2xf(eulang, axisa, axisb, axisc)
+
+def ev2lin(et, geophs, elems):
+    """**Deprecated:** This routine has been superseded by the SPICELIB routine `evsgp4`. *ALL* TLE evaluations should use that routine. NAIF supports `ev2lin` only for backward compatibility.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ev2lin.html
+    
+    :param et: Epoch in seconds past ephemeris epoch J2000.
+    :param geophs: Geophysical constants
+    :param elems: Two-line element data
+    :return: Evaluated state"""
+    return _context().ev2lin(et, geophs, elems)
 
 def evsgp4(et, geophs, elems):
     """Evaluate NORAD two-line element data for earth orbiting spacecraft. This evaluator uses algorithms as described in Vallado 2006 [4].
@@ -2760,6 +3222,16 @@ def georec(lon, lat, alt, re, f):
     :return: Rectangular coordinates of point."""
     return _context().georec(lon, lat, alt, re, f)
 
+def getelm(frstyr, lines):
+    """Parse the 'lines' of a two-line element set, returning the elements in units suitable for use in SPICE software.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/getelm.html
+    
+    :param frstyr: Year of earliest representable two-line elements.
+    :param lines: A pair of 'lines' containing two-line elements.
+    :return: The epoch of the elements in seconds past J2000.; The elements converted to SPICE units."""
+    return _context().getelm(frstyr, lines)
+
 def getfat(file):
     """Determine the architecture and type of SPICE kernels.
     
@@ -2768,6 +3240,18 @@ def getfat(file):
     :param file: The name of a file to be examined.
     :return: The architecture of the kernel file.; The type of the kernel file."""
     return _context().getfat(file)
+
+def getfvn(inst, room, shapelen=None, framelen=None):
+    """Return the field-of-view (FOV) parameters for a specified instrument. The instrument is specified by name.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/getfvn.html
+    
+    :param inst: Name of an instrument.
+    :param room: Maximum number of vectors that can be returned.
+    :param shapelen: (SpiceyPy compatibility; ignored)
+    :param framelen: (SpiceyPy compatibility; ignored)
+    :return: Instrument FOV shape.; Name of the frame in which FOV vectors are defined.; Boresight vector.; Number of boundary vectors returned.; FOV boundary vectors."""
+    return _context().getfvn(inst, room, shapelen, framelen)
 
 def gf_distance(target, abcorr, obsrvr, relate, refval, adjust, step, cnfine):
     """A GF search on the observer-target distance (PEPPER; `gfdist` with the confinement and result windows as arrays, and without workspace).
@@ -2782,6 +3266,33 @@ def gf_distance(target, abcorr, obsrvr, relate, refval, adjust, step, cnfine):
     :param cnfine: the confinement window, shape (2, n): intervals [start, stop], sorted and disjoint
     :return: the result window, shape (2, n) (n = 0 after an error)"""
     return _context().gf_distance(target, abcorr, obsrvr, relate, refval, adjust, step, cnfine)
+
+def gf_event(udstep, udrefn, gquant, qnpars, qpnams, qcpars, qdpars, qipars, qlpars, op, refval, tol, adjust, step, cnfine, rpt, udrepi, udrepu, udrepf, bail, udbail):
+    """A GF search on a geometric quantity, with the caller's step and refinement routines (PEPPER; `gfevnt` with the confinement and result windows as arrays, and without workspace).
+    
+    :param udstep: Name of the routine that computes and returns a time step.
+    :param udrefn: Name of the routine that computes a refined time.
+    :param gquant: Type of geometric quantity.
+    :param qnpars: Number of quantity definition parameters.
+    :param qpnams: Names of quantity definition parameters.
+    :param qcpars: Array of character quantity definition parameters.
+    :param qdpars: Array of double precision quantity definition parameters.
+    :param qipars: Array of integer quantity definition parameters.
+    :param qlpars: Array of logical quantity definition parameters.
+    :param op: Operator that either looks for an extreme value (max, min, local, absolute) or compares the geometric quantity value and a number.
+    :param refval: Reference value.
+    :param tol: Convergence tolerance in seconds
+    :param adjust: Absolute extremum adjustment value.
+    :param step: the smallest step UDSTEP returns: it sizes the work windows (PEPPER)
+    :param cnfine: the confinement window, shape (2, n): intervals [start, stop], sorted and disjoint
+    :param rpt: Progress reporter on (.TRUE.) or off (.FALSE.).
+    :param udrepi: Function that initializes progress reporting.
+    :param udrepu: Function that updates the progress report.
+    :param udrepf: Function that finalizes progress reporting.
+    :param bail: Logical indicating program interrupt monitoring.
+    :param udbail: Name of a routine that signals a program interrupt.
+    :return: the result window, shape (2, n) (n = 0 after an error)"""
+    return _context().gf_event(udstep, udrefn, gquant, qnpars, qpnams, qcpars, qdpars, qipars, qlpars, op, refval, tol, adjust, step, cnfine, rpt, udrepi, udrepu, udrepf, bail, udbail)
 
 def gf_illumination(method, angtyp, target, illmn, fixref, abcorr, obsrvr, spoint, relate, refval, adjust, step, cnfine):
     """A GF search on an illumination angle (PEPPER; `gfilum` with the confinement and result windows as arrays, and without workspace).
@@ -2957,6 +3468,60 @@ def gfbail():
     :return: the result"""
     return _context().gfbail()
 
+def gffove(inst, tshape, raydir, target, tframe, abcorr, obsrvr, tol, udstep, udrefn, rpt, udrepi, udrepu, udrepf, bail, udbail, cnfine, result=None):
+    """Determine time intervals when a specified target body or ray intersects the space bounded by the field-of-view (FOV) of a specified instrument. Report progress and handle interrupts if so commanded.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/gffove.html
+    
+    :param inst: Name of the instrument.
+    :param tshape: Type of shape model used for target body.
+    :param raydir: Ray's direction vector.
+    :param target: Name of the target body.
+    :param tframe: Body-fixed, body-centered frame for target body.
+    :param abcorr: Aberration correction flag.
+    :param obsrvr: Name of the observing body.
+    :param tol: Convergence tolerance in seconds.
+    :param udstep: Name of routine that returns a time step.
+    :param udrefn: Name of the routine that computes a refined time.
+    :param rpt: Progress report flag.
+    :param udrepi: Function that initializes progress reporting.
+    :param udrepu: Function that updates the progress report.
+    :param udrepf: Function that finalizes progress reporting.
+    :param bail: Logical indicating program interrupt monitoring.
+    :param udbail: Name of a routine that signals a program interrupt.
+    :param cnfine: SPICE window to which the search is restricted.
+    :param result: SPICE window containing results.
+    :return: SPICE window containing results."""
+    return _context().gffove(inst, tshape, raydir, target, tframe, abcorr, obsrvr, tol, udstep, udrefn, rpt, udrepi, udrepu, udrepf, bail, udbail, cnfine, result)
+
+def gfocce(occtyp, front, fshape, fframe, back, bshape, bframe, abcorr, obsrvr, tol, udstep, udrefn, rpt, udrepi, udrepu, udrepf, bail, udbail, cnfine, result=None):
+    """Determine time intervals when an observer sees one target occulted by another. Report progress and handle interrupts if so commanded.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/gfocce.html
+    
+    :param occtyp: Type of occultation.
+    :param front: Name of body occulting the other.
+    :param fshape: Type of shape model used for front body.
+    :param fframe: Body-fixed, body-centered frame for front body.
+    :param back: Name of body occulted by the other.
+    :param bshape: Type of shape model used for back body.
+    :param bframe: Body-fixed, body-centered frame for back body.
+    :param abcorr: Aberration correction flag.
+    :param obsrvr: Name of the observing body.
+    :param tol: Convergence tolerance in seconds.
+    :param udstep: Name of the routine that returns a time step.
+    :param udrefn: Name of the routine that computes a refined time.
+    :param rpt: Progress report flag.
+    :param udrepi: Function that initializes progress reporting.
+    :param udrepu: Function that updates the progress report.
+    :param udrepf: Function that finalizes progress reporting.
+    :param bail: Logical indicating program interrupt monitoring.
+    :param udbail: Name of a routine that signals a program interrupt.
+    :param cnfine: SPICE window to which the search is restricted.
+    :param result: SPICE window containing results.
+    :return: SPICE window containing results."""
+    return _context().gfocce(occtyp, front, fshape, fframe, back, bshape, bframe, abcorr, obsrvr, tol, udstep, udrefn, rpt, udrepi, udrepu, udrepf, bail, udbail, cnfine, result)
+
 def gfoclt(occtyp, front, fshape, fframe, back, bshape, bframe, abcorr, obsrvr, step, cnfine, result=None):
     """Determine time intervals when an observer sees one target body occulted by, or in transit across, another.
     
@@ -3085,6 +3650,29 @@ def gr2jul(year, month, day):
     :return: Year  of Gregorian Calendar/Julian Calendar; Month of Gregorian Calendar/Julian Calendar; Day of Month in Gregorian Calendar/Julian Calendar; Day of Year in Julian Calendar"""
     return _context().gr2jul(year, month, day)
 
+def hrmesp(first, step, yvals, x):
+    """Evaluate, at a specified point, a Hermite interpolating polynomial for a specified set of equally spaced abscissa values and corresponding pairs of function and function derivative values.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/hrmesp.html
+    
+    :param first: First abscissa value.
+    :param step: Step size.
+    :param yvals: Ordinate and derivative values.
+    :param x: Point at which to interpolate the polynomial.
+    :return: Interpolated function value at X.; Interpolated function's derivative at X."""
+    return _context().hrmesp(first, step, yvals, x)
+
+def hrmint(xvals, yvals, x):
+    """Evaluate a Hermite interpolating polynomial at a specified abscissa value.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/hrmint.html
+    
+    :param xvals: Abscissa values.
+    :param yvals: Ordinate and derivative values.
+    :param x: Point at which to interpolate the polynomial.
+    :return: Interpolated function value at X.; Interpolated function's derivative at X."""
+    return _context().hrmint(xvals, yvals, x)
+
 def hx2dp(string):
     """Convert a string representing a double precision number in a base 16 'scientific notation' into its equivalent double precision number.
     
@@ -3194,6 +3782,66 @@ def incnsg(apex, axis, angle, endpt1, endpt2):
     :param endpt2: Endpoints of line segment.
     :return: Number of intersection points.; First intersection point, if it exists.; Second intersection point, if it exists."""
     return _context().incnsg(apex, axis, angle, endpt1, endpt2)
+
+def inedpl(a, b, c, plane):
+    """Find the intersection of a triaxial ellipsoid and a plane.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/inedpl.html
+    
+    :param a: Length of ellipsoid semi-axis lying on the x-axis.
+    :param b: Length of ellipsoid semi-axis lying on the y-axis.
+    :param c: Length of ellipsoid semi-axis lying on the z-axis.
+    :param plane: Plane that intersects ellipsoid.
+    :return: Intersection ellipse, when FOUND is .TRUE.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+    return _context().inedpl(a, b, c, plane)
+
+def inelpl(ellips, plane):
+    """Find the intersection of an ellipse and a plane.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/inelpl.html
+    
+    :param ellips: A SPICE ellipse.
+    :param plane: A SPICE plane.
+    :return: Number of intersection points of plane and ellipse.; Intersection points.; Intersection points."""
+    return _context().inelpl(ellips, plane)
+
+def inrypl(vertex, direct, plane):
+    """Find the intersection of a ray and a plane.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/inrypl.html
+    
+    :param vertex: Vertex and direction vector of ray.
+    :param direct: Vertex and direction vector of ray.
+    :param plane: A SPICE plane.
+    :return: Number of intersection points of ray and plane.; Intersection point, if NXPTS = 1."""
+    return _context().inrypl(vertex, direct, plane)
+
+def inslad(elts, ne, loc, array, na):
+    """Insert one or more elements into a double precision array at the indicated location.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/inslad.html
+    
+    :param elts: Elements to be inserted.
+    :param ne: Number of elements to be inserted.
+    :param loc: Location of the first inserted element.
+    :param array: Input/output array.
+    :param na: Number of elements in the input/output array.
+    :return: Input/output array.; Number of elements in the input/output array."""
+    return _context().inslad(elts, ne, loc, array, na)
+
+def inslai(elts, ne, loc, array, na):
+    """Insert one or more elements into an integer array at the indicated location.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/inslai.html
+    
+    :param elts: Elements to be inserted.
+    :param ne: Number of elements to be inserted.
+    :param loc: Location of the first inserted element.
+    :param array: Input/output array.
+    :param na: Number of elements in the input/output array.
+    :return: Input/output array.; Number of elements in the input/output array."""
+    return _context().inslai(elts, ne, loc, array, na)
 
 def insrtd(item, inset=None):
     """Insert an item into a double precision set.
@@ -3479,18 +4127,52 @@ def ktotal(kind):
     :return: The number of kernels of type KIND."""
     return _context().ktotal(kind)
 
-def lgrind(n, xvals, yvals, work, x):
+def latsrf(method, target, et, fixref, lonlat):
+    """Map array of planetocentric longitude/latitude coordinate pairs to surface points on a specified target body.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/latsrf.html
+    
+    :param method: Computation method.
+    :param target: Name of target body.
+    :param et: Epoch in TDB seconds past J2000 TDB.
+    :param fixref: Body-fixed, body-centered target body frame.
+    :param lonlat: Array of longitude/latitude coordinate pairs.
+    :return: Array of surface points."""
+    return _context().latsrf(method, target, et, fixref, lonlat)
+
+def lgresp(first, step, yvals, x):
+    """Evaluate a Lagrange interpolating polynomial for a specified set of coordinate pairs whose first components are equally spaced, at a specified abscissa value.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/lgresp.html
+    
+    :param first: First abscissa value.
+    :param step: Step size.
+    :param yvals: Ordinate values.
+    :param x: Point at which to interpolate the polynomial.
+    :return: the result"""
+    return _context().lgresp(first, step, yvals, x)
+
+def lgrind(xvals, yvals, x):
     """Evaluate a Lagrange interpolating polynomial, for a specified set of coordinate pairs, at a specified abscissa value. Return both the value of the polynomial and its derivative.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/lgrind.html
     
-    :param n: Number of points defining the polynomial.
     :param xvals: Abscissa values.
     :param yvals: Ordinate values.
-    :param work: Work space array.
     :param x: Point at which to interpolate the polynomial.
-    :return: Work space array.; Polynomial value at X.; Polynomial derivative at X."""
-    return _context().lgrind(n, xvals, yvals, work, x)
+    :return: Polynomial value at X.; Polynomial derivative at X."""
+    return _context().lgrind(xvals, yvals, x)
+
+def lgrint(xvals, yvals, x):
+    """Evaluate a Lagrange interpolating polynomial for a specified set of coordinate pairs, at a specified abscissa value.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/lgrint.html
+    
+    :param xvals: Abscissa values.
+    :param yvals: Ordinate values.
+    :param x: Point at which to interpolate the polynomial.
+    :return: the result"""
+    return _context().lgrint(xvals, yvals, x)
 
 def limb_points(method, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol):
     """Limb points on a target body, without a limit on their number (PEPPER; `limbpt` without MAXN). The outputs are allocated to the number of points found.
@@ -3515,6 +4197,19 @@ def loader_names():
     
     :return: the loaders' names (upper case)"""
     return _context().loader_names()
+
+def locln(unit, bmark, emark, line):
+    """Locate a group of lines in a text file delimited by markers.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/locln.html
+    
+    :param unit: Logical unit connected to text file.
+    :param bmark: Begin marker.
+    :param emark: End marker.
+    :param line: Workspace.
+    :return: Workspace.; Beginning line.; Ending line.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+    return _context().locln(unit, bmark, emark, line)
 
 def lspcn(body, et, abcorr):
     """Compute L_s, the planetocentric longitude of the sun, as seen from a specified body.
@@ -3664,6 +4359,16 @@ def npedln(a, b, c, linept, linedr):
     :return: Nearest point on ellipsoid to line; Distance of ellipsoid from line"""
     return _context().npedln(a, b, c, linept, linedr)
 
+def npelpt(point, ellips):
+    """Find the nearest point on an ellipse to a specified point, both in three-dimensional space, and find the distance between the ellipse and the point.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/npelpt.html
+    
+    :param point: Point whose distance to an ellipse is to be found.
+    :param ellips: A SPICE ellipse.
+    :return: Nearest point on ellipse to input point.; Distance of input point to ellipse."""
+    return _context().npelpt(point, ellips)
+
 def nplnpt(linpt, lindir, point):
     """Find the nearest point on a line to a specified point, and find the distance between the two points.
     
@@ -3685,6 +4390,26 @@ def npsgpt(ep1, ep2, point):
     :param point: A point in 3-dimensional space.
     :return: Nearest point on the line segment to POINT.; Distance between PNEAR and POINT."""
     return _context().npsgpt(ep1, ep2, point)
+
+def nvc2pl(normal, constant):
+    """Make a SPICE plane from a normal vector and a constant.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/nvc2pl.html
+    
+    :param normal: A normal vector and constant defining a plane.
+    :param constant: A normal vector and constant defining a plane.
+    :return: An array representing the plane."""
+    return _context().nvc2pl(normal, constant)
+
+def nvp2pl(normal, point):
+    """Make a SPICE plane from a normal vector and a point.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/nvp2pl.html
+    
+    :param normal: A normal vector and a point defining a plane.
+    :param point: A normal vector and a point defining a plane.
+    :return: An array representing the plane."""
+    return _context().nvp2pl(normal, point)
 
 def occult(target1, shape1, frame1, target2, shape2, frame2, abcorr, observer, et):
     """Determine the occultation condition (not occulted, partially occulted, etc.) of one target relative to another target as seen by an observer at a given time.
@@ -3733,6 +4458,17 @@ def oscelt(state, et, mu):
     :param mu: Gravitational parameter (GM) of primary body.
     :return: Equivalent conic elements."""
     return _context().oscelt(state, et, mu)
+
+def oscltx(state, et, mu):
+    """Determine the set of osculating conic orbital elements that corresponds to the state (position, velocity) of a body at some epoch. In additional to the classical elements, return the true anomaly, semi-major axis, and period, if applicable.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/oscltx.html
+    
+    :param state: State of body at epoch of elements.
+    :param et: Epoch of elements.
+    :param mu: Gravitational parameter (GM) of primary body.
+    :return: Extended set of classical conic elements."""
+    return _context().oscltx(state, et, mu)
 
 def partof(ma):
     """Solve the time of flight equation MA = D + (D**3) / 3 for the parabolic eccentric anomaly D, given mean anomaly.
@@ -3958,6 +4694,16 @@ def phaseq(et, target, illmn, obsrvr, abcorr):
     :return: the result"""
     return _context().phaseq(et, target, illmn, obsrvr, abcorr)
 
+def pjelpl(elin, plane):
+    """Project an ellipse onto a plane, orthogonally.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/pjelpl.html
+    
+    :param elin: A SPICE ellipse to be projected.
+    :param plane: A plane onto which ELIN is to be projected.
+    :return: A SPICE ellipse resulting from the projection."""
+    return _context().pjelpl(elin, plane)
+
 def plnsns(bodid):
     """Indicate for a specified body whether planetographic and planetocentric longitude increase in the same sense.
     
@@ -4116,6 +4862,17 @@ def prtenc(number):
     :return: Encoded string."""
     return _context().prtenc(number)
 
+def psv2pl(point, span1, span2):
+    """Make a SPICE plane from a point and two spanning vectors.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/psv2pl.html
+    
+    :param point: A point and two spanning vectors defining a
+    :param span1: A point and two spanning vectors defining a
+    :param span2: A point and two spanning vectors defining a
+    :return: An array representing the plane."""
+    return _context().psv2pl(point, span1, span2)
+
 def pxform(fromstr, tostr, et):
     """Return the matrix that transforms position vectors from one specified frame to another at a specified epoch.
     
@@ -4244,6 +5001,30 @@ def refchg(frame1, frame2, et):
     :param et: an epoch in TDB seconds past J2000.
     :return: a rotation matrix"""
     return _context().refchg(frame1, frame2, et)
+
+def remlad(ne, loc, array, na):
+    """Remove one or more elements from a double precision array at the indicated location.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/remlad.html
+    
+    :param ne: Number of elements to be removed.
+    :param loc: Location of the first removed element.
+    :param array: Input/output array.
+    :param na: Number of elements in the input/output array.
+    :return: Input/output array.; Number of elements in the input/output array."""
+    return _context().remlad(ne, loc, array, na)
+
+def remlai(ne, loc, array, na):
+    """Remove one or more elements from an integer array at the indicated location.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/remlai.html
+    
+    :param ne: Number of elements to be removed.
+    :param loc: Location of the first removed element.
+    :param array: Input/output array.
+    :param na: Number of elements in the input/output array.
+    :return: Input/output array.; Number of elements in the input/output array."""
+    return _context().remlai(ne, loc, array, na)
 
 def removd(item, inset=None):
     """Remove an item from a double precision set.
@@ -4592,6 +5373,15 @@ def scpars(sc, sclkch):
     :param sclkch: Character representation of a spacecraft clock.
     :return: Flag to indicate if string parsed correctly.; Error message if string did not parse.; Encoded representation of the clock count."""
     return _context().scpars(sc, sclkch)
+
+def scpart(sc):
+    """Get spacecraft clock partition information from a spacecraft clock kernel file.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/scpart.html
+    
+    :param sc: NAIF spacecraft identification code.
+    :return: The number of spacecraft clock partitions.; Array of partition start times.; Array of partition stop times."""
+    return _context().scpart(sc)
 
 def scps01(sc, clkstr):
     """Convert a character representation of a type 1 spacecraft clock count to ticks.
@@ -5198,6 +5988,16 @@ def spke08(et, record):
     :return: State (position and velocity)."""
     return _context().spke08(et, record)
 
+def spke09(et, record):
+    """Evaluate a single SPK data record from a segment of type 9 (discrete states, evaluated by Lagrange interpolation).
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spke09.html
+    
+    :param et: Target epoch.
+    :param record: Data record.
+    :return: Data record.; State (position and velocity)."""
+    return _context().spke09(et, record)
+
 def spke10(et, record):
     """Evaluate a single SPK data record from a segment of type 10 (NORAD two-line element sets.). This evaluator uses algorithms as described in Vallado 2006 [4].
     
@@ -5257,6 +6057,26 @@ def spke17(et, recin):
     :param recin: Data record.
     :return: State (position and velocity)."""
     return _context().spke17(et, recin)
+
+def spke18(et, record):
+    """Evaluate a single data record from a type 18 SPK segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spke18.html
+    
+    :param et: Epoch for which a state is desired.
+    :param record: Record from a type 18 SPK segment valid for ET. (PEPPER: its packets are transposed in place.)
+    :return: Record from a type 18 SPK segment valid for ET. (PEPPER: its packets are transposed in place.); State (position and velocity) at epoch ET."""
+    return _context().spke18(et, record)
+
+def spke19(et, record):
+    """Evaluate a single data record from a type 19 SPK segment.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spke19.html
+    
+    :param et: Epoch for which a state is desired.
+    :param record: Record from a type 19 SPK segment valid for ET. (PEPPER: its packets are transposed in place.)
+    :return: Record from a type 19 SPK segment valid for ET. (PEPPER: its packets are transposed in place.); State (position and velocity) at epoch ET."""
+    return _context().spke19(et, record)
 
 def spke20(et, record):
     """Evaluate a single data record from an SPK or PCK segment of type 20 (Chebyshev polynomials, velocity only).
@@ -5383,6 +6203,20 @@ def spkopn(filename, ifname, ncomch):
     :param ncomch: The number of characters to reserve for comments.
     :return: The handle of the opened SPK file."""
     return _context().spkopn(filename, ifname, ncomch)
+
+def spkpds(body, center, framestr, typenum, first, last):
+    """Perform routine error checks and if all check pass, pack the descriptor for an SPK segment
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkpds.html
+    
+    :param body: The NAIF ID code for the body of the segment.
+    :param center: The center of motion for BODY.
+    :param framestr: The frame for this segment.
+    :param typenum: The type of SPK segment to create.
+    :param first: The first epoch for which the segment is valid.
+    :param last: The last  epoch for which the segment is valid.
+    :return: An SPK segment descriptor."""
+    return _context().spkpds(body, center, framestr, typenum, first, last)
 
 def spkpos(targ, et, ref, abcorr, obs):
     """Return the position of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration.
@@ -5611,6 +6445,18 @@ def spks21(handle, baddr, eaddr, begin, end):
     :param begin: Beginning (initial epoch) of subset.
     :param end: End (final epoch) of subset."""
     return _context().spks21(handle, baddr, eaddr, begin, end)
+
+def spksfs(body, et, idlen=None):
+    """Search through loaded SPK files to find the highest-priority segment applicable to the body and time specified and buffer searched segments in the process, to attempt to avoid re-reading files.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spksfs.html
+    
+    :param body: Body ID.
+    :param et: Ephemeris time.
+    :param idlen: (SpiceyPy compatibility; ignored)
+    :return: Handle of file containing the applicable segment.; Descriptor of the applicable segment.; Identifier of the applicable segment.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+    return _context().spksfs(body, et, idlen)
 
 def spkssb(targ, et, ref):
     """Return the state (position and velocity) of a target body relative to the solar system barycenter.
@@ -5939,6 +6785,19 @@ def srfcss(code, bodstr, srflen=None):
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().srfcss(code, bodstr, srflen)
 
+def srfnrm(method, target, et, fixref, srfpts):
+    """Map array of surface points on a specified target body to the corresponding unit length outward surface normal vectors.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/srfnrm.html
+    
+    :param method: Computation method.
+    :param target: Name of target body.
+    :param et: Epoch in TDB seconds past J2000 TDB.
+    :param fixref: Body-fixed, body-centered target body frame.
+    :param srfpts: Array of surface points.
+    :return: Array of outward, unit length normal vectors."""
+    return _context().srfnrm(method, target, et, fixref, srfpts)
+
 def srfrec(body, longitude, latitude):
     """Convert planetocentric latitude and longitude of a surface point on a specified body to rectangular coordinates.
     
@@ -6202,6 +7061,32 @@ def surfpv(stvrtx, stdir, a, b, c):
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().surfpv(stvrtx, stdir, a, b, c)
 
+def swapad(n, locn, m, locm, array):
+    """Swap (exchange) two non-intersecting groups of contiguous elements of a double precision array.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/swapad.html
+    
+    :param n: Number of elements in the first group.
+    :param locn: Location of the first group.
+    :param m: Number of elements in the second group.
+    :param locm: Location of the second group.
+    :param array: The array.
+    :return: The array."""
+    return _context().swapad(n, locn, m, locm, array)
+
+def swapai(n, locn, m, locm, array):
+    """Swap (exchange) two non-intersecting groups of contiguous elements of an integer array.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/swapai.html
+    
+    :param n: Number of elements in the first group.
+    :param locn: Location of the first group.
+    :param m: Number of elements in the second group.
+    :param locm: Location of the second group.
+    :param array: The array.
+    :return: The array."""
+    return _context().swapai(n, locn, m, locm, array)
+
 def swpool(agent, nnames, lenvals=None, names=None):
     """Add a name to the list of agents to notify whenever a member of a list of kernel variables is updated.
     
@@ -6298,6 +7183,18 @@ def texpyr(year):
     :param year: The year of some epoch abbreviated/expanded.
     :return: The year of some epoch abbreviated/expanded."""
     return _context().texpyr(year)
+
+def timdef(action, item, lenout=None, value=None):
+    """Set and retrieve the defaults associated with calendar input strings.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/timdef.html
+    
+    :param action: Kind of action to take 'SET' or 'GET'.
+    :param item: Default item of interest.
+    :param lenout: (SpiceyPy compatibility; ignored)
+    :param value: Value associated with the default item.
+    :return: Value associated with the default item."""
+    return _context().timdef(action, item, lenout, value)
 
 def timout(et, pictur, lenout=None):
     """Convert an input epoch represented in TDB seconds past the TDB epoch of J2000 to a character string formatted to the specifications of a user's format picture.
@@ -6527,6 +7424,28 @@ def validi(size, n, a=None):
     :param a: Set to be validated.
     :return: Set to be validated."""
     return _context().validi(size, n, a)
+
+def vprjp(vin, plane):
+    """Project a vector onto a specified plane, orthogonally.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/vprjp.html
+    
+    :param vin: Vector to be projected.
+    :param plane: A SPICE plane onto which VIN is projected.
+    :return: Vector resulting from projection."""
+    return _context().vprjp(vin, plane)
+
+def vprjpi(vin, projpl, invpl):
+    """Find the vector in a specified plane that maps to a specified vector in another plane under orthogonal projection.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/vprjpi.html
+    
+    :param vin: The projected vector.
+    :param projpl: Plane containing VIN.
+    :param invpl: Plane containing inverse image of VIN.
+    :return: Inverse projection of VIN.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+    return _context().vprjpi(vin, projpl, invpl)
 
 def wncard(window):
     """Return the cardinality (number of intervals) of a double precision window.
@@ -6927,6 +7846,21 @@ def unload(filename):
     :param filename: The name of a kernel to unload."""
     return _instance().unload(filename)
 
+def alltru(logcls, n):
+    """Determine if all the entries in an array of logicals are .TRUE.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/alltru.html
+    
+    :param logcls: An array of logicals.
+    :param n: Number of elements in the array LOGCLS.
+    :return: the result"""
+    cdef int _c_n = n
+    cdef int _c_fresult = 0
+    cdef int _st = 0
+    cdef cnp.ndarray _a_logcls = _rows(np.asarray(logcls).astype(bool).astype(np.int32), NPY_INT32, 1)
+    pepper_alltru(<int>cnp.PyArray_DIM(_a_logcls, 0), <const int*>cnp.PyArray_DATA(_a_logcls), _c_n, &_c_fresult)
+    return (_c_fresult != 0)
+
 def approx(x, y, tol):
     """Return .TRUE. if two double precision numbers are equal to within some tolerance.
     
@@ -6964,6 +7898,23 @@ def astrip(instr, asciib, asciie):
     _c_outstr[0] = 0
     pepper_astrip(_c_instr, _c_asciib, _c_asciie, 1024, _c_outstr)
     return _s(_c_outstr)
+
+def astrip_inplace(string, asciib, asciie):
+    """Remove the characters in an ASCII range from a string, in place: the in-place form of `astrip`.
+    
+    :param string: String to strip.
+    :param asciib: First ASCII character in range to be stripped.
+    :param asciie: Last ASCII character in range to be stripped.
+    :return: String to strip."""
+    cdef int _st = 0
+    cdef bytes _b_asciib = _b(asciib)
+    cdef bytes _b_asciie = _b(asciie)
+    cdef const char *_c_asciib = _b_asciib
+    cdef const char *_c_asciie = _b_asciie
+    cdef bytearray _ba_string = bytearray(_b(string if string is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_string = _ba_string
+    pepper_astrip_inplace(1024, _c_string, _c_asciib, _c_asciie)
+    return _s(_c_string)
 
 def axisar(axis, angle):
     """Construct a rotation matrix that rotates vectors by a specified angle about a specified axis.
@@ -7192,6 +8143,28 @@ def bsrchi(value, ndim, array):
     pepper_bsrchi(_c_value, _c_ndim, <const int*>cnp.PyArray_DATA(_a_array), &_c_fresult)
     return (_c_fresult - 1)
 
+def chbder(cp, degp, x2s, x, nderiv):
+    """Return the value of a polynomial and its first NDERIV derivatives, evaluated at the input X, using the coefficients of the Chebyshev expansion of the polynomial.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/chbder.html
+    
+    :param cp: DEGP+1 Chebyshev polynomial coefficients.
+    :param degp: Degree of polynomial.
+    :param x2s: Transformation parameters of polynomial.
+    :param x: Value for which the polynomial is to be evaluated.
+    :param nderiv: The number of derivatives to compute.
+    :return: Array of the derivatives of the polynomial."""
+    cdef int _c_degp = degp
+    cdef double _c_x = x
+    cdef int _c_nderiv = nderiv
+    cdef int _st = 0
+    cdef cnp.ndarray _a_cp = _rows(cp, NPY_DOUBLE, 1)
+    cdef cnp.ndarray _a_x2s = _input(x2s, NPY_DOUBLE, 2, -1, False)
+    cdef cnp.ndarray _a_partdp = _empty(NPY_DOUBLE, max(<int>(3 * (_c_nderiv + 1)), 1), -1)
+    cdef cnp.ndarray _a_dpdxs = _empty(NPY_DOUBLE, max(<int>(_c_nderiv + 1), 1), -1)
+    pepper_chbder(<const double*>cnp.PyArray_DATA(_a_cp), _c_degp, <double*>cnp.PyArray_DATA(_a_x2s), _c_x, _c_nderiv, <double*>cnp.PyArray_DATA(_a_partdp), <double*>cnp.PyArray_DATA(_a_dpdxs))
+    return _a_dpdxs
+
 def chbint(cp, degp, x2s, x):
     """Return the value of a polynomial and its derivative, evaluated at the input X, using the coefficients of the Chebyshev expansion of the polynomial.
     
@@ -7251,6 +8224,22 @@ def cmprss(delim, n, instr, lenout=None):
     _c_output[0] = 0
     pepper_cmprss(_c_delim, _c_n, _c_input, 1024, _c_output)
     return _s(_c_output)
+
+def cmprss_inplace(delim, n, string):
+    """Compress runs of a delimiter in a string, in place: the in-place form of `cmprss`.
+    
+    :param delim: Delimiter to be compressed.
+    :param n: Maximum consecutive occurrences of DELIM.
+    :param string: String to compress.
+    :return: String to compress."""
+    cdef int _c_n = n
+    cdef int _st = 0
+    cdef bytes _b_delim = _b(delim)
+    cdef const char *_c_delim = _b_delim
+    cdef bytearray _ba_string = bytearray(_b(string if string is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_string = _ba_string
+    pepper_cmprss_inplace(_c_delim, _c_n, 1024, _c_string)
+    return _s(_c_string)
 
 def cpos(string, chars, start):
     """Find the first occurrence in a string of a character belonging to a collection of characters, starting at a specified location, searching forward.
@@ -7521,6 +8510,21 @@ def dvnorm(state):
     cdef cnp.ndarray _a_state = _input(state, NPY_DOUBLE, 6, -1, False)
     pepper_dvnorm(<double*>cnp.PyArray_DATA(_a_state), &_c_fresult)
     return _c_fresult
+
+def el2cgv(ellipse):
+    """Convert a SPICE ellipse to a center vector and two generating vectors. The selected generating vectors are semi-axes of the ellipse.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/el2cgv.html
+    
+    :param ellipse: A SPICE ellipse.
+    :return: Center and semi-axes of ELLIPS.; Center and semi-axes of ELLIPS.; Center and semi-axes of ELLIPS."""
+    cdef int _st = 0
+    cdef cnp.ndarray _a_ellips = _input(ellipse, NPY_DOUBLE, 9, -1, False)
+    cdef cnp.ndarray _a_center = _empty(NPY_DOUBLE, 3, -1)
+    cdef cnp.ndarray _a_smajor = _empty(NPY_DOUBLE, 3, -1)
+    cdef cnp.ndarray _a_sminor = _empty(NPY_DOUBLE, 3, -1)
+    pepper_el2cgv(<double*>cnp.PyArray_DATA(_a_ellips), <double*>cnp.PyArray_DATA(_a_center), <double*>cnp.PyArray_DATA(_a_smajor), <double*>cnp.PyArray_DATA(_a_sminor))
+    return _a_center, _a_smajor, _a_sminor
 
 def eqchr(a, b):
     """Return .TRUE. if two given characters are equivalent when the case of the characters is ignored.
@@ -7811,6 +8815,38 @@ def isrchi(value, ndim, array):
     pepper_isrchi(_c_value, _c_ndim, <const int*>cnp.PyArray_DATA(_a_array), &_c_fresult)
     return (_c_fresult - 1)
 
+def kxtrct(keywd, terms, nterms, instring, termlen=None, stringlen=None, substrlen=None):
+    """Locate a keyword in a string and extract the substring from the beginning of the first word following the keyword to the beginning of the first subsequent recognized terminator of a list.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/kxtrct.html
+    
+    :param keywd: Word that marks the beginning of text of interest.
+    :param terms: Set of words, any of which marks the end of text.
+    :param nterms: Number of TERMS.
+    :param instring: String containing a sequence of words.
+    :param termlen: (SpiceyPy compatibility; ignored)
+    :param stringlen: (SpiceyPy compatibility; ignored)
+    :param substrlen: (SpiceyPy compatibility; ignored)
+    :return: String containing a sequence of words.; String from end of KEYWD to beginning of first TERMS
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+    if not keywd: _empty_string('kxtrct', 'keywd')
+    cdef int _c_nterms = nterms
+    cdef int _c_found = 0
+    cdef char _c_substr[1024]
+    cdef int _st = 0
+    cdef bytes _b_keywd = _b(keywd)
+    cdef bytes _b_terms
+    cdef const char *_c_keywd = _b_keywd
+    cdef int _n_terms, _w_terms
+    cdef const char *_p_terms
+    _b_terms, _n_terms, _w_terms = _strblock(terms)
+    _p_terms = _b_terms
+    cdef bytearray _ba_wordsq = bytearray(_b(instring if instring is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_wordsq = _ba_wordsq
+    _c_substr[0] = 0
+    pepper_kxtrct(_c_keywd, _n_terms, _w_terms, _p_terms, _c_nterms, 1024, _c_wordsq, &_c_found, 1024, _c_substr)
+    return _found('kxtrct', (_s(_c_wordsq), _s(_c_substr)), _c_found != 0)
+
 def lastnb(string):
     """Return the index of the last non-blank character in a character string.
     
@@ -7932,6 +8968,17 @@ def lcase(instr, lenout=None):
     _c_out[0] = 0
     pepper_lcase(_c_in, 1024, _c_out)
     return _s(_c_out)
+
+def lcase_inplace(string):
+    """Lowercase a string in place: the in-place form of `lcase`.
+    
+    :param string: String to convert to lowercase.
+    :return: String to convert to lowercase."""
+    cdef int _st = 0
+    cdef bytearray _ba_string = bytearray(_b(string if string is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_string = _ba_string
+    pepper_lcase_inplace(1024, _c_string)
+    return _s(_c_string)
 
 def ljucrs(n, input):
     """Left-justify, uppercase, and space-compress a character string.
@@ -8174,6 +9221,8 @@ def matchi(string, templ, wstr, wchr):
     :param wstr: Wild string token.
     :param wchr: Wild character token.
     :return: the result"""
+    if not string: _empty_string('matchi', 'string')
+    if not templ: _empty_string('matchi', 'templ')
     cdef int _c_fresult = 0
     cdef int _st = 0
     cdef bytes _b_string = _b(string)
@@ -8197,6 +9246,8 @@ def matchw(string, templ, wstr, wchr):
     :param wstr: Wild string token.
     :param wchr: Wild character token.
     :return: the result"""
+    if not string: _empty_string('matchw', 'string')
+    if not templ: _empty_string('matchw', 'templ')
     cdef int _c_fresult = 0
     cdef int _st = 0
     cdef bytes _b_string = _b(string)
@@ -8614,6 +9665,34 @@ def nextwd(string):
     pepper_nextwd(_c_string, 1024, _c_next, 1024, _c_rest)
     return _s(_c_next), _s(_c_rest)
 
+def nextwd_inplace(string):
+    """Remove the next word from a string: the form of `nextwd` whose REST is the input string.
+    
+    :param string: On input, the string; on output, the remaining part, left-justified.
+    :return: On input, the string; on output, the remaining part, left-justified.; The next word in the string."""
+    cdef char _c_next[1024]
+    cdef int _st = 0
+    cdef bytearray _ba_string = bytearray(_b(string if string is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_string = _ba_string
+    _c_next[0] = 0
+    pepper_nextwd_inplace(1024, _c_string, 1024, _c_next)
+    return _s(_c_string), _s(_c_next)
+
+def notru(logcls, n):
+    """Determine if none the entries in an array of logicals are .TRUE.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/notru.html
+    
+    :param logcls: An array of logicals.
+    :param n: Number of elements in the array LOGCLS.
+    :return: the result"""
+    cdef int _c_n = n
+    cdef int _c_fresult = 0
+    cdef int _st = 0
+    cdef cnp.ndarray _a_logcls = _rows(np.asarray(logcls).astype(bool).astype(np.int32), NPY_INT32, 1)
+    pepper_notru(<int>cnp.PyArray_DIM(_a_logcls, 0), <const int*>cnp.PyArray_DATA(_a_logcls), _c_n, &_c_fresult)
+    return (_c_fresult != 0)
+
 def nparsd(string):
     """Parse a character string that represents a number and return a double precision value.
     
@@ -8751,6 +9830,49 @@ def pcwid(array, nelt):
     pepper_pcwid(_n_array, _w_array, _p_array, _c_nelt, &_c_fresult)
     return _c_fresult
 
+def pl2nvc(plane):
+    """Return a unit normal vector and constant that define a specified plane.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/pl2nvc.html
+    
+    :param plane: A SPICE plane.
+    :return: A normal vector and constant defining the; A normal vector and constant defining the geometric plane"""
+    cdef double _c_konst = 0
+    cdef int _st = 0
+    cdef cnp.ndarray _a_plane = _input(plane, NPY_DOUBLE, 4, -1, False)
+    cdef cnp.ndarray _a_normal = _empty(NPY_DOUBLE, 3, -1)
+    pepper_pl2nvc(<double*>cnp.PyArray_DATA(_a_plane), <double*>cnp.PyArray_DATA(_a_normal), &_c_konst)
+    return _a_normal, _c_konst
+
+def pl2nvp(plane):
+    """Return a unit normal vector and point that define a specified plane.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/pl2nvp.html
+    
+    :param plane: A SPICE plane.
+    :return: A unit normal vector and point that define PLANE.; A unit normal vector and point that define PLANE."""
+    cdef int _st = 0
+    cdef cnp.ndarray _a_plane = _input(plane, NPY_DOUBLE, 4, -1, False)
+    cdef cnp.ndarray _a_normal = _empty(NPY_DOUBLE, 3, -1)
+    cdef cnp.ndarray _a_point = _empty(NPY_DOUBLE, 3, -1)
+    pepper_pl2nvp(<double*>cnp.PyArray_DATA(_a_plane), <double*>cnp.PyArray_DATA(_a_normal), <double*>cnp.PyArray_DATA(_a_point))
+    return _a_normal, _a_point
+
+def pl2psv(plane):
+    """Return a point and two orthogonal spanning vectors that generate a specified plane.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/pl2psv.html
+    
+    :param plane: A SPICE plane.
+    :return: A point in the input plane and two vectors; A point in the input plane and two vectors; A point in the input plane and two vectors"""
+    cdef int _st = 0
+    cdef cnp.ndarray _a_plane = _input(plane, NPY_DOUBLE, 4, -1, False)
+    cdef cnp.ndarray _a_point = _empty(NPY_DOUBLE, 3, -1)
+    cdef cnp.ndarray _a_span1 = _empty(NPY_DOUBLE, 3, -1)
+    cdef cnp.ndarray _a_span2 = _empty(NPY_DOUBLE, 3, -1)
+    pepper_pl2psv(<double*>cnp.PyArray_DATA(_a_plane), <double*>cnp.PyArray_DATA(_a_point), <double*>cnp.PyArray_DATA(_a_span1), <double*>cnp.PyArray_DATA(_a_span2))
+    return _a_point, _a_span1, _a_span2
+
 def pltexp(iverts, delta):
     """Expand a triangular plate by a specified amount. The expanded plate is co-planar with, and has the same orientation as, the original. The centroids of the two plates coincide.
     
@@ -8782,6 +9904,25 @@ def pltnrm(v1, v2, v3):
     cdef cnp.ndarray _a_normal = _empty(NPY_DOUBLE, 3, -1)
     pepper_pltnrm(<double*>cnp.PyArray_DATA(_a_v1), <double*>cnp.PyArray_DATA(_a_v2), <double*>cnp.PyArray_DATA(_a_v3), <double*>cnp.PyArray_DATA(_a_normal))
     return _a_normal
+
+def polyds(coeffs, deg, nderiv, t):
+    """Compute the value of a polynomial and its first NDERIV derivatives at the value T.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/polyds.html
+    
+    :param coeffs: Coefficients of the polynomial to be evaluated.
+    :param deg: Degree of the polynomial to be evaluated.
+    :param nderiv: Number of derivatives to compute.
+    :param t: Point to evaluate the polynomial and derivatives
+    :return: Value of polynomial and derivatives."""
+    cdef int _c_deg = deg
+    cdef int _c_nderiv = nderiv
+    cdef double _c_t = t
+    cdef int _st = 0
+    cdef cnp.ndarray _a_coeffs = _rows(coeffs, NPY_DOUBLE, 1)
+    cdef cnp.ndarray _a_p = _empty(NPY_DOUBLE, max(<int>(_c_nderiv + 1), 1), -1)
+    pepper_polyds(<const double*>cnp.PyArray_DATA(_a_coeffs), _c_deg, _c_nderiv, _c_t, <double*>cnp.PyArray_DATA(_a_p))
+    return _a_p
 
 def pos(string, substr, start):
     """Find the first occurrence in a string of a substring, starting at a specified location, searching forward.
@@ -8820,6 +9961,24 @@ def posr(string, substr, start):
     cdef const char *_c_substr = _b_substr
     pepper_posr(_c_str, _c_substr, _c_start, &_c_fresult)
     return (_c_fresult - 1)
+
+def prefix(pref, spaces, string):
+    """Add a prefix to a character string.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/prefix.html
+    
+    :param pref: Prefix.
+    :param spaces: Number of spaces separating prefix and suffix.
+    :param string: Suffix on input, string on output.
+    :return: Suffix on input, string on output."""
+    cdef int _c_spaces = spaces
+    cdef int _st = 0
+    cdef bytes _b_pref = _b(pref)
+    cdef const char *_c_pref = _b_pref
+    cdef bytearray _ba_string = bytearray(_b(string if string is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_string = _ba_string
+    pepper_prefix(_c_pref, _c_spaces, 1024, _c_string)
+    return _s(_c_string)
 
 def prodad(array, n):
     """Return the product of the elements of a double precision array.
@@ -9026,6 +10185,38 @@ def recsph(rectan):
     pepper_recsph(<double*>cnp.PyArray_DATA(_a_rectan), &_c_r, &_c_colat, &_c_slon)
     return _c_r, _c_colat, _c_slon
 
+def reordd(iorder, ndim, array):
+    """Reorder the elements of a double precision array according to a given order vector.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/reordd.html
+    
+    :param iorder: Order vector to be used to re-order ARRAY.
+    :param ndim: Dimension of ARRAY.
+    :param array: Array to be re-ordered.
+    :return: Order vector to be used to re-order ARRAY.; Array to be re-ordered."""
+    cdef int _c_ndim = ndim
+    cdef int _st = 0
+    cdef cnp.ndarray _a_iorder = _rows(np.array(iorder, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+    cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+    pepper_reordd(<int*>cnp.PyArray_DATA(_a_iorder), _c_ndim, <double*>cnp.PyArray_DATA(_a_array))
+    return _a_iorder, _a_array
+
+def reordi(iorder, ndim, array):
+    """Reorder the elements of an integer array according to a given order vector.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/reordi.html
+    
+    :param iorder: Order vector to be used to re-order ARRAY.
+    :param ndim: Dimension of ARRAY.
+    :param array: Array to be re-ordered.
+    :return: Order vector to be used to re-order ARRAY.; Array to be re-ordered."""
+    cdef int _c_ndim = ndim
+    cdef int _st = 0
+    cdef cnp.ndarray _a_iorder = _rows(np.array(iorder, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+    cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+    pepper_reordi(<int*>cnp.PyArray_DATA(_a_iorder), _c_ndim, <int*>cnp.PyArray_DATA(_a_array))
+    return _a_iorder, _a_array
+
 def replch(instr, old, new_):
     """Replace all occurrences of a single character with a second character.
     
@@ -9046,6 +10237,23 @@ def replch(instr, old, new_):
     _c_outstr[0] = 0
     pepper_replch(_c_instr, _c_old, _c_new, 1024, _c_outstr)
     return _s(_c_outstr)
+
+def replch_inplace(string, old, new_):
+    """Replace every occurrence of a character in a string, in place: the in-place form of `replch`.
+    
+    :param string: String in which to replace characters.
+    :param old: Character to be replaced.
+    :param new_: Replacement character.
+    :return: String in which to replace characters."""
+    cdef int _st = 0
+    cdef bytes _b_old = _b(old)
+    cdef bytes _b_new = _b(new_)
+    cdef const char *_c_old = _b_old
+    cdef const char *_c_new = _b_new
+    cdef bytearray _ba_string = bytearray(_b(string if string is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_string = _ba_string
+    pepper_replch_inplace(1024, _c_string, _c_old, _c_new)
+    return _s(_c_string)
 
 def replwd(instr, nth, new_):
     """Replace the Nth word in a string with a new word.
@@ -9089,6 +10297,57 @@ def repmc(instr, marker, value, lenout=None):
     pepper_repmc(_c_in, _c_marker, _c_value, 1024, _c_out)
     return _s(_c_out)
 
+def repmc_inplace(string, marker, value):
+    """Replace a marker in a string with a character string, in place: the in-place form of `repmc`.
+    
+    :param string: String in which the marker is replaced.
+    :param marker: Marker to be replaced.
+    :param value: Replacement string.
+    :return: String in which the marker is replaced."""
+    cdef int _st = 0
+    cdef bytes _b_marker = _b(marker)
+    cdef bytes _b_value = _b(value)
+    cdef const char *_c_marker = _b_marker
+    cdef const char *_c_value = _b_value
+    cdef bytearray _ba_string = bytearray(_b(string if string is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_string = _ba_string
+    pepper_repmc_inplace(1024, _c_string, _c_marker, _c_value)
+    return _s(_c_string)
+
+def repmd_inplace(string, marker, value, sigdig):
+    """Replace a marker in a string with a double precision number, in place: the in-place form of `repmd`.
+    
+    :param string: String in which the marker is replaced.
+    :param marker: Marker to be replaced.
+    :param value: Replacement value.
+    :param sigdig: Significant digits in replacement text.
+    :return: String in which the marker is replaced."""
+    cdef double _c_value = value
+    cdef int _c_sigdig = sigdig
+    cdef int _st = 0
+    cdef bytes _b_marker = _b(marker)
+    cdef const char *_c_marker = _b_marker
+    cdef bytearray _ba_string = bytearray(_b(string if string is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_string = _ba_string
+    pepper_repmd_inplace(1024, _c_string, _c_marker, _c_value, _c_sigdig)
+    return _s(_c_string)
+
+def repmi_inplace(string, marker, value):
+    """Replace a marker in a string with an integer, in place: the in-place form of `repmi`.
+    
+    :param string: String in which the marker is replaced.
+    :param marker: Marker to be replaced.
+    :param value: Replacement value.
+    :return: String in which the marker is replaced."""
+    cdef int _c_value = value
+    cdef int _st = 0
+    cdef bytes _b_marker = _b(marker)
+    cdef const char *_c_marker = _b_marker
+    cdef bytearray _ba_string = bytearray(_b(string if string is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_string = _ba_string
+    pepper_repmi_inplace(1024, _c_string, _c_marker, _c_value)
+    return _s(_c_string)
+
 def rjust(input):
     """Right justify a character string.
     
@@ -9103,6 +10362,34 @@ def rjust(input):
     _c_output[0] = 0
     pepper_rjust(_c_input, 1024, _c_output)
     return _s(_c_output)
+
+def rmdupd(nelt, array):
+    """Remove duplicate elements from a double precision array.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/rmdupd.html
+    
+    :param nelt: Number of elements in the array.
+    :param array: Input/output array.
+    :return: Number of elements in the array.; Input/output array."""
+    cdef int _c_nelt = nelt
+    cdef int _st = 0
+    cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+    pepper_rmdupd(&_c_nelt, <double*>cnp.PyArray_DATA(_a_array))
+    return _c_nelt, _a_array
+
+def rmdupi(nelt, array):
+    """Remove duplicate elements from an integer array.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/rmdupi.html
+    
+    :param nelt: Number of elements in the array.
+    :param array: Input/output array.
+    :return: Number of elements in the array.; Input/output array."""
+    cdef int _c_nelt = nelt
+    cdef int _st = 0
+    cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+    pepper_rmdupi(&_c_nelt, <int*>cnp.PyArray_DATA(_a_array))
+    return _c_nelt, _a_array
 
 def rtrim(string):
     """Return the maximum of 1 and the location of the last non-blank character in the string.
@@ -9227,6 +10514,28 @@ def samsub(str1, b1, e1, str2, b2, e2):
     pepper_samsub(_c_str1, _c_b1, _c_e1, _c_str2, _c_b2, _c_e2, &_c_fresult)
     return (_c_fresult != 0)
 
+def scanrj(ids, n, ntokns, ident, beg, end):
+    """Reject those tokens descriptors whose identities are among those of a specific collection.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/scanrj.html
+    
+    :param ids: value of id's of tokens that should be dumped.
+    :param n: number of id's.
+    :param ntokns: number of tokens input. The number kept.
+    :param ident: identity of each of the tokens.
+    :param beg: indices of beginning of tokens.
+    :param end: indices of endings of tokens.
+    :return: number of tokens input. The number kept.; identity of each of the tokens.; indices of beginning of tokens.; indices of endings of tokens."""
+    cdef int _c_n = n
+    cdef int _c_ntokns = ntokns
+    cdef int _st = 0
+    cdef cnp.ndarray _a_ids = _rows(ids, NPY_INT32, 1)
+    cdef cnp.ndarray _a_ident = _rows(np.array(ident, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+    cdef cnp.ndarray _a_beg = _rows(np.array(beg, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+    cdef cnp.ndarray _a_end = _rows(np.array(end, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+    pepper_scanrj(<const int*>cnp.PyArray_DATA(_a_ids), _c_n, &_c_ntokns, <int*>cnp.PyArray_DATA(_a_ident), <int*>cnp.PyArray_DATA(_a_beg), <int*>cnp.PyArray_DATA(_a_end))
+    return _c_ntokns, _a_ident, _a_beg, _a_end
+
 def sharpr(rot):
     """Adjust the columns of a matrix that is 'nearly' a rotation so that they are numerically unit length and orthogonal, going from left to right in the usual printed presentation of a matrix.
     
@@ -9238,6 +10547,34 @@ def sharpr(rot):
     cdef cnp.ndarray _a_rot = _input(rot, NPY_DOUBLE, 3, 3, True)
     pepper_sharpr(<double*>cnp.PyArray_DATA(_a_rot))
     return _a_rot
+
+def shelld(ndim, array):
+    """Sort a double precision array using the Shell Sort algorithm.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/shelld.html
+    
+    :param ndim: Dimension of the array.
+    :param array: The array.
+    :return: The array."""
+    cdef int _c_ndim = ndim
+    cdef int _st = 0
+    cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+    pepper_shelld(_c_ndim, <double*>cnp.PyArray_DATA(_a_array))
+    return _a_array
+
+def shelli(ndim, array):
+    """Sort an integer array using the Shell Sort algorithm.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/shelli.html
+    
+    :param ndim: Dimension of the array.
+    :param array: The array.
+    :return: The array."""
+    cdef int _c_ndim = ndim
+    cdef int _st = 0
+    cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+    pepper_shelli(_c_ndim, <int*>cnp.PyArray_DATA(_a_array))
+    return _a_array
 
 def shiftl(in_, nshift, fillc):
     """Shift the contents of a character string to the left. Characters moved past the beginning of the input string are lost. Vacant spaces are filled with a specified character.
@@ -9324,6 +10661,36 @@ def smsgni(x, y):
     pepper_smsgni(_c_x, _c_y, &_c_fresult)
     return (_c_fresult != 0)
 
+def somfls(logcls, n):
+    """Determine if some of the entries in an array of logicals are .FALSE.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/somfls.html
+    
+    :param logcls: An array of logicals.
+    :param n: Number of elements in the array LOGCLS.
+    :return: the result"""
+    cdef int _c_n = n
+    cdef int _c_fresult = 0
+    cdef int _st = 0
+    cdef cnp.ndarray _a_logcls = _rows(np.asarray(logcls).astype(bool).astype(np.int32), NPY_INT32, 1)
+    pepper_somfls(<int>cnp.PyArray_DIM(_a_logcls, 0), <const int*>cnp.PyArray_DATA(_a_logcls), _c_n, &_c_fresult)
+    return (_c_fresult != 0)
+
+def somtru(logcls, n):
+    """Determine if some of the entries in an array of logicals are .TRUE.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/somtru.html
+    
+    :param logcls: An array of logicals.
+    :param n: Number of elements in the array LOGCLS.
+    :return: the result"""
+    cdef int _c_n = n
+    cdef int _c_fresult = 0
+    cdef int _st = 0
+    cdef cnp.ndarray _a_logcls = _rows(np.asarray(logcls).astype(bool).astype(np.int32), NPY_INT32, 1)
+    pepper_somtru(<int>cnp.PyArray_DIM(_a_logcls, 0), <const int*>cnp.PyArray_DATA(_a_logcls), _c_n, &_c_fresult)
+    return (_c_fresult != 0)
+
 def sphcyl(radius, colat, slon):
     """Convert from spherical coordinates to cylindrical coordinates.
     
@@ -9379,6 +10746,24 @@ def sphrec(r, colat, lon):
     pepper_sphrec(_c_r, _c_colat, _c_slon, <double*>cnp.PyArray_DATA(_a_rectan))
     return _a_rectan
 
+def suffix(suff, spaces, string):
+    """Add a suffix to a character string.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/suffix.html
+    
+    :param suff: Suffix.
+    :param spaces: Number of spaces separating prefix and suffix.
+    :param string: Prefix on input, string on output.
+    :return: Prefix on input, string on output."""
+    cdef int _c_spaces = spaces
+    cdef int _st = 0
+    cdef bytes _b_suff = _b(suff)
+    cdef const char *_c_suff = _b_suff
+    cdef bytearray _ba_string = bytearray(_b(string if string is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_string = _ba_string
+    pepper_suffix(_c_suff, _c_spaces, 1024, _c_string)
+    return _s(_c_string)
+
 def sumad(array):
     """Return the sum of the elements of a double precision array.
     
@@ -9406,6 +10791,22 @@ def sumai(array):
     cdef cnp.ndarray _a_array = _rows(array, NPY_INT32, 1)
     pepper_sumai(<const int*>cnp.PyArray_DATA(_a_array), _c_n, &_c_fresult)
     return _c_fresult
+
+def swapc(a, b):
+    """Swap the contents of two character strings.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/swapc.html
+    
+    :param a: First string.
+    :param b: Second string.
+    :return: First string.; Second string."""
+    cdef int _st = 0
+    cdef bytearray _ba_a = bytearray(_b(a if a is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_a = _ba_a
+    cdef bytearray _ba_b = bytearray(_b(b if b is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_b = _ba_b
+    pepper_swapc(1024, _c_a, 1024, _c_b)
+    return _s(_c_a), _s(_c_b)
 
 def swapd(a, b):
     """Swap the contents of two double precision variables.
@@ -9517,6 +10918,17 @@ def ucase(inchar, lenout=None):
     _c_out[0] = 0
     pepper_ucase(_c_in, 1024, _c_out)
     return _s(_c_out)
+
+def ucase_inplace(string):
+    """Uppercase a string in place: the in-place form of `ucase`.
+    
+    :param string: String to convert to uppercase.
+    :return: String to convert to uppercase."""
+    cdef int _st = 0
+    cdef bytearray _ba_string = bytearray(_b(string if string is not None else '')[:1023].ljust(1024, b'\0'))
+    cdef char *_c_string = _ba_string
+    pepper_ucase_inplace(1024, _c_string)
+    return _s(_c_string)
 
 def ucrss(v1, v2):
     """Compute the normalized cross product of two 3-vectors.
@@ -10206,6 +11618,22 @@ def xpose(m):
     cdef cnp.ndarray _a_mout = _empty(NPY_DOUBLE, 3, 3)
     pepper_xpose(<double*>cnp.PyArray_DATA(_a_m1), <double*>cnp.PyArray_DATA(_a_mout))
     return _a_mout
+
+def xpsgip(nrow, ncol, matrix):
+    """Transpose a matrix of arbitrary size and shape in place.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/xpsgip.html
+    
+    :param nrow: Number of rows of input matrix.
+    :param ncol: Number of columns of input matrix.
+    :param matrix: Matrix to be transposed/transposed matrix.
+    :return: Matrix to be transposed/transposed matrix."""
+    cdef int _c_nrow = nrow
+    cdef int _c_ncol = ncol
+    cdef int _st = 0
+    cdef cnp.ndarray _a_matrix = _rows(np.array(matrix, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+    pepper_xpsgip(_c_nrow, _c_ncol, <double*>cnp.PyArray_DATA(_a_matrix))
+    return _a_matrix
 
 def b1900():
     """Besselian date 1900.0 (a constant)."""

@@ -64,6 +64,11 @@ cdef class _ContextRoutines(_ContextBase):
         :param obsctr: Center of motion of observer.
         :param obsref: Body-fixed, body-centered frame of observer's center.
         :return: State of target with respect to observer, in azimuth/elevation coordinates.; One way light time between target and observer."""
+        if not method: _empty_string('azlcpo', 'method')
+        if not target: _empty_string('azlcpo', 'target')
+        if not abcorr: _empty_string('azlcpo', 'abcorr')
+        if not obsctr: _empty_string('azlcpo', 'obsctr')
+        if not obsref: _empty_string('azlcpo', 'obsref')
         cdef double _c_et = et
         cdef int _c_azccw = 1 if azccw else 0
         cdef int _c_elplsz = 1 if elplsz else 0
@@ -102,6 +107,9 @@ cdef class _ContextRoutines(_ContextBase):
         :param divby: A divisor of the size of the kernel pool variable.
         :param intype: Expected type of the kernel pool variable.
         :return: the result"""
+        if not caller: _empty_string('badkpv', 'caller')
+        if not name: _empty_string('badkpv', 'name')
+        if not comp: _empty_string('badkpv', 'comp')
         cdef int _c_size = insize
         cdef int _c_divby = divby
         cdef int _c_fresult = 0
@@ -220,6 +228,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param body: ID code of body.
         :param item: Item to find ('RADII', 'NUT_AMP_RA', etc.).
         :return: the result"""
+        if not item: _empty_string('bodfnd', 'item')
         cdef int _c_body = body
         cdef int _c_fresult = 0
         cdef int _st = 0
@@ -263,6 +272,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param name: Body name to be translated into a SPICE ID code.
         :return: SPICE integer ID code for the named body.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not name: _empty_string('bodn2c', 'name')
         cdef int _c_code = 0
         cdef int _c_found = 0
         cdef int _st = 0
@@ -285,6 +295,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param name: String to be translated to an ID code.
         :return: Integer ID code corresponding to NAME.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not name: _empty_string('bods2c', 'name')
         cdef int _c_code = 0
         cdef int _c_found = 0
         cdef int _st = 0
@@ -426,6 +437,29 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _found('ccifrm', (_c_frcode, _s(_c_frname), _c_cent), _c_found != 0)
+
+    def cgv2el(self, center, vec1, vec2):
+        """Form a SPICE ellipse from a center vector and two generating vectors.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cgv2el.html
+        
+        :param center: Center and two generating vectors for an ellipse.
+        :param vec1: Center and two generating vectors for an ellipse.
+        :param vec2: Center and two generating vectors for an ellipse.
+        :return: The SPICE ellipse defined by the input vectors."""
+        cdef int _st = 0
+        cdef cnp.ndarray _a_center = _input(center, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_vec1 = _input(vec1, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_vec2 = _input(vec2, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_ellips = _empty(NPY_DOUBLE, 9, -1)
+        self._enter()
+        try:
+            _st = pepper_cgv2el(self._ptr, <double*>cnp.PyArray_DATA(_a_center), <double*>cnp.PyArray_DATA(_a_vec1), <double*>cnp.PyArray_DATA(_a_vec2), <double*>cnp.PyArray_DATA(_a_ellips))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return Ellipse._from_array(_a_ellips)
 
     def chbase(self):
         """Return the base value used to encode unsigned integer values in character strings.
@@ -624,6 +658,9 @@ cdef class _ContextRoutines(_ContextBase):
         :param timsys: Time system used to represent coverage.
         :param cover: Window giving coverage for IDCODE.
         :return: Window giving coverage for IDCODE."""
+        if not ck: _empty_string('ckcov', 'ckfnm')
+        if not level: _empty_string('ckcov', 'level')
+        if not timsys: _empty_string('ckcov', 'timsys')
         cdef int _c_idcode = idcode
         cdef int _c_needav = 1 if needav else 0
         cdef double _c_tol = tol
@@ -738,6 +775,52 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_cmat, _a_av, _c_clkout
 
+    def cke05(self, needav, record):
+        """Evaluate a single data record from a type 5 CK segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cke05.html
+        
+        :param needav: .TRUE. if angular velocity is requested.
+        :param record: Data type 5 record.
+        :return: Data type 5 record.; C-matrix.; Angular velocity vector.; SCLK associated with C-matrix."""
+        cdef int _c_needav = 1 if needav else 0
+        cdef double _c_clkout = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_record = _rows(np.array(record, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_cmat = _empty(NPY_DOUBLE, 3, 3)
+        cdef cnp.ndarray _a_av = _empty(NPY_DOUBLE, 3, -1)
+        self._enter()
+        try:
+            _st = pepper_cke05(self._ptr, _c_needav, <double*>cnp.PyArray_DATA(_a_record), <double*>cnp.PyArray_DATA(_a_cmat), <double*>cnp.PyArray_DATA(_a_av), &_c_clkout)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_record, _a_cmat, _a_av, _c_clkout
+
+    def cke06(self, needav, record):
+        """Evaluate a single data record from a type 6 CK segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cke06.html
+        
+        :param needav: .TRUE. if angular velocity is requested.
+        :param record: Data type 6 record.
+        :return: Data type 6 record.; C-matrix.; Angular velocity vector.; SCLK associated with C-matrix."""
+        cdef int _c_needav = 1 if needav else 0
+        cdef double _c_clkout = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_record = _rows(np.array(record, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_cmat = _empty(NPY_DOUBLE, 3, 3)
+        cdef cnp.ndarray _a_av = _empty(NPY_DOUBLE, 3, -1)
+        self._enter()
+        try:
+            _st = pepper_cke06(self._ptr, _c_needav, <double*>cnp.PyArray_DATA(_a_record), <double*>cnp.PyArray_DATA(_a_cmat), <double*>cnp.PyArray_DATA(_a_av), &_c_clkout)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_record, _a_cmat, _a_av, _c_clkout
+
     def ckfrot(self, inst, et):
         """Find the position rotation matrix from a C-kernel (CK) frame with the specified frame class ID (CK ID) to the base frame of the highest priority CK segment containing orientation data for this CK frame at the time requested.
         
@@ -798,6 +881,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param ref: Reference frame.
         :return: C-matrix pointing data.; Output encoded spacecraft clock time.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not ref: _empty_string('ckgp', 'ref')
         cdef int _c_inst = inst
         cdef double _c_sclkdp = sclkdp
         cdef double _c_tol = tol
@@ -828,6 +912,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param ref: Reference frame.
         :return: C-matrix pointing data.; Angular velocity vector.; Output encoded spacecraft clock time.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not ref: _empty_string('ckgpav', 'ref')
         cdef int _c_inst = inst
         cdef double _c_sclkdp = sclkdp
         cdef double _c_tol = tol
@@ -861,7 +946,7 @@ cdef class _ContextRoutines(_ContextBase):
         cdef int _c_recno = recno
         cdef int _st = 0
         cdef cnp.ndarray _a_descr = _rows(descr, NPY_DOUBLE, 1)
-        cdef cnp.ndarray _a_record = _empty(NPY_DOUBLE, max(<int>(10), 0), -1)
+        cdef cnp.ndarray _a_record = _empty(NPY_DOUBLE, max(<int>(10), 1), -1)
         self._enter()
         try:
             _st = pepper_ckgr02(self._ptr, _c_handle, <const double*>cnp.PyArray_DATA(_a_descr), _c_recno, <double*>cnp.PyArray_DATA(_a_record))
@@ -884,7 +969,7 @@ cdef class _ContextRoutines(_ContextBase):
         cdef int _c_recno = recno
         cdef int _st = 0
         cdef cnp.ndarray _a_descr = _rows(descr, NPY_DOUBLE, 1)
-        cdef cnp.ndarray _a_record = _empty(NPY_DOUBLE, max(<int>(8), 0), -1)
+        cdef cnp.ndarray _a_record = _empty(NPY_DOUBLE, max(<int>(8), 1), -1)
         self._enter()
         try:
             _st = pepper_ckgr03(self._ptr, _c_handle, <const double*>cnp.PyArray_DATA(_a_descr), _c_recno, <double*>cnp.PyArray_DATA(_a_record))
@@ -919,6 +1004,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param ckid: The ID code for some C kernel object.
         :param meta: The kind of meta data requested 'SPK' or 'SCLK'
         :return: The requested SCLK or spacecraft ID code."""
+        if not meta: _empty_string('ckmeta', 'meta')
         cdef int _c_ckid = ckid
         cdef int _c_idcode = 0
         cdef int _st = 0
@@ -1095,6 +1181,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param ck: Name of CK file.
         :param out_cell: Set of ID codes of objects in CK file.
         :return: Set of ID codes of objects in CK file."""
+        if not ck: _empty_string('ckobj', 'ckfnm')
         cdef int _st = 0
         cdef bytes _b_ckfnm = _b(ck)
         cdef const char *_c_ckfnm = _b_ckfnm
@@ -1119,6 +1206,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param ifname: The internal filename for the CK.
         :param ncomch: The number of characters to reserve for comments.
         :return: The handle of the opened CK file."""
+        if not filename: _empty_string('ckopn', 'fname')
+        if not ifname: _empty_string('ckopn', 'ifname')
         cdef int _c_ncomch = ncomch
         cdef int _c_handle = 0
         cdef int _st = 0
@@ -1166,6 +1255,161 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _found('ckpfs', (_a_cmat, _a_av, _c_clkout), _c_found != 0)
+
+    def ckw01(self, handle, begtim, endtim, inst, ref, avflag, segid, nrec, sclkdp, quats, avvs):
+        """Add a type 1 segment to a C-kernel.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckw01.html
+        
+        :param handle: Handle of an open CK file.
+        :param begtim: The beginning encoded SCLK of the segment.
+        :param endtim: The ending encoded SCLK of the segment.
+        :param inst: The NAIF instrument ID code.
+        :param ref: The reference frame of the segment.
+        :param avflag: .TRUE. if the segment will contain angular velocity.
+        :param segid: Segment identifier.
+        :param nrec: Number of pointing records.
+        :param sclkdp: Encoded SCLK times.
+        :param quats: SPICE quaternions representing instrument pointing.
+        :param avvs: Angular velocity vectors."""
+        if not ref: _empty_string('ckw01', 'ref')
+        if not segid: _empty_string('ckw01', 'segid')
+        cdef int _c_handle = handle
+        cdef double _c_begtim = begtim
+        cdef double _c_endtim = endtim
+        cdef int _c_inst = inst
+        cdef int _c_avflag = 1 if avflag else 0
+        cdef int _c_nrec = nrec
+        cdef int _st = 0
+        cdef bytes _b_ref = _b(ref)
+        cdef bytes _b_segid = _b(segid)
+        cdef const char *_c_ref = _b_ref
+        cdef const char *_c_segid = _b_segid
+        cdef cnp.ndarray _a_sclkdp = _rows(sclkdp, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_quats = _rows(quats, NPY_DOUBLE, 2)
+        cdef cnp.ndarray _a_avvs = _rows(avvs, NPY_DOUBLE, 2)
+        self._enter()
+        try:
+            _st = pepper_ckw01(self._ptr, _c_handle, _c_begtim, _c_endtim, _c_inst, _c_ref, _c_avflag, _c_segid, _c_nrec, <const double*>cnp.PyArray_DATA(_a_sclkdp), <const double*>cnp.PyArray_DATA(_a_quats), <const double*>cnp.PyArray_DATA(_a_avvs))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return None
+
+    def ckw02(self, handle, begtim, endtim, inst, ref, segid, nrec, start, stop, quats, avvs, rates):
+        """Write a type 2 segment to a C-kernel.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckw02.html
+        
+        :param handle: Handle of an open CK file.
+        :param begtim: The beginning encoded SCLK of the segment.
+        :param endtim: The ending encoded SCLK of the segment.
+        :param inst: The NAIF instrument ID code.
+        :param ref: The reference frame of the segment.
+        :param segid: Segment identifier.
+        :param nrec: Number of pointing records.
+        :param start: Encoded SCLK interval start times.
+        :param stop: Encoded SCLK interval stop times.
+        :param quats: SPICE quaternions representing instrument pointing.
+        :param avvs: Angular velocity vectors.
+        :param rates: Number of seconds per tick for each interval."""
+        if not ref: _empty_string('ckw02', 'ref')
+        if not segid: _empty_string('ckw02', 'segid')
+        cdef int _c_handle = handle
+        cdef double _c_begtim = begtim
+        cdef double _c_endtim = endtim
+        cdef int _c_inst = inst
+        cdef int _c_nrec = nrec
+        cdef int _st = 0
+        cdef bytes _b_ref = _b(ref)
+        cdef bytes _b_segid = _b(segid)
+        cdef const char *_c_ref = _b_ref
+        cdef const char *_c_segid = _b_segid
+        cdef cnp.ndarray _a_start = _rows(start, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_stop = _rows(stop, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_quats = _rows(quats, NPY_DOUBLE, 2)
+        cdef cnp.ndarray _a_avvs = _rows(avvs, NPY_DOUBLE, 2)
+        cdef cnp.ndarray _a_rates = _rows(rates, NPY_DOUBLE, 1)
+        self._enter()
+        try:
+            _st = pepper_ckw02(self._ptr, _c_handle, _c_begtim, _c_endtim, _c_inst, _c_ref, _c_segid, _c_nrec, <const double*>cnp.PyArray_DATA(_a_start), <const double*>cnp.PyArray_DATA(_a_stop), <const double*>cnp.PyArray_DATA(_a_quats), <const double*>cnp.PyArray_DATA(_a_avvs), <const double*>cnp.PyArray_DATA(_a_rates))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return None
+
+    def ckw03(self, handle, begtim, endtim, inst, ref, avflag, segid, nrec, sclkdp, quats, avvs, nints, starts):
+        """Add a type 3 segment to a C-kernel.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckw03.html
+        
+        :param handle: Handle of an open CK file.
+        :param begtim: Beginning encoded SCLK of the segment.
+        :param endtim: Ending encoded SCLK of the segment.
+        :param inst: NAIF instrument ID code.
+        :param ref: Reference frame of the segment.
+        :param avflag: .TRUE. if the segment will contain angular velocity.
+        :param segid: Segment identifier.
+        :param nrec: Number of pointing records.
+        :param sclkdp: Encoded SCLK times.
+        :param quats: SPICE quaternions representing instrument pointing.
+        :param avvs: Angular velocity vectors.
+        :param nints: Number of intervals.
+        :param starts: Encoded SCLK interval start times."""
+        if not ref: _empty_string('ckw03', 'ref')
+        if not segid: _empty_string('ckw03', 'segid')
+        cdef int _c_handle = handle
+        cdef double _c_begtim = begtim
+        cdef double _c_endtim = endtim
+        cdef int _c_inst = inst
+        cdef int _c_avflag = 1 if avflag else 0
+        cdef int _c_nrec = nrec
+        cdef int _c_nints = nints
+        cdef int _st = 0
+        cdef bytes _b_ref = _b(ref)
+        cdef bytes _b_segid = _b(segid)
+        cdef const char *_c_ref = _b_ref
+        cdef const char *_c_segid = _b_segid
+        cdef cnp.ndarray _a_sclkdp = _rows(sclkdp, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_quats = _rows(quats, NPY_DOUBLE, 2)
+        cdef cnp.ndarray _a_avvs = _rows(avvs, NPY_DOUBLE, 2)
+        cdef cnp.ndarray _a_starts = _rows(starts, NPY_DOUBLE, 1)
+        self._enter()
+        try:
+            _st = pepper_ckw03(self._ptr, _c_handle, _c_begtim, _c_endtim, _c_inst, _c_ref, _c_avflag, _c_segid, _c_nrec, <const double*>cnp.PyArray_DATA(_a_sclkdp), <const double*>cnp.PyArray_DATA(_a_quats), <const double*>cnp.PyArray_DATA(_a_avvs), _c_nints, <const double*>cnp.PyArray_DATA(_a_starts))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return None
+
+    def ckw04a(self, handle, npkts, pktsiz, pktdat, sclkdp):
+        """Add data to a type 4 CK segment currently being written to the file associated with HANDLE. See also `ckw04b` and `ckw04e`.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckw04a.html
+        
+        :param handle: The handle of an DAF file opened for writing.
+        :param npkts: Number of data packets to write to a segment.
+        :param pktsiz: The numbers of values in the data packets (PEPPER: changed in place)
+        :param pktdat: The data packets. (PEPPER: packed in place)
+        :param sclkdp: The SCLK times associated with the data packets.
+        :return: The numbers of values in the data packets (PEPPER: changed in place); The data packets. (PEPPER: packed in place)"""
+        cdef int _c_handle = handle
+        cdef int _c_npkts = npkts
+        cdef int _st = 0
+        cdef cnp.ndarray _a_pktsiz = _rows(np.array(pktsiz, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+        cdef cnp.ndarray _a_pktdat = _rows(np.array(pktdat, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_sclkdp = _rows(sclkdp, NPY_DOUBLE, 1)
+        self._enter()
+        try:
+            _st = pepper_ckw04a(self._ptr, _c_handle, _c_npkts, <int*>cnp.PyArray_DATA(_a_pktsiz), <double*>cnp.PyArray_DATA(_a_pktdat), <const double*>cnp.PyArray_DATA(_a_sclkdp))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_pktsiz, _a_pktdat
 
     def ckw04b(self, handle, begtim, inst, ref, avflag, segid):
         """Begin a type CK04 segment in the DAF file associated with HANDLE. See also `ckw04a` and `ckw04e`.
@@ -1234,6 +1478,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param rate: Nominal SCLK rate in seconds per tick.
         :param nints: Number of intervals.
         :param starts: Encoded SCLK interval start times."""
+        if not ref: _empty_string('ckw05', 'ref')
+        if not segid: _empty_string('ckw05', 'segid')
         cdef int _c_handle = handle
         cdef int _c_subtyp = subtype
         cdef int _c_degree = degree
@@ -1337,6 +1583,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param lenout: (SpiceyPy compatibility; ignored)
         :return: the ID code of the frame associated with CNAME; the name of the frame with ID FRCODE
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not cname: _empty_string('cnmfrm', 'cname')
         cdef int _c_frcode = 0
         cdef char _c_frname[1024]
         cdef int _c_found = 0
@@ -1385,6 +1632,8 @@ cdef class _ContextRoutines(_ContextBase):
         :return: The measurement in the desired units."""
         if _iterable(x):
             return _stack([self.convrt(_v, inunit, outunit) for _v in x])
+        if not inunit: _empty_string('convrt', 'in')
+        if not outunit: _empty_string('convrt', 'out')
         cdef double _c_x = x
         cdef double _c_y = 0
         cdef int _st = 0
@@ -1443,6 +1692,32 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return copy
 
+    def countc(self, unit, bline, eline, line):
+        """Count the characters in a group of lines in a text file.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/countc.html
+        
+        :param unit: Logical unit connected to text file.
+        :param bline: Beginning line number.
+        :param eline: Ending line number.
+        :param line: Workspace.
+        :return: Workspace.; the result"""
+        cdef int _c_unit = unit
+        cdef int _c_bline = bline
+        cdef int _c_eline = eline
+        cdef int _c_fresult = 0
+        cdef int _st = 0
+        cdef bytearray _ba_line = bytearray(_b(line if line is not None else '')[:1023].ljust(1024, b'\0'))
+        cdef char *_c_line = _ba_line
+        self._enter()
+        try:
+            _st = pepper_countc(self._ptr, _c_unit, _c_bline, _c_eline, 1024, _c_line, &_c_fresult)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _s(_c_line), _c_fresult
+
     def cvpool(self, agent):
         """Indicate whether or not any watched kernel variables that have a specified agent on their notification list have been updated.
         
@@ -1450,6 +1725,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param agent: Name of the agent to check for notices.
         :return: .TRUE. if variables for AGENT have been updated."""
+        if not agent: _empty_string('cvpool', 'agent')
         cdef int _c_update = 0
         cdef int _st = 0
         cdef bytes _b_agent = _b(agent)
@@ -1462,6 +1738,56 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return (_c_update != 0)
+
+    def cyadip(self, nelt, dir, ncycle, array):
+        """Cycle the elements of a double precision array forward or backward in place.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cyadip.html
+        
+        :param nelt: Number of elements.
+        :param dir: Direction to cycle: 'F' or 'B'.
+        :param ncycle: Number of times to cycle.
+        :param array: Array to be cycled/cycled array.
+        :return: Array to be cycled/cycled array."""
+        cdef int _c_nelt = nelt
+        cdef int _c_ncycle = ncycle
+        cdef int _st = 0
+        cdef bytes _b_dir = _b(dir)
+        cdef const char *_c_dir = _b_dir
+        cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+        self._enter()
+        try:
+            _st = pepper_cyadip(self._ptr, _c_nelt, _c_dir, _c_ncycle, <double*>cnp.PyArray_DATA(_a_array))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_array
+
+    def cyaiip(self, nelt, dir, ncycle, array):
+        """Cycle the elements of an integer array forward or backward in place.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cyaiip.html
+        
+        :param nelt: Number of elements.
+        :param dir: Direction to cycle: 'F' or 'B'.
+        :param ncycle: Number of times to cycle.
+        :param array: Array to be cycled/cycled array.
+        :return: Array to be cycled/cycled array."""
+        cdef int _c_nelt = nelt
+        cdef int _c_ncycle = ncycle
+        cdef int _st = 0
+        cdef bytes _b_dir = _b(dir)
+        cdef const char *_c_dir = _b_dir
+        cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+        self._enter()
+        try:
+            _st = pepper_cyaiip(self._ptr, _c_nelt, _c_dir, _c_ncycle, <int*>cnp.PyArray_DATA(_a_array))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_array
 
     def cyclec(self, instr, dir, ncycle):
         """Cycle the contents of a character string to the left or right.
@@ -1839,6 +2165,32 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return None
 
+    def dafec(self, handle, bufsiz, lenout=None):
+        """Extract comments from the comment area of a binary DAF.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dafec.html
+        
+        :param handle: Handle of binary DAF opened with read access.
+        :param bufsiz: Maximum size, in lines, of BUFFER.
+        :param lenout: (SpiceyPy compatibility; ignored)
+        :return: Number of extracted comment lines.; Buffer where extracted comment lines are placed.; Indicates whether all comments have been extracted."""
+        cdef int _c_handle = handle
+        cdef int _c_bufsiz = bufsiz
+        cdef int _c_n = 0
+        cdef int _c_done = 0
+        cdef int _st = 0
+        cdef int _n_buffer = max(<int>(_c_bufsiz), 1)
+        cdef bytearray _ba_buffer = bytearray(_n_buffer * 1024)
+        cdef char *_c_buffer = _ba_buffer
+        self._enter()
+        try:
+            _st = pepper_dafec(self._ptr, _c_handle, _c_bufsiz, &_c_n, _n_buffer, 1024, _c_buffer, &_c_done)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _c_n, _strs(_ba_buffer, _n_buffer, 1024), (_c_done != 0)
+
     def dafena(self):
         """End the addition of data to the newest array in the current DAF.
         
@@ -1921,7 +2273,7 @@ cdef class _ContextRoutines(_ContextBase):
         cdef int _c_baddr = begin
         cdef int _c_eaddr = end
         cdef int _st = 0
-        cdef cnp.ndarray _a_data = _empty(NPY_DOUBLE, max(<int>(_c_eaddr - _c_baddr + 1), 0), -1)
+        cdef cnp.ndarray _a_data = _empty(NPY_DOUBLE, max(<int>(_c_eaddr - _c_baddr + 1), 1), -1)
         self._enter()
         try:
             _st = pepper_dafgda(self._ptr, _c_handle, _c_baddr, _c_eaddr, <double*>cnp.PyArray_DATA(_a_data))
@@ -1974,7 +2326,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :return: Summary for current array."""
         cdef int _st = 0
-        cdef cnp.ndarray _a_sum = _empty(NPY_DOUBLE, max(<int>(128), 0), -1)
+        cdef cnp.ndarray _a_sum = _empty(NPY_DOUBLE, max(<int>(128), 1), -1)
         self._enter()
         try:
             _st = pepper_dafgs(self._ptr, <double*>cnp.PyArray_DATA(_a_sum))
@@ -2001,7 +2353,7 @@ cdef class _ContextRoutines(_ContextBase):
         cdef int _c_end = end
         cdef int _c_found = 0
         cdef int _st = 0
-        cdef cnp.ndarray _a_data = _empty(NPY_DOUBLE, max(<int>(_c_end - _c_begin + 1), 0), -1)
+        cdef cnp.ndarray _a_data = _empty(NPY_DOUBLE, max(<int>(_c_end - _c_begin + 1), 1), -1)
         self._enter()
         try:
             _st = pepper_dafgsr(self._ptr, _c_handle, _c_recno, _c_begin, _c_end, <double*>cnp.PyArray_DATA(_a_data), &_c_found)
@@ -2194,6 +2546,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param fname: Name of DAF to be opened.
         :return: Handle assigned to DAF."""
+        if not fname: _empty_string('dafopr', 'fname')
         cdef int _c_handle = 0
         cdef int _st = 0
         cdef bytes _b_fname = _b(fname)
@@ -2215,6 +2568,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param fname: Name of DAF to be opened.
         :return: Handle assigned to DAF."""
+        if not fname: _empty_string('dafopw', 'fname')
         cdef int _c_handle = 0
         cdef int _st = 0
         cdef bytes _b_fname = _b(fname)
@@ -2244,7 +2598,7 @@ cdef class _ContextRoutines(_ContextBase):
         cdef int _st = 0
         cdef cnp.ndarray _a_dc = _rows(dc, NPY_DOUBLE, 1)
         cdef cnp.ndarray _a_ic = _rows(ic, NPY_INT32, 1)
-        cdef cnp.ndarray _a_sum = _empty(NPY_DOUBLE, max(<int>(_c_nd + (_c_ni + 1) // 2), 0), -1)
+        cdef cnp.ndarray _a_sum = _empty(NPY_DOUBLE, max(<int>(_c_nd + (_c_ni + 1) // 2), 1), -1)
         self._enter()
         try:
             _st = pepper_dafps(self._ptr, _c_nd, _c_ni, <const double*>cnp.PyArray_DATA(_a_dc), <const int*>cnp.PyArray_DATA(_a_ic), <double*>cnp.PyArray_DATA(_a_sum))
@@ -2253,6 +2607,28 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_sum
+
+    def dafra(self, handle, iorder, n):
+        """Reorder the arrays in a DAF according to a given order vector.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dafra.html
+        
+        :param handle: Handle of DAF.
+        :param iorder: Order vector.
+        :param n: Dimension of IORDER.
+        :return: Order vector."""
+        cdef int _c_handle = handle
+        cdef int _c_n = n
+        cdef int _st = 0
+        cdef cnp.ndarray _a_iorder = _rows(np.array(iorder, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+        self._enter()
+        try:
+            _st = pepper_dafra(self._ptr, _c_handle, <int*>cnp.PyArray_DATA(_a_iorder), _c_n)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_iorder
 
     def dafrcr(self, handle, recno):
         """Read the contents of a character record from a DAF.
@@ -2289,7 +2665,7 @@ cdef class _ContextRoutines(_ContextBase):
         cdef int _c_begin = begin
         cdef int _c_end = end
         cdef int _st = 0
-        cdef cnp.ndarray _a_data = _empty(NPY_DOUBLE, max(<int>(_c_end - _c_begin + 1), 0), -1)
+        cdef cnp.ndarray _a_data = _empty(NPY_DOUBLE, max(<int>(_c_end - _c_begin + 1), 1), -1)
         self._enter()
         try:
             _st = pepper_dafrda(self._ptr, _c_handle, _c_begin, _c_end, <double*>cnp.PyArray_DATA(_a_data))
@@ -2475,8 +2851,8 @@ cdef class _ContextRoutines(_ContextBase):
         cdef int _c_ni = ni
         cdef int _st = 0
         cdef cnp.ndarray _a_sum = _rows(insum, NPY_DOUBLE, 1)
-        cdef cnp.ndarray _a_dc = _empty(NPY_DOUBLE, max(<int>(_c_nd), 0), -1)
-        cdef cnp.ndarray _a_ic = _empty(NPY_INT32, max(<int>(_c_ni), 0), -1)
+        cdef cnp.ndarray _a_dc = _empty(NPY_DOUBLE, max(<int>(_c_nd), 1), -1)
+        cdef cnp.ndarray _a_ic = _empty(NPY_INT32, max(<int>(_c_ni), 1), -1)
         self._enter()
         try:
             _st = pepper_dafus(self._ptr, <const double*>cnp.PyArray_DATA(_a_sum), _c_nd, _c_ni, <double*>cnp.PyArray_DATA(_a_dc), <int*>cnp.PyArray_DATA(_a_ic))
@@ -2862,6 +3238,32 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return None
 
+    def dasec(self, handle, bufsiz=256, buflen=None):
+        """Extract comments from the comment area of a binary DAS file.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dasec.html
+        
+        :param handle: Handle of binary DAS file open with read access.
+        :param bufsiz: Maximum size, in lines, of BUFFER.
+        :param buflen: (SpiceyPy compatibility; ignored)
+        :return: Number of comments extracted from the DAS file.; Buffer in which extracted comments are placed.; Indicates whether all comments have been extracted."""
+        cdef int _c_handle = handle
+        cdef int _c_bufsiz = bufsiz
+        cdef int _c_n = 0
+        cdef int _c_done = 0
+        cdef int _st = 0
+        cdef int _n_buffer = max(<int>(_c_bufsiz), 1)
+        cdef bytearray _ba_buffer = bytearray(_n_buffer * 1024)
+        cdef char *_c_buffer = _ba_buffer
+        self._enter()
+        try:
+            _st = pepper_dasec(self._ptr, _c_handle, _c_bufsiz, &_c_n, _n_buffer, 1024, _c_buffer, &_c_done)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _c_n, _strs(_ba_buffer, _n_buffer, 1024), (_c_done != 0)
+
     def dasecu(self, handle, comlun):
         """Extract comments from a previously opened binary DAS file to a previously opened text file attached to a Fortran logical unit.
         
@@ -3029,6 +3431,32 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _c_fresult
 
+    def dasioc(self, action, unit, recno, record):
+        """Perform Fortran reads and writes of DAS character records.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dasioc.html
+        
+        :param action: Action to take (read or write).
+        :param unit: Fortran unit connected to DAS file.
+        :param recno: Number of record to read or write.
+        :param record: DAS character record.
+        :return: DAS character record."""
+        cdef int _c_unit = unit
+        cdef int _c_recno = recno
+        cdef int _st = 0
+        cdef bytes _b_action = _b(action)
+        cdef const char *_c_action = _b_action
+        cdef bytearray _ba_record = bytearray(_b(record if record is not None else '')[:1023].ljust(1024, b'\0'))
+        cdef char *_c_record = _ba_record
+        self._enter()
+        try:
+            _st = pepper_dasioc(self._ptr, _c_action, _c_unit, _c_recno, 1024, _c_record)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _s(_c_record)
+
     def daslla(self, handle):
         """Return last DAS logical addresses of character, double precision and integer type that are currently in use in a specified DAS file.
         
@@ -3096,6 +3524,9 @@ cdef class _ContextRoutines(_ContextBase):
         :param ifname: Internal file name.
         :param ncomr: Number of comment records to allocate.
         :return: Handle assigned to the opened DAS file."""
+        if not fname: _empty_string('dasonw', 'fname')
+        if not ftype: _empty_string('dasonw', 'ftype')
+        if not ifname: _empty_string('dasonw', 'ifname')
         cdef int _c_ncomr = ncomr
         cdef int _c_handle = 0
         cdef int _st = 0
@@ -3144,6 +3575,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param fname: Name of a DAS file to be opened.
         :return: Handle assigned to the opened DAS file."""
+        if not fname: _empty_string('dasopr', 'fname')
         cdef int _c_handle = 0
         cdef int _st = 0
         cdef bytes _b_fname = _b(fname)
@@ -3182,6 +3614,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param fname: Name of a DAS file to be opened.
         :return: Handle assigned to the opened DAS file."""
+        if not fname: _empty_string('dasopw', 'fname')
         cdef int _c_handle = 0
         cdef int _st = 0
         cdef bytes _b_fname = _b(fname)
@@ -3227,7 +3660,7 @@ cdef class _ContextRoutines(_ContextBase):
         cdef int _c_first = first
         cdef int _c_last = last
         cdef int _st = 0
-        cdef cnp.ndarray _a_data = _empty(NPY_DOUBLE, max(<int>(_c_last - _c_first + 1), 0), -1)
+        cdef cnp.ndarray _a_data = _empty(NPY_DOUBLE, max(<int>(_c_last - _c_first + 1), 1), -1)
         self._enter()
         try:
             _st = pepper_dasrdd(self._ptr, _c_handle, _c_first, _c_last, <double*>cnp.PyArray_DATA(_a_data))
@@ -3250,7 +3683,7 @@ cdef class _ContextRoutines(_ContextBase):
         cdef int _c_first = first
         cdef int _c_last = last
         cdef int _st = 0
-        cdef cnp.ndarray _a_data = _empty(NPY_INT32, max(<int>(_c_last - _c_first + 1), 0), -1)
+        cdef cnp.ndarray _a_data = _empty(NPY_INT32, max(<int>(_c_last - _c_first + 1), 1), -1)
         self._enter()
         try:
             _st = pepper_dasrdi(self._ptr, _c_handle, _c_first, _c_last, <int*>cnp.PyArray_DATA(_a_data))
@@ -3741,6 +4174,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param epoch: Input epoch (seconds past J2000).
         :param eptype: Type of input epoch ('UTC' or 'ET').
         :return: Delta ET (ET-UTC) at input epoch."""
+        if not eptype: _empty_string('deltet', 'eptype')
         cdef double _c_epoch = epoch
         cdef double _c_delta = 0
         cdef int _st = 0
@@ -3869,6 +4303,50 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return c
 
+    def dlabbs(self, handle):
+        """Begin a backward segment search in a DLA file.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dlabbs.html
+        
+        :param handle: Handle of open DLA file.
+        :return: Descriptor of last segment in DLA file.
+            (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        cdef int _c_handle = handle
+        cdef int _c_found = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_dladsc = _empty(NPY_INT32, max(<int>(8), 1), -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dlabbs(self._ptr, _c_handle, <int*>cnp.PyArray_DATA(_a_dladsc), &_c_found)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found('dlabbs', (SpiceDLADescr._from_array(_a_dladsc),), _c_found != 0)
+
+    def dlabfs(self, handle):
+        """Begin a forward segment search in a DLA file.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dlabfs.html
+        
+        :param handle: Handle of open DLA file.
+        :return: Descriptor of first segment in DLA file.
+            (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        cdef int _c_handle = handle
+        cdef int _c_found = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_dladsc = _empty(NPY_INT32, max(<int>(8), 1), -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dlabfs(self._ptr, _c_handle, <int*>cnp.PyArray_DATA(_a_dladsc), &_c_found)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found('dlabfs', (SpiceDLADescr._from_array(_a_dladsc),), _c_found != 0)
+
     def dlabns(self, handle):
         """Begin a new segment in a DLA file.
         
@@ -3905,6 +4383,54 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return None
 
+    def dlafns(self, handle, descr):
+        """Find the segment following a specified segment in a DLA file.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dlafns.html
+        
+        :param handle: Handle of open DLA file.
+        :param descr: Descriptor of a segment in DLA file.
+        :return: Descriptor of next segment in DLA file.
+            (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        cdef int _c_handle = handle
+        cdef int _c_found = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_dladsc = _rows(descr, NPY_INT32, 1)
+        cdef cnp.ndarray _a_nxtdsc = _empty(NPY_INT32, max(<int>(8), 1), -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dlafns(self._ptr, _c_handle, <const int*>cnp.PyArray_DATA(_a_dladsc), <int*>cnp.PyArray_DATA(_a_nxtdsc), &_c_found)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found('dlafns', (SpiceDLADescr._from_array(_a_nxtdsc),), _c_found != 0)
+
+    def dlafps(self, handle, descr):
+        """Find the segment preceding a specified segment in a DLA file.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dlafps.html
+        
+        :param handle: Handle of open DLA file.
+        :param descr: Descriptor of a segment in DLA file.
+        :return: Descriptor of previous segment in DLA file.
+            (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        cdef int _c_handle = handle
+        cdef int _c_found = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_dladsc = _rows(descr, NPY_INT32, 1)
+        cdef cnp.ndarray _a_prvdsc = _empty(NPY_INT32, max(<int>(8), 1), -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dlafps(self._ptr, _c_handle, <const int*>cnp.PyArray_DATA(_a_dladsc), <int*>cnp.PyArray_DATA(_a_prvdsc), &_c_found)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found('dlafps', (SpiceDLADescr._from_array(_a_prvdsc),), _c_found != 0)
+
     def dlaopn(self, fname, ftype, ifname, ncomch):
         """Open a new DLA file and set the file type.
         
@@ -3915,6 +4441,9 @@ cdef class _ContextRoutines(_ContextBase):
         :param ifname: Internal file name.
         :param ncomch: Number of comment characters to allocate.
         :return: Handle assigned to the opened DLA file."""
+        if not fname: _empty_string('dlaopn', 'fname')
+        if not ftype: _empty_string('dlaopn', 'ftype')
+        if not ifname: _empty_string('dlaopn', 'ifname')
         cdef int _c_ncomch = ncomch
         cdef int _c_handle = 0
         cdef int _st = 0
@@ -4043,6 +4572,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param re: Equatorial radius of the reference spheroid.
         :param f: Flattening coefficient.
         :return: Matrix of partial derivatives."""
+        if not body: _empty_string('dpgrdr', 'body')
         cdef double _c_x = x
         cdef double _c_y = y
         cdef double _c_z = z
@@ -4175,6 +4705,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param re: Equatorial radius of the reference spheroid.
         :param f: Flattening coefficient.
         :return: Matrix of partial derivatives."""
+        if not body: _empty_string('drdpgr', 'body')
         cdef double _c_lon = lon
         cdef double _c_lat = lat
         cdef double _c_alt = alt
@@ -4319,7 +4850,7 @@ cdef class _ContextRoutines(_ContextBase):
         cdef int _c_voxnpl = 0
         cdef int _st = 0
         cdef cnp.ndarray _a_dladsc = _rows(dladsc, NPY_INT32, 1)
-        cdef cnp.ndarray _a_vtxbds = _empty(NPY_DOUBLE, 2, 3)
+        cdef cnp.ndarray _a_vtxbds = np.empty((3, 2), dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32)
         cdef cnp.ndarray _a_voxori = _empty(NPY_DOUBLE, 3, -1)
         cdef cnp.ndarray _a_vgrext = _empty(NPY_INT32, 3, -1)
         self._enter()
@@ -4352,6 +4883,57 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return None
 
+    def dskd02(self, handle, dladsc, item, start, room):
+        """Fetch double precision data from a type 2 DSK segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskd02.html
+        
+        :param handle: DSK file handle.
+        :param dladsc: DLA descriptor.
+        :param item: Keyword identifying item to fetch.
+        :param start: Start index.
+        :param room: Amount of room in output array.
+        :return: Number of values returned.; Array containing requested item."""
+        cdef int _c_handle = handle
+        cdef int _c_item = item
+        cdef int _c_start = start + 1
+        cdef int _c_room = room
+        cdef int _c_n = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_dladsc = _rows(dladsc, NPY_INT32, 1)
+        cdef cnp.ndarray _a_values = _empty(NPY_DOUBLE, max(<int>(_c_room), 1), -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dskd02(self._ptr, _c_handle, <const int*>cnp.PyArray_DATA(_a_dladsc), _c_item, _c_start, _c_room, &_c_n, <double*>cnp.PyArray_DATA(_a_values))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_values[:_c_n]
+
+    def dskgd(self, handle, dladsc):
+        """Return the DSK descriptor from a DSK segment identified by a DAS handle and DLA descriptor.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskgd.html
+        
+        :param handle: Handle of a DSK file.
+        :param dladsc: DLA segment descriptor.
+        :return: DSK segment descriptor."""
+        cdef int _c_handle = handle
+        cdef int _st = 0
+        cdef cnp.ndarray _a_dladsc = _rows(dladsc, NPY_INT32, 1)
+        cdef cnp.ndarray _a_dskdsc = _empty(NPY_DOUBLE, max(<int>(24), 1), -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dskgd(self._ptr, _c_handle, <const int*>cnp.PyArray_DATA(_a_dladsc), <double*>cnp.PyArray_DATA(_a_dskdsc))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return SpiceDSKDescr._from_array(_a_dskdsc)
+
     def dskgtl(self, keywrd):
         """Retrieve the value of a specified DSK tolerance or margin parameter.
         
@@ -4371,6 +4953,75 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _c_dpval
+
+    def dski02(self, handle, dladsc, item, start, room):
+        """Fetch integer data from a type 2 DSK segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dski02.html
+        
+        :param handle: DSK file handle.
+        :param dladsc: DLA descriptor.
+        :param item: Keyword identifying item to fetch.
+        :param start: Start index.
+        :param room: Amount of room in output array.
+        :return: Number of values returned.; Array containing requested item."""
+        cdef int _c_handle = handle
+        cdef int _c_item = item
+        cdef int _c_start = start + 1
+        cdef int _c_room = room
+        cdef int _c_n = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_dladsc = _rows(dladsc, NPY_INT32, 1)
+        cdef cnp.ndarray _a_values = _empty(NPY_INT32, max(<int>(_c_room), 1), -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dski02(self._ptr, _c_handle, <const int*>cnp.PyArray_DATA(_a_dladsc), _c_item, _c_start, _c_room, &_c_n, <int*>cnp.PyArray_DATA(_a_values))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_values[:_c_n]
+
+    def dskmi2(self, vrtces, plates, finscl, corscl, worksz, voxpsz, voxlsz, makvtl, spxisz):
+        """Make spatial index for a DSK type 2 segment. The index is returned as a pair of arrays, one of type INTEGER and one of type DOUBLE PRECISION. These arrays are suitable for use with the DSK type 2 writer `dskw02`.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskmi2.html
+        
+        :param vrtces: Vertices.
+        :param plates: Plates.
+        :param finscl: Fine voxel scale.
+        :param corscl: Coarse voxel scale.
+        :param worksz: Workspace size.
+        :param voxpsz: Voxel-plate pointer array size.
+        :param voxlsz: Voxel-plate list array size.
+        :param makvtl: Vertex-plate list flag.
+        :param spxisz: Spatial index integer component size.
+        :return: Double precision component of spatial index.; Integer component of spatial index."""
+        cdef int _c_nv = (np.shape(vrtces)[0] if np.ndim(vrtces) > 1 else np.size(vrtces))
+        cdef int _c_np = (np.shape(plates)[0] if np.ndim(plates) > 1 else np.size(plates))
+        cdef double _c_finscl = finscl
+        cdef int _c_corscl = corscl
+        cdef int _c_worksz = worksz
+        cdef int _c_voxpsz = voxpsz
+        cdef int _c_voxlsz = voxlsz
+        cdef int _c_makvtl = 1 if makvtl else 0
+        cdef int _c_spxisz = spxisz
+        cdef int _st = 0
+        cdef cnp.ndarray _a_vrtces = _rows(vrtces, NPY_DOUBLE, 2)
+        cdef cnp.ndarray _a_plates = _rows(plates, NPY_INT32, 2)
+        cdef cnp.ndarray _a_work = _empty(NPY_INT32, max(<int>(2 * _c_worksz), 1), -1)
+        cdef cnp.ndarray _a_spaixd = _empty(NPY_DOUBLE, 10, -1)
+        cdef cnp.ndarray _a_spaixi = _empty(NPY_INT32, _c_spxisz, -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dskmi2(self._ptr, _c_nv, <const double*>cnp.PyArray_DATA(_a_vrtces), _c_np, <const int*>cnp.PyArray_DATA(_a_plates), _c_finscl, _c_corscl, _c_worksz, _c_voxpsz, _c_voxlsz, _c_makvtl, _c_spxisz, <int*>cnp.PyArray_DATA(_a_work), <double*>cnp.PyArray_DATA(_a_spaixd), <int*>cnp.PyArray_DATA(_a_spaixi))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_spaixd, _a_spaixi
 
     def dskn02(self, handle, dladsc, plid):
         """Compute the unit normal vector for a specified plate from a type 2 DSK segment.
@@ -4404,6 +5055,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param dsk: Name of DSK file.
         :param bodids: Set of ID codes of objects in DSK
         :return: Set of ID codes of objects in DSK"""
+        if not dsk: _empty_string('dskobj', 'dskfnm')
         cdef int _st = 0
         cdef bytes _b_dskfnm = _b(dsk)
         cdef const char *_c_dskfnm = _b_dskfnm
@@ -4428,6 +5080,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param ifname: Internal file name.
         :param ncomch: Number of comment characters to allocate.
         :return: Handle assigned to the opened DSK file."""
+        if not fname: _empty_string('dskopn', 'fname')
+        if not ifname: _empty_string('dskopn', 'ifname')
         cdef int _c_ncomch = ncomch
         cdef int _c_handle = 0
         cdef int _st = 0
@@ -4445,20 +5099,46 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _c_handle
 
-    def dskrb2(self, nv, vrtces, np, plates, corsys, corpar):
+    def dskp02(self, handle, dladsc, start, room):
+        """Fetch triangular plates from a type 2 DSK segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskp02.html
+        
+        :param handle: DSK file handle.
+        :param dladsc: DLA descriptor.
+        :param start: Start index.
+        :param room: Amount of room in output array.
+        :return: Number of plates returned.; Array containing plates."""
+        cdef int _c_handle = handle
+        cdef int _c_start = start
+        cdef int _c_room = room
+        cdef int _c_n = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_dladsc = _rows(dladsc, NPY_INT32, 1)
+        cdef int _n_plates = max(<int>(_c_room), 1)
+        cdef cnp.ndarray _a_plates = np.zeros((_n_plates, 3), dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dskp02(self._ptr, _c_handle, <const int*>cnp.PyArray_DATA(_a_dladsc), _c_start, _c_room, &_c_n, <int*>cnp.PyArray_DATA(_a_plates))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_plates[:_c_n]
+
+    def dskrb2(self, vrtces, plates, corsys, corpar):
         """Determine range bounds for a set of triangular plates to be stored in a type 2 DSK segment.
         
         https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskrb2.html
         
-        :param nv: Number of vertices.
         :param vrtces: Vertices.
-        :param np: Number of plates.
         :param plates: Plates.
         :param corsys: DSK coordinate system code.
         :param corpar: DSK coordinate system parameters.
         :return: Lower bound on range of third coordinate.; Upper bound on range of third coordinate."""
-        cdef int _c_nv = nv
-        cdef int _c_np = np
+        cdef int _c_nv = (np.shape(vrtces)[0] if np.ndim(vrtces) > 1 else np.size(vrtces))
+        cdef int _c_np = (np.shape(plates)[0] if np.ndim(plates) > 1 else np.size(plates))
         cdef int _c_corsys = corsys
         cdef double _c_mncor3 = 0
         cdef double _c_mxcor3 = 0
@@ -4485,6 +5165,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param bodyid: Integer body ID code.
         :param srfids: Set of ID codes of surfaces in DSK
         :return: Set of ID codes of surfaces in DSK"""
+        if not dsk: _empty_string('dsksrf', 'dskfnm')
         cdef int _c_bodyid = bodyid
         cdef int _st = 0
         cdef bytes _b_dskfnm = _b(dsk)
@@ -4521,6 +5202,34 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return None
 
+    def dskv02(self, handle, dladsc, start, room):
+        """Fetch vertices from a type 2 DSK segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskv02.html
+        
+        :param handle: DSK file handle.
+        :param dladsc: DLA descriptor.
+        :param start: Start index.
+        :param room: Amount of room in output array.
+        :return: Number of vertices returned.; Array containing vertices."""
+        cdef int _c_handle = handle
+        cdef int _c_start = start
+        cdef int _c_room = room
+        cdef int _c_n = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_dladsc = _rows(dladsc, NPY_INT32, 1)
+        cdef int _n_vrtces = max(<int>(_c_room), 1)
+        cdef cnp.ndarray _a_vrtces = np.zeros((_n_vrtces, 3), dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dskv02(self._ptr, _c_handle, <const int*>cnp.PyArray_DATA(_a_dladsc), _c_start, _c_room, &_c_n, <double*>cnp.PyArray_DATA(_a_vrtces))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_vrtces[:_c_n]
+
     def dskw02(self, handle, center, surfid, dclass, fname, corsys, corpar, mncor1, mxcor1, mncor2, mxcor2, mncor3, mxcor3, first, last, vrtces, plates, spaixd, spaixi):
         """Write a type 2 segment to a DSK file.
         
@@ -4545,6 +5254,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param plates: Plates.
         :param spaixd: Double precision component of spatial index.
         :param spaixi: Integer component of spatial index."""
+        if not fname: _empty_string('dskw02', 'frame')
         cdef int _c_handle = handle
         cdef int _c_center = center
         cdef int _c_surfid = surfid
@@ -4606,6 +5316,93 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _c_plid, _a_xpt, (_c_found != 0)
 
+    def dskxsi(self, pri, target, srflst, et, fixref, vertex, raydir):
+        """Compute a ray-surface intercept using data provided by multiple loaded DSK segments. Return information about the source of the data defining the surface on which the intercept was found: DSK handle, DLA and DSK descriptors, and DSK data type-dependent parameters.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskxsi.html
+        
+        :param pri: Data prioritization flag.
+        :param target: Target body name.
+        :param srflst: Surface ID list.
+        :param et: Epoch, expressed as seconds past J2000 TDB.
+        :param fixref: Name of target body-fixed reference frame.
+        :param vertex: Vertex of ray.
+        :param raydir: Direction vector of ray.
+        :return: Intercept point.; Handle of segment contributing surface data.; DLA descriptor of segment.; DSK descriptor of segment.; Double precision component of source info.; Integer component of source info.
+            (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not target: _empty_string('dskxsi', 'target')
+        if not fixref: _empty_string('dskxsi', 'fixref')
+        cdef int _c_pri = 1 if pri else 0
+        cdef int _c_nsurf = np.size(srflst)
+        cdef double _c_et = et
+        cdef int _c_maxd = 1
+        cdef int _c_maxi = 1
+        cdef int _c_handle = 0
+        cdef int _c_found = 0
+        cdef int _st = 0
+        cdef bytes _b_target = _b(target)
+        cdef bytes _b_fixref = _b(fixref)
+        cdef const char *_c_target = _b_target
+        cdef const char *_c_fixref = _b_fixref
+        cdef cnp.ndarray _a_srflst = _rows(srflst, NPY_INT32, 1)
+        cdef cnp.ndarray _a_vertex = _input(vertex, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_raydir = _input(raydir, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_xpt = _empty(NPY_DOUBLE, 3, -1)
+        cdef cnp.ndarray _a_dladsc = _empty(NPY_INT32, max(<int>(8), 1), -1)
+        cdef cnp.ndarray _a_dskdsc = _empty(NPY_DOUBLE, max(<int>(24), 1), -1)
+        cdef cnp.ndarray _a_dc = _empty(NPY_DOUBLE, max(<int>(_c_maxd), 1), -1)
+        cdef cnp.ndarray _a_ic = _empty(NPY_INT32, max(<int>(_c_maxi), 1), -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dskxsi(self._ptr, _c_pri, _c_target, _c_nsurf, <const int*>cnp.PyArray_DATA(_a_srflst), _c_et, _c_fixref, <double*>cnp.PyArray_DATA(_a_vertex), <double*>cnp.PyArray_DATA(_a_raydir), _c_maxd, _c_maxi, <double*>cnp.PyArray_DATA(_a_xpt), &_c_handle, <int*>cnp.PyArray_DATA(_a_dladsc), <double*>cnp.PyArray_DATA(_a_dskdsc), <double*>cnp.PyArray_DATA(_a_dc), <int*>cnp.PyArray_DATA(_a_ic), &_c_found)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found('dskxsi', (_a_xpt, _c_handle, SpiceDLADescr._from_array(_a_dladsc), SpiceDSKDescr._from_array(_a_dskdsc), _a_dc, _a_ic), _c_found != 0)
+
+    def dskxv(self, pri, target, srflst, et, fixref, vtxarr, dirarr):
+        """Compute ray-surface intercepts for a set of rays, using data provided by multiple loaded DSK segments.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/dskxv.html
+        
+        :param pri: Data prioritization flag.
+        :param target: Target body name.
+        :param srflst: Surface ID list.
+        :param et: Epoch, expressed as seconds past J2000 TDB.
+        :param fixref: Name of target body-fixed reference frame.
+        :param vtxarr: Array of vertices of rays.
+        :param dirarr: Array of direction vectors of rays.
+        :return: Intercept point array.; Found flag array."""
+        if not target: _empty_string('dskxv', 'target')
+        if not fixref: _empty_string('dskxv', 'fixref')
+        cdef int _c_pri = 1 if pri else 0
+        cdef int _c_nsurf = np.size(srflst)
+        cdef double _c_et = et
+        cdef int _c_nrays = (np.shape(vtxarr)[0] if np.ndim(vtxarr) > 1 else np.size(vtxarr))
+        cdef int _st = 0
+        cdef bytes _b_target = _b(target)
+        cdef bytes _b_fixref = _b(fixref)
+        cdef const char *_c_target = _b_target
+        cdef const char *_c_fixref = _b_fixref
+        cdef cnp.ndarray _a_srflst = _rows(srflst, NPY_INT32, 1)
+        cdef cnp.ndarray _a_vtxarr = _rows(vtxarr, NPY_DOUBLE, 2)
+        cdef cnp.ndarray _a_dirarr = _rows(dirarr, NPY_DOUBLE, 2)
+        cdef int _n_xptarr = max(<int>(_c_nrays), 1)
+        cdef cnp.ndarray _a_xptarr = np.zeros((_n_xptarr, 3), dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32)
+        cdef int _n_fndarr = max(<int>(_c_nrays), 0)
+        cdef cnp.ndarray _a_fndarr = _empty(NPY_INT32, max(_n_fndarr, 1), -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_dskxv(self._ptr, _c_pri, _c_target, _c_nsurf, <const int*>cnp.PyArray_DATA(_a_srflst), _c_et, _c_fixref, _c_nrays, <const double*>cnp.PyArray_DATA(_a_vtxarr), <const double*>cnp.PyArray_DATA(_a_dirarr), <double*>cnp.PyArray_DATA(_a_xptarr), _n_fndarr, <int*>cnp.PyArray_DATA(_a_fndarr))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_xptarr, (_a_fndarr[:_n_fndarr] != 0)
+
     def dskz02(self, handle, dladsc):
         """Return plate model size parameters---plate count and vertex count---for a type 2 DSK segment.
         
@@ -4660,6 +5457,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param name: Name of the variable whose value is to be returned.
         :return: Number of values returned for NAME.; Type of the variable 'C', 'N', 'X'
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not name: _empty_string('dtpool', 'name')
         cdef int _c_found = 0
         cdef int _c_n = 0
         cdef char _c_type[1024]
@@ -4714,6 +5512,31 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return None
+
+    def edlimb(self, a, b, c, viewpt):
+        """Find the limb of a triaxial ellipsoid, viewed from a specified point.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/edlimb.html
+        
+        :param a: Length of ellipsoid semi-axis lying on the x-axis.
+        :param b: Length of ellipsoid semi-axis lying on the y-axis.
+        :param c: Length of ellipsoid semi-axis lying on the z-axis.
+        :param viewpt: Location of viewing point.
+        :return: Limb of ellipsoid as seen from viewing point."""
+        cdef double _c_a = a
+        cdef double _c_b = b
+        cdef double _c_c = c
+        cdef int _st = 0
+        cdef cnp.ndarray _a_viewpt = _input(viewpt, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_limb = _empty(NPY_DOUBLE, 9, -1)
+        self._enter()
+        try:
+            _st = pepper_edlimb(self._ptr, _c_a, _c_b, _c_c, <double*>cnp.PyArray_DATA(_a_viewpt), <double*>cnp.PyArray_DATA(_a_limb))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return Ellipse._from_array(_a_limb)
 
     def ednmpt(self, a, b, c, normal):
         """Return the unique point on an ellipsoid's surface where the outward normal direction is a given vector.
@@ -4779,6 +5602,12 @@ cdef class _ContextRoutines(_ContextBase):
         :param obsrvr: Observer.
         :param npts: Number of points in terminator set.
         :return: Epoch associated with target center.; Position of observer in body-fixed frame.; Terminator point set."""
+        if not trmtyp: _empty_string('edterm', 'trmtyp')
+        if not source: _empty_string('edterm', 'source')
+        if not target: _empty_string('edterm', 'target')
+        if not fixref: _empty_string('edterm', 'fixref')
+        if not abcorr: _empty_string('edterm', 'abcorr')
+        if not obsrvr: _empty_string('edterm', 'obsrvr')
         cdef double _c_et = et
         cdef int _c_npts = npts
         cdef double _c_trgepc = 0
@@ -4899,6 +5728,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param nvals: Number of values to add to column.
         :param cvals: Character values to add to column.
         :param isnull: Flag indicating whether column entry is null."""
+        if not column: _empty_string('ekacec', 'column')
         cdef int _c_handle = handle
         cdef int _c_segno = segno + 1
         cdef int _c_recno = recno + 1
@@ -4935,6 +5765,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param dvals: Double precision values to add to column.
         :param isnull: Flag indicating whether column entry is null.
         :return: Index of segment containing record. (PEPPER: changed by the routine, an input in SPICELIB's table)"""
+        if not column: _empty_string('ekaced', 'column')
         cdef int _c_handle = handle
         cdef int _c_segno = segno + 1
         cdef int _c_recno = recno + 1
@@ -4967,6 +5798,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param ivals: Integer values to add to column.
         :param isnull: Flag indicating whether column entry is null.
         :return: Index of segment containing record. (PEPPER: changed by the routine, an input in SPICELIB's table)"""
+        if not column: _empty_string('ekacei', 'column')
         cdef int _c_handle = handle
         cdef int _c_segno = segno + 1
         cdef int _c_recno = recno + 1
@@ -4985,6 +5817,116 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return None
+
+    def ekaclc(self, handle, segno, column, vallen=None, cvals=None, entszs=None, nlflgs=None, rcptrs=None, wkindx=None):
+        """Add an entire character column to an EK segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekaclc.html
+        
+        :param handle: EK file handle.
+        :param segno: Number of segment to add column to.
+        :param column: Column name.
+        :param vallen: (SpiceyPy compatibility; ignored)
+        :param cvals: Character values to add to column.
+        :param entszs: Array of sizes of column entries.
+        :param nlflgs: Array of null flags for column entries.
+        :param rcptrs: Record pointers for segment.
+        :param wkindx: Work space for column index.
+        :return: Work space for column index."""
+        if not column: _empty_string('ekaclc', 'column')
+        cdef int _c_handle = handle
+        cdef int _c_segno = segno + 1
+        cdef int _st = 0
+        cdef bytes _b_column = _b(column)
+        cdef bytes _b_cvals
+        cdef const char *_c_column = _b_column
+        cdef int _n_cvals, _w_cvals
+        cdef const char *_p_cvals
+        _b_cvals, _n_cvals, _w_cvals = _strblock(cvals)
+        _p_cvals = _b_cvals
+        cdef cnp.ndarray _a_entszs = _rows(entszs, NPY_INT32, 1)
+        cdef cnp.ndarray _a_nlflgs = _rows(np.asarray(nlflgs).astype(bool).astype(np.int32), NPY_INT32, 1)
+        cdef cnp.ndarray _a_rcptrs = _rows(rcptrs, NPY_INT32, 1)
+        cdef cnp.ndarray _a_wkindx = _rows(np.array(wkindx, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_ekaclc(self._ptr, _c_handle, _c_segno, _c_column, _n_cvals, _w_cvals, _p_cvals, <const int*>cnp.PyArray_DATA(_a_entszs), <int>cnp.PyArray_DIM(_a_nlflgs, 0), <const int*>cnp.PyArray_DATA(_a_nlflgs), <const int*>cnp.PyArray_DATA(_a_rcptrs), <int*>cnp.PyArray_DATA(_a_wkindx))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_wkindx
+
+    def ekacld(self, handle, segno, column, dvals, entszs, nlflgs, rcptrs, wkindx):
+        """Add an entire double precision column to an EK segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekacld.html
+        
+        :param handle: EK file handle.
+        :param segno: Number of segment to add column to.
+        :param column: Column name.
+        :param dvals: Double precision values to add to column.
+        :param entszs: Array of sizes of column entries.
+        :param nlflgs: Array of null flags for column entries.
+        :param rcptrs: Record pointers for segment.
+        :param wkindx: Work space for column index.
+        :return: Work space for column index."""
+        if not column: _empty_string('ekacld', 'column')
+        cdef int _c_handle = handle
+        cdef int _c_segno = segno + 1
+        cdef int _st = 0
+        cdef bytes _b_column = _b(column)
+        cdef const char *_c_column = _b_column
+        cdef cnp.ndarray _a_dvals = _rows(dvals, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_entszs = _rows(entszs, NPY_INT32, 1)
+        cdef cnp.ndarray _a_nlflgs = _rows(np.asarray(nlflgs).astype(bool).astype(np.int32), NPY_INT32, 1)
+        cdef cnp.ndarray _a_rcptrs = _rows(rcptrs, NPY_INT32, 1)
+        cdef cnp.ndarray _a_wkindx = _rows(np.array(wkindx, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_ekacld(self._ptr, _c_handle, _c_segno, _c_column, <const double*>cnp.PyArray_DATA(_a_dvals), <const int*>cnp.PyArray_DATA(_a_entszs), <int>cnp.PyArray_DIM(_a_nlflgs, 0), <const int*>cnp.PyArray_DATA(_a_nlflgs), <const int*>cnp.PyArray_DATA(_a_rcptrs), <int*>cnp.PyArray_DATA(_a_wkindx))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_wkindx
+
+    def ekacli(self, handle, segno, column, ivals, entszs, nlflgs, rcptrs, wkindx):
+        """Add an entire integer column to an EK segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekacli.html
+        
+        :param handle: EK file handle.
+        :param segno: Number of segment to add column to.
+        :param column: Column name.
+        :param ivals: Integer values to add to column.
+        :param entszs: Array of sizes of column entries.
+        :param nlflgs: Array of null flags for column entries.
+        :param rcptrs: Record pointers for segment.
+        :param wkindx: Work space for column index.
+        :return: Work space for column index."""
+        if not column: _empty_string('ekacli', 'column')
+        cdef int _c_handle = handle
+        cdef int _c_segno = segno + 1
+        cdef int _st = 0
+        cdef bytes _b_column = _b(column)
+        cdef const char *_c_column = _b_column
+        cdef cnp.ndarray _a_ivals = _rows(ivals, NPY_INT32, 1)
+        cdef cnp.ndarray _a_entszs = _rows(entszs, NPY_INT32, 1)
+        cdef cnp.ndarray _a_nlflgs = _rows(np.asarray(nlflgs).astype(bool).astype(np.int32), NPY_INT32, 1)
+        cdef cnp.ndarray _a_rcptrs = _rows(rcptrs, NPY_INT32, 1)
+        cdef cnp.ndarray _a_wkindx = _rows(np.array(wkindx, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_ekacli(self._ptr, _c_handle, _c_segno, _c_column, <const int*>cnp.PyArray_DATA(_a_ivals), <const int*>cnp.PyArray_DATA(_a_entszs), <int>cnp.PyArray_DIM(_a_nlflgs, 0), <const int*>cnp.PyArray_DATA(_a_nlflgs), <const int*>cnp.PyArray_DATA(_a_rcptrs), <int*>cnp.PyArray_DATA(_a_wkindx))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_wkindx
 
     def ekappr(self, handle, segno):
         """Append a new, empty record at the end of a specified E-kernel segment.
@@ -5018,6 +5960,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param cnames: Names of columns.
         :param decls: Declarations of columns.
         :return: Segment number."""
+        if not tabnam: _empty_string('ekbseg', 'tabnam')
         cdef int _c_handle = handle
         cdef int _c_ncols = (1 if isinstance(cnames, (str, bytes)) else len(cnames))
         cdef int _c_segno = 0
@@ -5051,6 +5994,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param table: Name of table.
         :return: Count of distinct, currently loaded columns."""
+        if not table: _empty_string('ekccnt', 'table')
         cdef int _c_ccount = 0
         cdef int _st = 0
         cdef bytes _b_table = _b(table)
@@ -5064,6 +6008,32 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _c_ccount
+
+    def ekcii(self, table, cindex, lenout=None):
+        """Return attribute information about a column belonging to a loaded EK table, specifying the column by table and index.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekcii.html
+        
+        :param table: Name of table containing column.
+        :param cindex: Index of column whose attributes are to be found.
+        :param lenout: (SpiceyPy compatibility; ignored)
+        :return: Name of column.; Column attribute descriptor."""
+        cdef int _c_cindex = cindex + 1
+        cdef char _c_column[1024]
+        cdef int _st = 0
+        cdef bytes _b_table = _b(table)
+        cdef const char *_c_table = _b_table
+        _c_column[0] = 0
+        cdef cnp.ndarray _a_attdsc = _empty(NPY_INT32, 6, -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_ekcii(self._ptr, _c_table, _c_cindex, 1024, _c_column, <int*>cnp.PyArray_DATA(_a_attdsc))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _s(_c_column), SpiceEKAttDsc._from_array(_a_attdsc)
 
     def ekcls(self, handle):
         """Close an E-kernel.
@@ -5106,6 +6076,29 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return None
 
+    def ekffld(self, handle, segno, rcptrs):
+        """Complete a fast write operation on a new E-kernel segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekffld.html
+        
+        :param handle: File handle.
+        :param segno: Segment number.
+        :param rcptrs: Record pointers. (PEPPER: changed by the routine, an input in SPICELIB's table)
+        :return: Record pointers. (PEPPER: changed by the routine, an input in SPICELIB's table)"""
+        cdef int _c_handle = handle
+        cdef int _c_segno = segno + 1
+        cdef int _st = 0
+        cdef cnp.ndarray _a_rcptrs = _rows(np.array(rcptrs, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_ekffld(self._ptr, _c_handle, _c_segno, <int*>cnp.PyArray_DATA(_a_rcptrs))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return None
+
     def ekfind(self, query, lenout=None):
         """Find E-kernel data that satisfy a set of constraints.
         
@@ -5114,6 +6107,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param query: Query specifying data to be found.
         :param lenout: (SpiceyPy compatibility; ignored)
         :return: Number of matching rows.; Flag indicating whether query parsed correctly.; Parse error description."""
+        if not query: _empty_string('ekfind', 'query')
         cdef int _c_nmrows = 0
         cdef int _c_error = 0
         cdef char _c_errmsg[1024]
@@ -5214,6 +6208,49 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _found('ekgi', (_c_idata, (_c_null != 0)), _c_found != 0)
 
+    def ekifld(self, handle, tabnam, ncols, nrows, cnmlen=None, cnames=None, declen=None, decls=None):
+        """Initialize a new E-kernel segment to allow fast writing.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekifld.html
+        
+        :param handle: File handle.
+        :param tabnam: Table name.
+        :param ncols: Number of columns in the segment.
+        :param nrows: Number of rows in the segment.
+        :param cnmlen: (SpiceyPy compatibility; ignored)
+        :param cnames: Names of columns.
+        :param declen: (SpiceyPy compatibility; ignored)
+        :param decls: Declarations of columns.
+        :return: Segment number.; Array of record pointers."""
+        if not tabnam: _empty_string('ekifld', 'tabnam')
+        cdef int _c_handle = handle
+        cdef int _c_ncols = ncols
+        cdef int _c_nrows = nrows
+        cdef int _c_segno = 0
+        cdef int _st = 0
+        cdef bytes _b_tabnam = _b(tabnam)
+        cdef bytes _b_cnames
+        cdef bytes _b_decls
+        cdef const char *_c_tabnam = _b_tabnam
+        cdef int _n_cnames, _w_cnames
+        cdef const char *_p_cnames
+        _b_cnames, _n_cnames, _w_cnames = _strblock(cnames)
+        _p_cnames = _b_cnames
+        cdef int _n_decls, _w_decls
+        cdef const char *_p_decls
+        _b_decls, _n_decls, _w_decls = _strblock(decls)
+        _p_decls = _b_decls
+        cdef cnp.ndarray _a_rcptrs = _empty(NPY_INT32, max(<int>(_c_nrows), 1), -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_ekifld(self._ptr, _c_handle, _c_tabnam, _c_ncols, _c_nrows, _n_cnames, _w_cnames, _p_cnames, _n_decls, _w_decls, _p_decls, &_c_segno, <int*>cnp.PyArray_DATA(_a_rcptrs))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return (_c_segno - 1), _a_rcptrs
+
     def ekinsr(self, handle, segno, recno):
         """Add a new, empty record to a specified E-kernel segment at a specified index.
         
@@ -5305,6 +6342,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param ifname: Internal file name.
         :param ncomch: The number of characters to reserve for comments.
         :return: Handle attached to new EK file."""
+        if not fname: _empty_string('ekopn', 'fname')
+        if not ifname: _empty_string('ekopn', 'ifname')
         cdef int _c_ncomch = ncomch
         cdef int _c_handle = 0
         cdef int _st = 0
@@ -5329,6 +6368,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param fname: Name of EK file.
         :return: Handle attached to EK file."""
+        if not fname: _empty_string('ekopr', 'fname')
         cdef int _c_handle = 0
         cdef int _st = 0
         cdef bytes _b_fname = _b(fname)
@@ -5368,6 +6408,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param fname: Name of EK file.
         :return: Handle attached to EK file."""
+        if not fname: _empty_string('ekopw', 'fname')
         cdef int _c_handle = 0
         cdef int _st = 0
         cdef bytes _b_fname = _b(fname)
@@ -5381,6 +6422,48 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _c_handle
+
+    def ekpsel(self, query, msglen=None, tablen=None, collen=None):
+        """Parse the SELECT clause of an EK query, returning full particulars concerning each selected item.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekpsel.html
+        
+        :param query: EK query.
+        :param msglen: (SpiceyPy compatibility; ignored)
+        :param tablen: (SpiceyPy compatibility; ignored)
+        :param collen: (SpiceyPy compatibility; ignored)
+        :return: Number of items in SELECT clause of QUERY.; Begin positions of expressions in SELECT clause.; End positions of expressions in SELECT clause.; Data types of expressions.; Classes of expressions.; Names of tables qualifying SELECT columns.; Names of columns in SELECT clause of QUERY.; Error flag.; Parse error message."""
+        if not query: _empty_string('ekpsel', 'query')
+        cdef int _c_n = 0
+        cdef int _c_error = 0
+        cdef char _c_errmsg[1024]
+        cdef int _st = 0
+        cdef bytes _b_query = _b(query)
+        cdef const char *_c_query = _b_query
+        cdef cnp.ndarray _a_xbegs = _empty(NPY_INT32, max(<int>(50), 1), -1)
+        cdef cnp.ndarray _a_xends = _empty(NPY_INT32, max(<int>(50), 1), -1)
+        cdef int _n_xtypes = max(<int>(50), 1)
+        cdef bytearray _ba_xtypes = bytearray(_n_xtypes * 1024)
+        cdef char *_c_xtypes = _ba_xtypes
+        cdef int _n_xclass = max(<int>(50), 1)
+        cdef bytearray _ba_xclass = bytearray(_n_xclass * 1024)
+        cdef char *_c_xclass = _ba_xclass
+        cdef int _n_tabs = max(<int>(50), 1)
+        cdef bytearray _ba_tabs = bytearray(_n_tabs * 1024)
+        cdef char *_c_tabs = _ba_tabs
+        cdef int _n_cols = max(<int>(50), 1)
+        cdef bytearray _ba_cols = bytearray(_n_cols * 1024)
+        cdef char *_c_cols = _ba_cols
+        _c_errmsg[0] = 0
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_ekpsel(self._ptr, _c_query, &_c_n, <int*>cnp.PyArray_DATA(_a_xbegs), <int*>cnp.PyArray_DATA(_a_xends), _n_xtypes, 1024, _c_xtypes, _n_xclass, 1024, _c_xclass, _n_tabs, 1024, _c_tabs, _n_cols, 1024, _c_cols, &_c_error, 1024, _c_errmsg)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _c_n, _a_xbegs, _a_xends, _strs(_ba_xtypes, _n_xtypes, 1024), _strs(_ba_xclass, _n_xclass, 1024), _strs(_ba_tabs, _n_tabs, 1024), _strs(_ba_cols, _n_cols, 1024), (_c_error != 0), _s(_c_errmsg)
 
     def ekshdw(self, handle):
         """Return shadowing status of a specified EK file. THIS IS A STUB ROUTINE.
@@ -5430,6 +6513,43 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _c_nmrows, (_c_semerr != 0), _s(_c_errmsg)
 
+    def ekssum(self, handle, segno):
+        """Return summary information for a specified segment in a specified EK.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ekssum.html
+        
+        :param handle: Handle of EK.
+        :param segno: Number of segment to be summarized.
+        :return: Name of table containing segment.; Number of rows in segment.; Number of columns in segment.; Names of columns in segment.; Data types of columns in segment.; Entry sizes of columns in segment.; String lengths of columns in segment.; Flags indicating whether columns are indexed.; Flags indicating whether columns allow nulls."""
+        cdef int _c_handle = handle
+        cdef int _c_segno = segno + 1
+        cdef char _c_tabnam[1024]
+        cdef int _c_nrows = 0
+        cdef int _c_ncols = 0
+        cdef int _st = 0
+        _c_tabnam[0] = 0
+        cdef int _n_cnames = max(<int>(100), 1)
+        cdef bytearray _ba_cnames = bytearray(_n_cnames * 1024)
+        cdef char *_c_cnames = _ba_cnames
+        cdef int _n_dtypes = max(<int>(100), 1)
+        cdef bytearray _ba_dtypes = bytearray(_n_dtypes * 1024)
+        cdef char *_c_dtypes = _ba_dtypes
+        cdef cnp.ndarray _a_sizes = _empty(NPY_INT32, max(<int>(100), 1), -1)
+        cdef cnp.ndarray _a_strlns = _empty(NPY_INT32, max(<int>(100), 1), -1)
+        cdef int _n_indexd = max(<int>(100), 0)
+        cdef cnp.ndarray _a_indexd = _empty(NPY_INT32, max(_n_indexd, 1), -1)
+        cdef int _n_nullok = max(<int>(100), 0)
+        cdef cnp.ndarray _a_nullok = _empty(NPY_INT32, max(_n_nullok, 1), -1)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_ekssum(self._ptr, _c_handle, _c_segno, 1024, _c_tabnam, &_c_nrows, &_c_ncols, _n_cnames, 1024, _c_cnames, _n_dtypes, 1024, _c_dtypes, <int*>cnp.PyArray_DATA(_a_sizes), <int*>cnp.PyArray_DATA(_a_strlns), _n_indexd, <int*>cnp.PyArray_DATA(_a_indexd), _n_nullok, <int*>cnp.PyArray_DATA(_a_nullok))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _s(_c_tabnam), _c_nrows, _c_ncols, _strs(_ba_cnames, _n_cnames, 1024), _strs(_ba_dtypes, _n_dtypes, 1024), _a_sizes, _a_strlns, (_a_indexd[:_n_indexd] != 0), (_a_nullok[:_n_nullok] != 0)
+
     def ektnam(self, n, lenout=None):
         """Return the name of a specified, loaded table.
         
@@ -5465,6 +6585,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param cvals: Character string values to add to column.
         :param isnull: Flag indicating whether column entry is null.
         :return: Index of segment containing record. (PEPPER: changed by the routine, an input in SPICELIB's table)"""
+        if not column: _empty_string('ekucec', 'column')
         cdef int _c_handle = handle
         cdef int _c_segno = segno + 1
         cdef int _c_recno = recno + 1
@@ -5501,6 +6622,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param dvals: Double precision values to add to column.
         :param isnull: Flag indicating whether column entry is null.
         :return: Index of segment containing record. (PEPPER: changed by the routine, an input in SPICELIB's table)"""
+        if not column: _empty_string('ekuced', 'column')
         cdef int _c_handle = handle
         cdef int _c_segno = segno + 1
         cdef int _c_recno = recno + 1
@@ -5533,6 +6655,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param ivals: Integer values to add to column.
         :param isnull: Flag indicating whether column entry is null.
         :return: Index of segment containing record. (PEPPER: changed by the routine, an input in SPICELIB's table)"""
+        if not column: _empty_string('ekucei', 'column')
         cdef int _c_handle = handle
         cdef int _c_segno = segno + 1
         cdef int _c_recno = recno + 1
@@ -5674,6 +6797,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param timlen: (SpiceyPy compatibility; ignored)
         :param ampmlen: (SpiceyPy compatibility; ignored)
         :return: Local hour on a '24 hour' clock; Minutes past the hour; Seconds past the minute; String giving local time on 24 hour clock; String giving time on A.M./ P.M. scale"""
+        if not typein: _empty_string('et2lst', 'type')
         cdef double _c_et = et
         cdef int _c_body = body
         cdef double _c_lon = lon
@@ -5708,6 +6832,7 @@ cdef class _ContextRoutines(_ContextBase):
         :return: Output time string, UTC."""
         if _iterable(et):
             return _stack([self.et2utc(_v, format_str, prec, lenout) for _v in et])
+        if not format_str: _empty_string('et2utc', 'format')
         cdef double _c_et = et
         cdef int _c_prec = prec
         cdef char _c_utcstr[1024]
@@ -5801,6 +6926,29 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_xform
 
+    def ev2lin(self, et, geophs, elems):
+        """**Deprecated:** This routine has been superseded by the SPICELIB routine `evsgp4`. *ALL* TLE evaluations should use that routine. NAIF supports `ev2lin` only for backward compatibility.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ev2lin.html
+        
+        :param et: Epoch in seconds past ephemeris epoch J2000.
+        :param geophs: Geophysical constants
+        :param elems: Two-line element data
+        :return: Evaluated state"""
+        cdef double _c_et = et
+        cdef int _st = 0
+        cdef cnp.ndarray _a_geophs = _rows(geophs, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_elems = _rows(elems, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_state = _empty(NPY_DOUBLE, max(<int>(6), 1), -1)
+        self._enter()
+        try:
+            _st = pepper_ev2lin(self._ptr, _c_et, <const double*>cnp.PyArray_DATA(_a_geophs), <const double*>cnp.PyArray_DATA(_a_elems), <double*>cnp.PyArray_DATA(_a_state))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_state
+
     def evsgp4(self, et, geophs, elems):
         """Evaluate NORAD two-line element data for earth orbiting spacecraft. This evaluator uses algorithms as described in Vallado 2006 [4].
         
@@ -5851,6 +6999,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param fname: Name of the file in question.
         :return: the result"""
+        if not fname: _empty_string('exists', 'fname')
         cdef int _c_fresult = 0
         cdef int _st = 0
         cdef bytes _b_fname = _b(fname)
@@ -5871,6 +7020,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param name: Name of a numeric kernel variable.
         :return: .TRUE. when the variable is in the pool."""
+        if not name: _empty_string('expool', 'name')
         cdef int _c_found = 0
         cdef int _st = 0
         cdef bytes _b_name = _b(name)
@@ -6007,6 +7157,9 @@ cdef class _ContextRoutines(_ContextBase):
         :param observer: Name or ID code string of the observer.
         :param et: Time of the observation (seconds past J2000).
         :return: Visibility flag (.TRUE./.FALSE.)."""
+        if not inst: _empty_string('fovray', 'inst')
+        if not abcorr: _empty_string('fovray', 'abcorr')
+        if not observer: _empty_string('fovray', 'obsrvr')
         cdef double _c_et = et
         cdef int _c_visibl = 0
         cdef int _st = 0
@@ -6042,6 +7195,11 @@ cdef class _ContextRoutines(_ContextBase):
         :param observer: Name or ID code string of the observer.
         :param et: Time of the observation (seconds past J2000).
         :return: Visibility flag (.TRUE./.FALSE.)."""
+        if not inst: _empty_string('fovtrg', 'inst')
+        if not target: _empty_string('fovtrg', 'target')
+        if not tshape: _empty_string('fovtrg', 'tshape')
+        if not abcorr: _empty_string('fovtrg', 'abcorr')
+        if not observer: _empty_string('fovtrg', 'obsrvr')
         cdef double _c_et = et
         cdef int _c_visibl = 0
         cdef int _st = 0
@@ -6205,6 +7363,32 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_rectan
 
+    def getelm(self, frstyr, lines):
+        """Parse the 'lines' of a two-line element set, returning the elements in units suitable for use in SPICE software.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/getelm.html
+        
+        :param frstyr: Year of earliest representable two-line elements.
+        :param lines: A pair of 'lines' containing two-line elements.
+        :return: The epoch of the elements in seconds past J2000.; The elements converted to SPICE units."""
+        cdef int _c_frstyr = frstyr
+        cdef double _c_epoch = 0
+        cdef int _st = 0
+        cdef bytes _b_lines
+        cdef int _n_lines, _w_lines
+        cdef const char *_p_lines
+        _b_lines, _n_lines, _w_lines = _strblock(lines)
+        _p_lines = _b_lines
+        cdef cnp.ndarray _a_elems = _empty(NPY_DOUBLE, 10, -1)
+        self._enter()
+        try:
+            _st = pepper_getelm(self._ptr, _c_frstyr, _n_lines, _w_lines, _p_lines, &_c_epoch, <double*>cnp.PyArray_DATA(_a_elems))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _c_epoch, _a_elems
+
     def getfat(self, file):
         """Determine the architecture and type of SPICE kernels.
         
@@ -6212,6 +7396,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param file: The name of a file to be examined.
         :return: The architecture of the kernel file.; The type of the kernel file."""
+        if not file: _empty_string('getfat', 'file')
         cdef char _c_arch[1024]
         cdef char _c_kertyp[1024]
         cdef int _st = 0
@@ -6227,6 +7412,38 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _s(_c_arch), _s(_c_kertyp)
+
+    def getfvn(self, inst, room, shapelen=None, framelen=None):
+        """Return the field-of-view (FOV) parameters for a specified instrument. The instrument is specified by name.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/getfvn.html
+        
+        :param inst: Name of an instrument.
+        :param room: Maximum number of vectors that can be returned.
+        :param shapelen: (SpiceyPy compatibility; ignored)
+        :param framelen: (SpiceyPy compatibility; ignored)
+        :return: Instrument FOV shape.; Name of the frame in which FOV vectors are defined.; Boresight vector.; Number of boundary vectors returned.; FOV boundary vectors."""
+        if not inst: _empty_string('getfvn', 'inst')
+        cdef int _c_room = room
+        cdef char _c_shape[1024]
+        cdef char _c_frame[1024]
+        cdef int _c_n = 0
+        cdef int _st = 0
+        cdef bytes _b_inst = _b(inst)
+        cdef const char *_c_inst = _b_inst
+        _c_shape[0] = 0
+        _c_frame[0] = 0
+        cdef cnp.ndarray _a_bsight = _empty(NPY_DOUBLE, 3, -1)
+        cdef int _n_bounds = max(<int>(_c_room), 1)
+        cdef cnp.ndarray _a_bounds = np.zeros((_n_bounds, 3), dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32)
+        self._enter()
+        try:
+            _st = pepper_getfvn(self._ptr, _c_inst, _c_room, 1024, _c_shape, 1024, _c_frame, <double*>cnp.PyArray_DATA(_a_bsight), &_c_n, <double*>cnp.PyArray_DATA(_a_bounds))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _s(_c_shape), _s(_c_frame), _a_bsight, _c_n, _a_bounds[:_c_n]
 
     def gf_distance(self, target, abcorr, obsrvr, relate, refval, adjust, step, cnfine):
         """A GF search on the observer-target distance (PEPPER; `gfdist` with the confinement and result windows as arrays, and without workspace).
@@ -6263,6 +7480,72 @@ cdef class _ContextRoutines(_ContextBase):
             if _st:
                 self._raise()
         finally:
+            self._leave()
+        return _copy2(NPY_DOUBLE, _c_result, _c_result_rows, _c_result_cols)
+
+    def gf_event(self, udstep, udrefn, gquant, qnpars, qpnams, qcpars, qdpars, qipars, qlpars, op, refval, tol, adjust, step, cnfine, rpt, udrepi, udrepu, udrepf, bail, udbail):
+        """A GF search on a geometric quantity, with the caller's step and refinement routines (PEPPER; `gfevnt` with the confinement and result windows as arrays, and without workspace).
+        
+        :param udstep: Name of the routine that computes and returns a time step.
+        :param udrefn: Name of the routine that computes a refined time.
+        :param gquant: Type of geometric quantity.
+        :param qnpars: Number of quantity definition parameters.
+        :param qpnams: Names of quantity definition parameters.
+        :param qcpars: Array of character quantity definition parameters.
+        :param qdpars: Array of double precision quantity definition parameters.
+        :param qipars: Array of integer quantity definition parameters.
+        :param qlpars: Array of logical quantity definition parameters.
+        :param op: Operator that either looks for an extreme value (max, min, local, absolute) or compares the geometric quantity value and a number.
+        :param refval: Reference value.
+        :param tol: Convergence tolerance in seconds
+        :param adjust: Absolute extremum adjustment value.
+        :param step: the smallest step UDSTEP returns: it sizes the work windows (PEPPER)
+        :param cnfine: the confinement window, shape (2, n): intervals [start, stop], sorted and disjoint
+        :param rpt: Progress reporter on (.TRUE.) or off (.FALSE.).
+        :param udrepi: Function that initializes progress reporting.
+        :param udrepu: Function that updates the progress report.
+        :param udrepf: Function that finalizes progress reporting.
+        :param bail: Logical indicating program interrupt monitoring.
+        :param udbail: Name of a routine that signals a program interrupt.
+        :return: the result window, shape (2, n) (n = 0 after an error)"""
+        cdef int _c_qnpars = qnpars
+        cdef double _c_refval = refval
+        cdef double _c_tol = tol
+        cdef double _c_adjust = adjust
+        cdef double _c_step = step
+        cdef int _c_rpt = 1 if rpt else 0
+        cdef int _c_bail = 1 if bail else 0
+        cdef const double *_c_result = NULL
+        cdef int _c_result_rows = 0
+        cdef int _c_result_cols = 0
+        cdef int _st = 0
+        cdef bytes _b_gquant = _b(gquant)
+        cdef bytes _b_qpnams
+        cdef bytes _b_qcpars
+        cdef bytes _b_op = _b(op)
+        cdef const char *_c_gquant = _b_gquant
+        cdef const char *_c_op = _b_op
+        cdef int _n_qpnams, _w_qpnams
+        cdef const char *_p_qpnams
+        _b_qpnams, _n_qpnams, _w_qpnams = _strblock(qpnams)
+        _p_qpnams = _b_qpnams
+        cdef int _n_qcpars, _w_qcpars
+        cdef const char *_p_qcpars
+        _b_qcpars, _n_qcpars, _w_qcpars = _strblock(qcpars)
+        _p_qcpars = _b_qcpars
+        cdef cnp.ndarray _a_qdpars = _rows(qdpars, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_qipars = _rows(qipars, NPY_INT32, 1)
+        cdef cnp.ndarray _a_qlpars = _rows(np.asarray(qlpars).astype(bool).astype(np.int32), NPY_INT32, 1)
+        cdef cnp.ndarray _a_cnfine = _rows(cnfine, NPY_DOUBLE, 2)
+        _hk = self._gf_hooks_on(step=udstep, refn=udrefn, repi=udrepi, repu=udrepu, repf=udrepf, bail=udbail)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_gf_event(self._ptr, _c_gquant, _c_qnpars, _n_qpnams, _w_qpnams, _p_qpnams, _n_qcpars, _w_qcpars, _p_qcpars, <const double*>cnp.PyArray_DATA(_a_qdpars), <const int*>cnp.PyArray_DATA(_a_qipars), <int>cnp.PyArray_DIM(_a_qlpars, 0), <const int*>cnp.PyArray_DATA(_a_qlpars), _c_op, _c_refval, _c_tol, _c_adjust, _c_step, <int>cnp.PyArray_DIM(_a_cnfine, 0), <int>cnp.PyArray_DIM(_a_cnfine, 1), <const double*>cnp.PyArray_DATA(_a_cnfine), _c_rpt, _c_bail, &_c_result, &_c_result_rows, &_c_result_cols)
+            if _st:
+                self._raise()
+        finally:
+            self._gf_hooks_off()
             self._leave()
         return _copy2(NPY_DOUBLE, _c_result, _c_result_rows, _c_result_cols)
 
@@ -6745,6 +8028,135 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return (_c_fresult != 0)
 
+    def gffove(self, inst, tshape, raydir, target, tframe, abcorr, obsrvr, tol, udstep, udrefn, rpt, udrepi, udrepu, udrepf, bail, udbail, cnfine, result=None):
+        """Determine time intervals when a specified target body or ray intersects the space bounded by the field-of-view (FOV) of a specified instrument. Report progress and handle interrupts if so commanded.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/gffove.html
+        
+        :param inst: Name of the instrument.
+        :param tshape: Type of shape model used for target body.
+        :param raydir: Ray's direction vector.
+        :param target: Name of the target body.
+        :param tframe: Body-fixed, body-centered frame for target body.
+        :param abcorr: Aberration correction flag.
+        :param obsrvr: Name of the observing body.
+        :param tol: Convergence tolerance in seconds.
+        :param udstep: Name of routine that returns a time step.
+        :param udrefn: Name of the routine that computes a refined time.
+        :param rpt: Progress report flag.
+        :param udrepi: Function that initializes progress reporting.
+        :param udrepu: Function that updates the progress report.
+        :param udrepf: Function that finalizes progress reporting.
+        :param bail: Logical indicating program interrupt monitoring.
+        :param udbail: Name of a routine that signals a program interrupt.
+        :param cnfine: SPICE window to which the search is restricted.
+        :param result: SPICE window containing results.
+        :return: SPICE window containing results."""
+        if not inst: _empty_string('gffove', 'inst')
+        if not tshape: _empty_string('gffove', 'tshape')
+        if not abcorr: _empty_string('gffove', 'abcorr')
+        cdef double _c_tol = tol
+        cdef int _c_rpt = 1 if rpt else 0
+        cdef int _c_bail = 1 if bail else 0
+        cdef int _st = 0
+        cdef bytes _b_inst = _b(inst)
+        cdef bytes _b_tshape = _b(tshape)
+        cdef bytes _b_target = _b(target)
+        cdef bytes _b_tframe = _b(tframe)
+        cdef bytes _b_abcorr = _b(abcorr)
+        cdef bytes _b_obsrvr = _b(obsrvr)
+        cdef const char *_c_inst = _b_inst
+        cdef const char *_c_tshape = _b_tshape
+        cdef const char *_c_target = _b_target
+        cdef const char *_c_tframe = _b_tframe
+        cdef const char *_c_abcorr = _b_abcorr
+        cdef const char *_c_obsrvr = _b_obsrvr
+        cdef cnp.ndarray _a_raydir = _input(raydir, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_cnfine = _cellbuf(cnfine, NPY_DOUBLE, True)
+        if result is None: result = _autocell(NPY_DOUBLE, [cnfine])
+        cdef cnp.ndarray _a_result = _cellbuf(result, NPY_DOUBLE, False)
+        _hk = self._gf_hooks_on(step=udstep, refn=udrefn, repi=udrepi, repu=udrepu, repf=udrepf, bail=udbail)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_gffove(self._ptr, _c_inst, _c_tshape, <double*>cnp.PyArray_DATA(_a_raydir), _c_target, _c_tframe, _c_abcorr, _c_obsrvr, _c_tol, _c_rpt, _c_bail, <double*>cnp.PyArray_DATA(_a_cnfine), <double*>cnp.PyArray_DATA(_a_result))
+            if _st:
+                self._raise()
+        finally:
+            self._gf_hooks_off()
+            self._leave()
+        return result
+
+    def gfocce(self, occtyp, front, fshape, fframe, back, bshape, bframe, abcorr, obsrvr, tol, udstep, udrefn, rpt, udrepi, udrepu, udrepf, bail, udbail, cnfine, result=None):
+        """Determine time intervals when an observer sees one target occulted by another. Report progress and handle interrupts if so commanded.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/gfocce.html
+        
+        :param occtyp: Type of occultation.
+        :param front: Name of body occulting the other.
+        :param fshape: Type of shape model used for front body.
+        :param fframe: Body-fixed, body-centered frame for front body.
+        :param back: Name of body occulted by the other.
+        :param bshape: Type of shape model used for back body.
+        :param bframe: Body-fixed, body-centered frame for back body.
+        :param abcorr: Aberration correction flag.
+        :param obsrvr: Name of the observing body.
+        :param tol: Convergence tolerance in seconds.
+        :param udstep: Name of the routine that returns a time step.
+        :param udrefn: Name of the routine that computes a refined time.
+        :param rpt: Progress report flag.
+        :param udrepi: Function that initializes progress reporting.
+        :param udrepu: Function that updates the progress report.
+        :param udrepf: Function that finalizes progress reporting.
+        :param bail: Logical indicating program interrupt monitoring.
+        :param udbail: Name of a routine that signals a program interrupt.
+        :param cnfine: SPICE window to which the search is restricted.
+        :param result: SPICE window containing results.
+        :return: SPICE window containing results."""
+        if not occtyp: _empty_string('gfocce', 'occtyp')
+        if not front: _empty_string('gfocce', 'front')
+        if not fshape: _empty_string('gfocce', 'fshape')
+        if not back: _empty_string('gfocce', 'back')
+        if not bshape: _empty_string('gfocce', 'bshape')
+        if not abcorr: _empty_string('gfocce', 'abcorr')
+        if not obsrvr: _empty_string('gfocce', 'obsrvr')
+        cdef double _c_tol = tol
+        cdef int _c_rpt = 1 if rpt else 0
+        cdef int _c_bail = 1 if bail else 0
+        cdef int _st = 0
+        cdef bytes _b_occtyp = _b(occtyp)
+        cdef bytes _b_front = _b(front)
+        cdef bytes _b_fshape = _b(fshape)
+        cdef bytes _b_fframe = _b(fframe)
+        cdef bytes _b_back = _b(back)
+        cdef bytes _b_bshape = _b(bshape)
+        cdef bytes _b_bframe = _b(bframe)
+        cdef bytes _b_abcorr = _b(abcorr)
+        cdef bytes _b_obsrvr = _b(obsrvr)
+        cdef const char *_c_occtyp = _b_occtyp
+        cdef const char *_c_front = _b_front
+        cdef const char *_c_fshape = _b_fshape
+        cdef const char *_c_fframe = _b_fframe
+        cdef const char *_c_back = _b_back
+        cdef const char *_c_bshape = _b_bshape
+        cdef const char *_c_bframe = _b_bframe
+        cdef const char *_c_abcorr = _b_abcorr
+        cdef const char *_c_obsrvr = _b_obsrvr
+        cdef cnp.ndarray _a_cnfine = _cellbuf(cnfine, NPY_DOUBLE, True)
+        if result is None: result = _autocell(NPY_DOUBLE, [cnfine])
+        cdef cnp.ndarray _a_result = _cellbuf(result, NPY_DOUBLE, False)
+        _hk = self._gf_hooks_on(step=udstep, refn=udrefn, repi=udrepi, repu=udrepu, repf=udrepf, bail=udbail)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_gfocce(self._ptr, _c_occtyp, _c_front, _c_fshape, _c_fframe, _c_back, _c_bshape, _c_bframe, _c_abcorr, _c_obsrvr, _c_tol, _c_rpt, _c_bail, <double*>cnp.PyArray_DATA(_a_cnfine), <double*>cnp.PyArray_DATA(_a_result))
+            if _st:
+                self._raise()
+        finally:
+            self._gf_hooks_off()
+            self._leave()
+        return result
+
     def gfoclt(self, occtyp, front, fshape, fframe, back, bshape, bframe, abcorr, obsrvr, step, cnfine, result=None):
         """Determine time intervals when an observer sees one target body occulted by, or in transit across, another.
         
@@ -6763,6 +8175,13 @@ cdef class _ContextRoutines(_ContextBase):
         :param cnfine: SPICE window to which the search is restricted.
         :param result: SPICE window containing results.
         :return: SPICE window containing results."""
+        if not occtyp: _empty_string('gfoclt', 'occtyp')
+        if not front: _empty_string('gfoclt', 'front')
+        if not fshape: _empty_string('gfoclt', 'fshape')
+        if not back: _empty_string('gfoclt', 'back')
+        if not bshape: _empty_string('gfoclt', 'bshape')
+        if not abcorr: _empty_string('gfoclt', 'abcorr')
+        if not obsrvr: _empty_string('gfoclt', 'obsrvr')
         cdef double _c_step = step
         cdef int _st = 0
         cdef bytes _b_occtyp = _b(occtyp)
@@ -6846,6 +8265,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param window: A window over which a job is to be performed.
         :param begmss: Beginning of the text portion of output message.
         :param endmss: End of the text portion of output message."""
+        if not begmss: _empty_string('gfrepi', 'begmss')
+        if not endmss: _empty_string('gfrepi', 'endmss')
         cdef int _st = 0
         cdef bytes _b_begmss = _b(begmss)
         cdef bytes _b_endmss = _b(endmss)
@@ -6898,6 +8319,9 @@ cdef class _ContextRoutines(_ContextBase):
         :param cnfine: SPICE window to which the search is restricted.
         :param result: SPICE window containing results.
         :return: SPICE window containing results."""
+        if not inst: _empty_string('gfrfov', 'inst')
+        if not rframe: _empty_string('gfrfov', 'rframe')
+        if not abcorr: _empty_string('gfrfov', 'abcorr')
         cdef double _c_step = step
         cdef int _st = 0
         cdef bytes _b_inst = _b(inst)
@@ -6993,6 +8417,11 @@ cdef class _ContextRoutines(_ContextBase):
         :param cnfine: SPICE window to which the search is restricted.
         :param result: SPICE window containing results.
         :return: SPICE window containing results."""
+        if not inst: _empty_string('gftfov', 'inst')
+        if not target: _empty_string('gftfov', 'target')
+        if not tshape: _empty_string('gftfov', 'tshape')
+        if not abcorr: _empty_string('gftfov', 'abcorr')
+        if not obsrvr: _empty_string('gftfov', 'obsrvr')
         cdef double _c_step = step
         cdef int _st = 0
         cdef bytes _b_inst = _b(inst)
@@ -7043,6 +8472,60 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _c_year, _c_month, _c_day, _c_doy
 
+    def hrmesp(self, first, step, yvals, x):
+        """Evaluate, at a specified point, a Hermite interpolating polynomial for a specified set of equally spaced abscissa values and corresponding pairs of function and function derivative values.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/hrmesp.html
+        
+        :param first: First abscissa value.
+        :param step: Step size.
+        :param yvals: Ordinate and derivative values.
+        :param x: Point at which to interpolate the polynomial.
+        :return: Interpolated function value at X.; Interpolated function's derivative at X."""
+        cdef int _c_n = (np.size(yvals) // 2)
+        cdef double _c_first = first
+        cdef double _c_step = step
+        cdef double _c_x = x
+        cdef double _c_f = 0
+        cdef double _c_df = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_yvals = _input(yvals, NPY_DOUBLE, 2*_c_n, -1, False)
+        cdef cnp.ndarray _a_work = _empty(NPY_DOUBLE, max(<int>(4 * _c_n), 1), -1)
+        self._enter()
+        try:
+            _st = pepper_hrmesp(self._ptr, _c_n, _c_first, _c_step, <double*>cnp.PyArray_DATA(_a_yvals), _c_x, <double*>cnp.PyArray_DATA(_a_work), &_c_f, &_c_df)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _c_f, _c_df
+
+    def hrmint(self, xvals, yvals, x):
+        """Evaluate a Hermite interpolating polynomial at a specified abscissa value.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/hrmint.html
+        
+        :param xvals: Abscissa values.
+        :param yvals: Ordinate and derivative values.
+        :param x: Point at which to interpolate the polynomial.
+        :return: Interpolated function value at X.; Interpolated function's derivative at X."""
+        cdef int _c_n = np.size(xvals)
+        cdef double _c_x = x
+        cdef double _c_f = 0
+        cdef double _c_df = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_xvals = _input(xvals, NPY_DOUBLE, _c_n, -1, False)
+        cdef cnp.ndarray _a_yvals = _input(yvals, NPY_DOUBLE, 2*_c_n, -1, False)
+        cdef cnp.ndarray _a_work = _empty(NPY_DOUBLE, max(<int>(4 * _c_n), 1), -1)
+        self._enter()
+        try:
+            _st = pepper_hrmint(self._ptr, _c_n, <double*>cnp.PyArray_DATA(_a_xvals), <double*>cnp.PyArray_DATA(_a_yvals), _c_x, <double*>cnp.PyArray_DATA(_a_work), &_c_f, &_c_df)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _c_f, _c_df
+
     def hx2dp(self, string):
         """Convert a string representing a double precision number in a base 16 'scientific notation' into its equivalent double precision number.
         
@@ -7050,6 +8533,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param string: Hex form string to convert to double precision.
         :return: Double precision value to be returned.; A logical flag which is .TRUE. on error.; A descriptive error message."""
+        if not string: _empty_string('hx2dp', 'string')
         cdef double _c_number = 0
         cdef int _c_error = 0
         cdef char _c_errmsg[1024]
@@ -7144,6 +8628,9 @@ cdef class _ContextRoutines(_ContextBase):
         :param obsrvr: Name of observing body.
         :param spoint: Body-fixed coordinates of a target surface point.
         :return: Phase angle at the surface point.; Solar incidence angle at the surface point.; Emission angle at the surface point."""
+        if not target: _empty_string('illum', 'target')
+        if not abcorr: _empty_string('illum', 'abcorr')
+        if not obsrvr: _empty_string('illum', 'obsrvr')
         cdef double _c_et = et
         cdef double _c_phase = 0
         cdef double _c_solar = 0
@@ -7180,6 +8667,12 @@ cdef class _ContextRoutines(_ContextBase):
         :param obsrvr: Name of observing body.
         :param spoint: Body-fixed coordinates of a target surface point.
         :return: Target surface point epoch.; Vector from observer to target surface point.; Phase angle at the surface point.; Source incidence angle at the surface point.; Emission angle at the surface point.; Visibility flag (.TRUE. = visible).; Illumination flag (.TRUE. = illuminated)."""
+        if not method: _empty_string('illumf', 'method')
+        if not target: _empty_string('illumf', 'target')
+        if not ilusrc: _empty_string('illumf', 'ilusrc')
+        if not fixref: _empty_string('illumf', 'fixref')
+        if not abcorr: _empty_string('illumf', 'abcorr')
+        if not obsrvr: _empty_string('illumf', 'obsrvr')
         cdef double _c_et = et
         cdef double _c_trgepc = 0
         cdef double _c_phase = 0
@@ -7226,6 +8719,12 @@ cdef class _ContextRoutines(_ContextBase):
         :param obsrvr: Name of observing body.
         :param spoint: Body-fixed coordinates of a target surface point.
         :return: Target surface point epoch.; Vector from observer to target surface point.; Phase angle at the surface point.; Source incidence angle at the surface point.; Emission angle at the surface point."""
+        if not method: _empty_string('illumg', 'method')
+        if not target: _empty_string('illumg', 'target')
+        if not ilusrc: _empty_string('illumg', 'ilusrc')
+        if not fixref: _empty_string('illumg', 'fixref')
+        if not abcorr: _empty_string('illumg', 'abcorr')
+        if not obsrvr: _empty_string('illumg', 'obsrvr')
         cdef double _c_et = et
         cdef double _c_trgepc = 0
         cdef double _c_phase = 0
@@ -7269,6 +8768,11 @@ cdef class _ContextRoutines(_ContextBase):
         :param obsrvr: Name of observing body.
         :param spoint: Body-fixed coordinates of a target surface point.
         :return: Target surface point epoch.; Vector from observer to target surface point.; Phase angle at the surface point.; Solar incidence angle at the surface point.; Emission angle at the surface point."""
+        if not method: _empty_string('ilumin', 'method')
+        if not target: _empty_string('ilumin', 'target')
+        if not fixref: _empty_string('ilumin', 'fixref')
+        if not abcorr: _empty_string('ilumin', 'abcorr')
+        if not obsrvr: _empty_string('ilumin', 'obsrvr')
         cdef double _c_et = et
         cdef double _c_trgepc = 0
         cdef double _c_phase = 0
@@ -7325,6 +8829,132 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _c_nxpts, _a_xpt1, _a_xpt2
+
+    def inedpl(self, a, b, c, plane):
+        """Find the intersection of a triaxial ellipsoid and a plane.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/inedpl.html
+        
+        :param a: Length of ellipsoid semi-axis lying on the x-axis.
+        :param b: Length of ellipsoid semi-axis lying on the y-axis.
+        :param c: Length of ellipsoid semi-axis lying on the z-axis.
+        :param plane: Plane that intersects ellipsoid.
+        :return: Intersection ellipse, when FOUND is .TRUE.
+            (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        cdef double _c_a = a
+        cdef double _c_b = b
+        cdef double _c_c = c
+        cdef int _c_found = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_plane = _input(plane, NPY_DOUBLE, 4, -1, False)
+        cdef cnp.ndarray _a_ellips = _empty(NPY_DOUBLE, 9, -1)
+        self._enter()
+        try:
+            _st = pepper_inedpl(self._ptr, _c_a, _c_b, _c_c, <double*>cnp.PyArray_DATA(_a_plane), <double*>cnp.PyArray_DATA(_a_ellips), &_c_found)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found('inedpl', (Ellipse._from_array(_a_ellips),), _c_found != 0)
+
+    def inelpl(self, ellips, plane):
+        """Find the intersection of an ellipse and a plane.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/inelpl.html
+        
+        :param ellips: A SPICE ellipse.
+        :param plane: A SPICE plane.
+        :return: Number of intersection points of plane and ellipse.; Intersection points.; Intersection points."""
+        cdef int _c_nxpts = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_ellips = _input(ellips, NPY_DOUBLE, 9, -1, False)
+        cdef cnp.ndarray _a_plane = _input(plane, NPY_DOUBLE, 4, -1, False)
+        cdef cnp.ndarray _a_xpt1 = _empty(NPY_DOUBLE, 3, -1)
+        cdef cnp.ndarray _a_xpt2 = _empty(NPY_DOUBLE, 3, -1)
+        self._enter()
+        try:
+            _st = pepper_inelpl(self._ptr, <double*>cnp.PyArray_DATA(_a_ellips), <double*>cnp.PyArray_DATA(_a_plane), &_c_nxpts, <double*>cnp.PyArray_DATA(_a_xpt1), <double*>cnp.PyArray_DATA(_a_xpt2))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _c_nxpts, _a_xpt1, _a_xpt2
+
+    def inrypl(self, vertex, direct, plane):
+        """Find the intersection of a ray and a plane.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/inrypl.html
+        
+        :param vertex: Vertex and direction vector of ray.
+        :param direct: Vertex and direction vector of ray.
+        :param plane: A SPICE plane.
+        :return: Number of intersection points of ray and plane.; Intersection point, if NXPTS = 1."""
+        cdef int _c_nxpts = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_vertex = _input(vertex, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_dir = _input(direct, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_plane = _input(plane, NPY_DOUBLE, 4, -1, False)
+        cdef cnp.ndarray _a_xpt = _empty(NPY_DOUBLE, 3, -1)
+        self._enter()
+        try:
+            _st = pepper_inrypl(self._ptr, <double*>cnp.PyArray_DATA(_a_vertex), <double*>cnp.PyArray_DATA(_a_dir), <double*>cnp.PyArray_DATA(_a_plane), &_c_nxpts, <double*>cnp.PyArray_DATA(_a_xpt))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _c_nxpts, _a_xpt
+
+    def inslad(self, elts, ne, loc, array, na):
+        """Insert one or more elements into a double precision array at the indicated location.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/inslad.html
+        
+        :param elts: Elements to be inserted.
+        :param ne: Number of elements to be inserted.
+        :param loc: Location of the first inserted element.
+        :param array: Input/output array.
+        :param na: Number of elements in the input/output array.
+        :return: Input/output array.; Number of elements in the input/output array."""
+        cdef int _c_ne = ne
+        cdef int _c_loc = loc
+        cdef int _c_na = na
+        cdef int _st = 0
+        cdef cnp.ndarray _a_elts = _rows(elts, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+        self._enter()
+        try:
+            _st = pepper_inslad(self._ptr, <const double*>cnp.PyArray_DATA(_a_elts), _c_ne, _c_loc, <double*>cnp.PyArray_DATA(_a_array), &_c_na)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_array, _c_na
+
+    def inslai(self, elts, ne, loc, array, na):
+        """Insert one or more elements into an integer array at the indicated location.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/inslai.html
+        
+        :param elts: Elements to be inserted.
+        :param ne: Number of elements to be inserted.
+        :param loc: Location of the first inserted element.
+        :param array: Input/output array.
+        :param na: Number of elements in the input/output array.
+        :return: Input/output array.; Number of elements in the input/output array."""
+        cdef int _c_ne = ne
+        cdef int _c_loc = loc
+        cdef int _c_na = na
+        cdef int _st = 0
+        cdef cnp.ndarray _a_elts = _rows(elts, NPY_INT32, 1)
+        cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+        self._enter()
+        try:
+            _st = pepper_inslai(self._ptr, <const int*>cnp.PyArray_DATA(_a_elts), _c_ne, _c_loc, <int*>cnp.PyArray_DATA(_a_array), &_c_na)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_array, _c_na
 
     def insrtd(self, item, inset=None):
         """Insert an item into a double precision set.
@@ -7768,6 +9398,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param srclen: (SpiceyPy compatibility; ignored)
         :return: The name of the kernel file.; The type of the kernel.; Name of the source file used to load FILE.; The handle attached to FILE.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not kind: _empty_string('kdata', 'kind')
         cdef int _c_which = which + 1
         cdef char _c_file[1024]
         cdef char _c_filtyp[1024]
@@ -7898,6 +9529,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param srclen: (SpiceyPy compatibility; ignored)
         :return: The type of the kernel; Name of the source file used to load FILE.; The handle attached to FILE.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not file: _empty_string('kinfo', 'file')
         cdef char _c_filtyp[1024]
         cdef char _c_srcfil[1024]
         cdef int _c_handle = 0
@@ -7964,6 +9596,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param kind: A list of kinds of kernels to count.
         :return: The number of kernels of type KIND."""
+        if not kind: _empty_string('ktotal', 'kind')
         cdef int _c_count = 0
         cdef int _st = 0
         cdef bytes _b_kind = _b(kind)
@@ -7978,25 +9611,86 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _c_count
 
-    def lgrind(self, n, xvals, yvals, work, x):
+    def latsrf(self, method, target, et, fixref, lonlat):
+        """Map array of planetocentric longitude/latitude coordinate pairs to surface points on a specified target body.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/latsrf.html
+        
+        :param method: Computation method.
+        :param target: Name of target body.
+        :param et: Epoch in TDB seconds past J2000 TDB.
+        :param fixref: Body-fixed, body-centered target body frame.
+        :param lonlat: Array of longitude/latitude coordinate pairs.
+        :return: Array of surface points."""
+        if not method: _empty_string('latsrf', 'method')
+        if not target: _empty_string('latsrf', 'target')
+        if not fixref: _empty_string('latsrf', 'fixref')
+        cdef double _c_et = et
+        cdef int _c_npts = (np.shape(lonlat)[0] if np.ndim(lonlat) > 1 else np.size(lonlat))
+        cdef int _st = 0
+        cdef bytes _b_method = _b(method)
+        cdef bytes _b_target = _b(target)
+        cdef bytes _b_fixref = _b(fixref)
+        cdef const char *_c_method = _b_method
+        cdef const char *_c_target = _b_target
+        cdef const char *_c_fixref = _b_fixref
+        cdef cnp.ndarray _a_lonlat = _rows(lonlat, NPY_DOUBLE, 2)
+        cdef int _n_srfpts = max(<int>(_c_npts), 1)
+        cdef cnp.ndarray _a_srfpts = np.zeros((_n_srfpts, 3), dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_latsrf(self._ptr, _c_method, _c_target, _c_et, _c_fixref, _c_npts, <const double*>cnp.PyArray_DATA(_a_lonlat), <double*>cnp.PyArray_DATA(_a_srfpts))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_srfpts
+
+    def lgresp(self, first, step, yvals, x):
+        """Evaluate a Lagrange interpolating polynomial for a specified set of coordinate pairs whose first components are equally spaced, at a specified abscissa value.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/lgresp.html
+        
+        :param first: First abscissa value.
+        :param step: Step size.
+        :param yvals: Ordinate values.
+        :param x: Point at which to interpolate the polynomial.
+        :return: the result"""
+        cdef int _c_n = np.size(yvals)
+        cdef double _c_first = first
+        cdef double _c_step = step
+        cdef double _c_x = x
+        cdef double _c_fresult = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_yvals = _rows(yvals, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_work = _empty(NPY_DOUBLE, max(<int>(4 * _c_n), 1), -1)
+        self._enter()
+        try:
+            _st = pepper_lgresp(self._ptr, _c_n, _c_first, _c_step, <const double*>cnp.PyArray_DATA(_a_yvals), <double*>cnp.PyArray_DATA(_a_work), _c_x, &_c_fresult)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _c_fresult
+
+    def lgrind(self, xvals, yvals, x):
         """Evaluate a Lagrange interpolating polynomial, for a specified set of coordinate pairs, at a specified abscissa value. Return both the value of the polynomial and its derivative.
         
         https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/lgrind.html
         
-        :param n: Number of points defining the polynomial.
         :param xvals: Abscissa values.
         :param yvals: Ordinate values.
-        :param work: Work space array.
         :param x: Point at which to interpolate the polynomial.
-        :return: Work space array.; Polynomial value at X.; Polynomial derivative at X."""
-        cdef int _c_n = n
+        :return: Polynomial value at X.; Polynomial derivative at X."""
+        cdef int _c_n = np.size(xvals)
         cdef double _c_x = x
         cdef double _c_p = 0
         cdef double _c_dp = 0
         cdef int _st = 0
         cdef cnp.ndarray _a_xvals = _input(xvals, NPY_DOUBLE, _c_n, -1, False)
         cdef cnp.ndarray _a_yvals = _input(yvals, NPY_DOUBLE, _c_n, -1, False)
-        cdef cnp.ndarray _a_work = _input(work, NPY_DOUBLE, _c_n, 2, True)
+        cdef cnp.ndarray _a_work = _empty(NPY_DOUBLE, max(<int>(4 * _c_n), 1), -1)
         self._enter()
         try:
             _st = pepper_lgrind(self._ptr, _c_n, <double*>cnp.PyArray_DATA(_a_xvals), <double*>cnp.PyArray_DATA(_a_yvals), <double*>cnp.PyArray_DATA(_a_work), _c_x, &_c_p, &_c_dp)
@@ -8004,7 +9698,32 @@ cdef class _ContextRoutines(_ContextBase):
                 self._raise()
         finally:
             self._leave()
-        return _a_work, _c_p, _c_dp
+        return _c_p, _c_dp
+
+    def lgrint(self, xvals, yvals, x):
+        """Evaluate a Lagrange interpolating polynomial for a specified set of coordinate pairs, at a specified abscissa value.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/lgrint.html
+        
+        :param xvals: Abscissa values.
+        :param yvals: Ordinate values.
+        :param x: Point at which to interpolate the polynomial.
+        :return: the result"""
+        cdef int _c_n = np.size(xvals)
+        cdef double _c_x = x
+        cdef double _c_fresult = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_xvals = _rows(xvals, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_yvals = _rows(yvals, NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_work = _empty(NPY_DOUBLE, max(<int>(4 * _c_n), 1), -1)
+        self._enter()
+        try:
+            _st = pepper_lgrint(self._ptr, _c_n, <const double*>cnp.PyArray_DATA(_a_xvals), <const double*>cnp.PyArray_DATA(_a_yvals), <double*>cnp.PyArray_DATA(_a_work), _c_x, &_c_fresult)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _c_fresult
 
     def limb_points(self, method, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol):
         """Limb points on a target body, without a limit on their number (PEPPER; `limbpt` without MAXN). The outputs are allocated to the number of points found.
@@ -8077,6 +9796,37 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _slist(_c_names, _c_names_n)
 
+    def locln(self, unit, bmark, emark, line):
+        """Locate a group of lines in a text file delimited by markers.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/locln.html
+        
+        :param unit: Logical unit connected to text file.
+        :param bmark: Begin marker.
+        :param emark: End marker.
+        :param line: Workspace.
+        :return: Workspace.; Beginning line.; Ending line.
+            (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        cdef int _c_unit = unit
+        cdef int _c_bline = 0
+        cdef int _c_eline = 0
+        cdef int _c_found = 0
+        cdef int _st = 0
+        cdef bytes _b_bmark = _b(bmark)
+        cdef bytes _b_emark = _b(emark)
+        cdef const char *_c_bmark = _b_bmark
+        cdef const char *_c_emark = _b_emark
+        cdef bytearray _ba_line = bytearray(_b(line if line is not None else '')[:1023].ljust(1024, b'\0'))
+        cdef char *_c_line = _ba_line
+        self._enter()
+        try:
+            _st = pepper_locln(self._ptr, _c_unit, _c_bmark, _c_emark, 1024, _c_line, &_c_bline, &_c_eline, &_c_found)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found('locln', (_s(_c_line), _c_bline, _c_eline), _c_found != 0)
+
     def lspcn(self, body, et, abcorr):
         """Compute L_s, the planetocentric longitude of the sun, as seen from a specified body.
         
@@ -8086,6 +9836,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param et: Epoch in seconds past J2000 TDB.
         :param abcorr: Aberration correction.
         :return: the result"""
+        if not body: _empty_string('lspcn', 'body')
         cdef double _c_et = et
         cdef double _c_fresult = 0
         cdef int _st = 0
@@ -8112,6 +9863,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param direct: Direction the signal travels ( '->' or '<-' ).
         :param targ: NAIF ID of the target object.
         :return: Epoch of the signal at the target.; Time between transmit and receipt of the signal."""
+        if not direct: _empty_string('ltime', 'dir')
         cdef double _c_etobs = etobs
         cdef int _c_obs = obs
         cdef int _c_targ = targ
@@ -8340,6 +10092,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param frname: The name of some reference frame
         :return: The SPICE ID code of the frame."""
+        if not frname: _empty_string('namfrm', 'frname')
         cdef int _c_frcode = 0
         cdef int _st = 0
         cdef bytes _b_frname = _b(frname)
@@ -8407,6 +10160,28 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_pnear, _c_dist
 
+    def npelpt(self, point, ellips):
+        """Find the nearest point on an ellipse to a specified point, both in three-dimensional space, and find the distance between the ellipse and the point.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/npelpt.html
+        
+        :param point: Point whose distance to an ellipse is to be found.
+        :param ellips: A SPICE ellipse.
+        :return: Nearest point on ellipse to input point.; Distance of input point to ellipse."""
+        cdef double _c_dist = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_point = _input(point, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_ellips = _input(ellips, NPY_DOUBLE, 9, -1, False)
+        cdef cnp.ndarray _a_pnear = _empty(NPY_DOUBLE, 3, -1)
+        self._enter()
+        try:
+            _st = pepper_npelpt(self._ptr, <double*>cnp.PyArray_DATA(_a_point), <double*>cnp.PyArray_DATA(_a_ellips), <double*>cnp.PyArray_DATA(_a_pnear), &_c_dist)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_pnear, _c_dist
+
     def nplnpt(self, linpt, lindir, point):
         """Find the nearest point on a line to a specified point, and find the distance between the two points.
         
@@ -8455,6 +10230,48 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_pnear, _c_dist
 
+    def nvc2pl(self, normal, constant):
+        """Make a SPICE plane from a normal vector and a constant.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/nvc2pl.html
+        
+        :param normal: A normal vector and constant defining a plane.
+        :param constant: A normal vector and constant defining a plane.
+        :return: An array representing the plane."""
+        cdef double _c_konst = constant
+        cdef int _st = 0
+        cdef cnp.ndarray _a_normal = _input(normal, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_plane = _empty(NPY_DOUBLE, 4, -1)
+        self._enter()
+        try:
+            _st = pepper_nvc2pl(self._ptr, <double*>cnp.PyArray_DATA(_a_normal), _c_konst, <double*>cnp.PyArray_DATA(_a_plane))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return Plane._from_array(_a_plane)
+
+    def nvp2pl(self, normal, point):
+        """Make a SPICE plane from a normal vector and a point.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/nvp2pl.html
+        
+        :param normal: A normal vector and a point defining a plane.
+        :param point: A normal vector and a point defining a plane.
+        :return: An array representing the plane."""
+        cdef int _st = 0
+        cdef cnp.ndarray _a_normal = _input(normal, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_point = _input(point, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_plane = _empty(NPY_DOUBLE, 4, -1)
+        self._enter()
+        try:
+            _st = pepper_nvp2pl(self._ptr, <double*>cnp.PyArray_DATA(_a_normal), <double*>cnp.PyArray_DATA(_a_point), <double*>cnp.PyArray_DATA(_a_plane))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return Plane._from_array(_a_plane)
+
     def occult(self, target1, shape1, frame1, target2, shape2, frame2, abcorr, observer, et):
         """Determine the occultation condition (not occulted, partially occulted, etc.) of one target relative to another target as seen by an observer at a given time.
         
@@ -8470,6 +10287,14 @@ cdef class _ContextRoutines(_ContextBase):
         :param observer: Name or ID of the observer.
         :param et: Time of the observation (seconds past J2000).
         :return: Occultation identification code."""
+        if not target1: _empty_string('occult', 'targ1')
+        if not shape1: _empty_string('occult', 'shape1')
+        if not frame1: _empty_string('occult', 'frame1')
+        if not target2: _empty_string('occult', 'targ2')
+        if not shape2: _empty_string('occult', 'shape2')
+        if not frame2: _empty_string('occult', 'frame2')
+        if not abcorr: _empty_string('occult', 'abcorr')
+        if not observer: _empty_string('occult', 'obsrvr')
         cdef double _c_et = et
         cdef int _c_ocltid = 0
         cdef int _st = 0
@@ -8563,6 +10388,29 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_elts
+
+    def oscltx(self, state, et, mu):
+        """Determine the set of osculating conic orbital elements that corresponds to the state (position, velocity) of a body at some epoch. In additional to the classical elements, return the true anomaly, semi-major axis, and period, if applicable.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/oscltx.html
+        
+        :param state: State of body at epoch of elements.
+        :param et: Epoch of elements.
+        :param mu: Gravitational parameter (GM) of primary body.
+        :return: Extended set of classical conic elements."""
+        cdef double _c_et = et
+        cdef double _c_mu = mu
+        cdef int _st = 0
+        cdef cnp.ndarray _a_state = _input(state, NPY_DOUBLE, 6, -1, False)
+        cdef cnp.ndarray _a_elts = _empty(NPY_DOUBLE, max(<int>(20), 1), -1)
+        self._enter()
+        try:
+            _st = pepper_oscltx(self._ptr, <double*>cnp.PyArray_DATA(_a_state), _c_et, _c_mu, <double*>cnp.PyArray_DATA(_a_elts))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_elts[:11]
 
     def partof(self, ma):
         """Solve the time of flight equation MA = D + (D**3) / 3 for the parabolic eccentric anomaly D, given mean anomaly.
@@ -8723,6 +10571,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param idcode: Class ID code of PCK reference frame.
         :param cover: Window giving coverage in PCKFNM for IDCODE.
         :return: Window giving coverage in PCKFNM for IDCODE."""
+        if not pck: _empty_string('pckcov', 'pckfnm')
         cdef int _c_idcode = idcode
         cdef int _st = 0
         cdef bytes _b_pckfnm = _b(pck)
@@ -8835,6 +10684,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param pck: Name of PCK file.
         :param ids: Set of frame class ID codes of frames in PCK file.
         :return: Set of frame class ID codes of frames in PCK file."""
+        if not pck: _empty_string('pckfrm', 'pckfnm')
         cdef int _st = 0
         cdef bytes _b_pckfnm = _b(pck)
         cdef const char *_c_pckfnm = _b_pckfnm
@@ -8883,6 +10733,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param ifname: The internal filename for the PCK.
         :param ncomch: The number of characters to reserve for comments.
         :return: The handle of the opened PCK file."""
+        if not name: _empty_string('pckopn', 'name')
+        if not ifname: _empty_string('pckopn', 'ifname')
         cdef int _c_ncomch = ncomch
         cdef int _c_handle = 0
         cdef int _st = 0
@@ -8941,6 +10793,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param polydg: Chebyshev polynomial degree.
         :param cdata: Array of Chebyshev coefficients.
         :param btime: Begin time of first logical record."""
+        if not frname: _empty_string('pckw02', 'frame')
+        if not segid: _empty_string('pckw02', 'segid')
         cdef int _c_handle = handle
         cdef int _c_clssid = classid
         cdef double _c_first = first
@@ -9021,6 +10875,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param re: Equatorial radius of the reference spheroid.
         :param f: Flattening coefficient.
         :return: Rectangular coordinates of the point."""
+        if not body: _empty_string('pgrrec', 'body')
         cdef double _c_lon = lon
         cdef double _c_lat = lat
         cdef double _c_alt = alt
@@ -9050,6 +10905,10 @@ cdef class _ContextRoutines(_ContextBase):
         :param obsrvr: Observer body.
         :param abcorr: Aberration correction flag.
         :return: the result"""
+        if not target: _empty_string('phaseq', 'target')
+        if not illmn: _empty_string('phaseq', 'illmn')
+        if not obsrvr: _empty_string('phaseq', 'obsrvr')
+        if not abcorr: _empty_string('phaseq', 'abcorr')
         cdef double _c_et = et
         cdef double _c_fresult = 0
         cdef int _st = 0
@@ -9069,6 +10928,27 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _c_fresult
+
+    def pjelpl(self, elin, plane):
+        """Project an ellipse onto a plane, orthogonally.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/pjelpl.html
+        
+        :param elin: A SPICE ellipse to be projected.
+        :param plane: A plane onto which ELIN is to be projected.
+        :return: A SPICE ellipse resulting from the projection."""
+        cdef int _st = 0
+        cdef cnp.ndarray _a_elin = _input(elin, NPY_DOUBLE, 9, -1, False)
+        cdef cnp.ndarray _a_plane = _input(plane, NPY_DOUBLE, 4, -1, False)
+        cdef cnp.ndarray _a_elout = _empty(NPY_DOUBLE, 9, -1)
+        self._enter()
+        try:
+            _st = pepper_pjelpl(self._ptr, <double*>cnp.PyArray_DATA(_a_elin), <double*>cnp.PyArray_DATA(_a_plane), <double*>cnp.PyArray_DATA(_a_elout))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return Ellipse._from_array(_a_elout)
 
     def plnsns(self, bodid):
         """Indicate for a specified body whether planetographic and planetocentric longitude increase in the same sense.
@@ -9377,6 +11257,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param string: String representing a numeric value.
         :return: D.p. value obtained by parsing STRING."""
+        if not string: _empty_string('prsdp', 'string')
         cdef double _c_dpval = 0
         cdef int _st = 0
         cdef bytes _b_string = _b(string)
@@ -9397,6 +11278,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param string: String representing a numeric value.
         :return: Integer value obtained by parsing STRING."""
+        if not string: _empty_string('prsint', 'string')
         cdef int _c_intval = 0
         cdef int _st = 0
         cdef bytes _b_string = _b(string)
@@ -9450,6 +11332,29 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _s(_c_string)
 
+    def psv2pl(self, point, span1, span2):
+        """Make a SPICE plane from a point and two spanning vectors.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/psv2pl.html
+        
+        :param point: A point and two spanning vectors defining a
+        :param span1: A point and two spanning vectors defining a
+        :param span2: A point and two spanning vectors defining a
+        :return: An array representing the plane."""
+        cdef int _st = 0
+        cdef cnp.ndarray _a_point = _input(point, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_span1 = _input(span1, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_span2 = _input(span2, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_plane = _empty(NPY_DOUBLE, 4, -1)
+        self._enter()
+        try:
+            _st = pepper_psv2pl(self._ptr, <double*>cnp.PyArray_DATA(_a_point), <double*>cnp.PyArray_DATA(_a_span1), <double*>cnp.PyArray_DATA(_a_span2), <double*>cnp.PyArray_DATA(_a_plane))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return Plane._from_array(_a_plane)
+
     def pxform(self, fromstr, tostr, et):
         """Return the matrix that transforms position vectors from one specified frame to another at a specified epoch.
         
@@ -9459,6 +11364,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param tostr: Name of the frame to transform to.
         :param et: Epoch of the rotation matrix.
         :return: A rotation matrix."""
+        if not fromstr: _empty_string('pxform', 'from')
+        if not tostr: _empty_string('pxform', 'to')
         cdef double _c_et = et
         cdef int _st = 0
         cdef bytes _b_from = _b(fromstr)
@@ -9485,6 +11392,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param etfrom: Evaluation time of FROM frame.
         :param etto: Evaluation time of TO frame.
         :return: A position transformation matrix from frame FROM to frame TO."""
+        if not frame_from: _empty_string('pxfrm2', 'from')
+        if not frame_to: _empty_string('pxfrm2', 'to')
         cdef double _c_etfrom = etfrom
         cdef double _c_etto = etto
         cdef int _st = 0
@@ -9632,6 +11541,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param file: Name of text file.
         :param lenout: (SpiceyPy compatibility; ignored)
         :return: Next line from the text file.; End-of-file indicator."""
+        if not file: _empty_string('rdtext', 'file')
         cdef char _c_line[1024]
         cdef int _c_eof = 0
         cdef int _st = 0
@@ -9703,6 +11613,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param re: Equatorial radius of the reference spheroid.
         :param f: Flattening coefficient.
         :return: Planetographic longitude of the point (radians).; Planetographic latitude of the point (radians).; Altitude of the point above reference spheroid."""
+        if not body: _empty_string('recpgr', 'body')
         cdef double _c_re = re
         cdef double _c_f = f
         cdef double _c_lon = 0
@@ -9743,6 +11654,54 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_rotate
+
+    def remlad(self, ne, loc, array, na):
+        """Remove one or more elements from a double precision array at the indicated location.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/remlad.html
+        
+        :param ne: Number of elements to be removed.
+        :param loc: Location of the first removed element.
+        :param array: Input/output array.
+        :param na: Number of elements in the input/output array.
+        :return: Input/output array.; Number of elements in the input/output array."""
+        cdef int _c_ne = ne
+        cdef int _c_loc = loc
+        cdef int _c_na = na
+        cdef int _st = 0
+        cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+        self._enter()
+        try:
+            _st = pepper_remlad(self._ptr, _c_ne, _c_loc, <double*>cnp.PyArray_DATA(_a_array), &_c_na)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_array, _c_na
+
+    def remlai(self, ne, loc, array, na):
+        """Remove one or more elements from an integer array at the indicated location.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/remlai.html
+        
+        :param ne: Number of elements to be removed.
+        :param loc: Location of the first removed element.
+        :param array: Input/output array.
+        :param na: Number of elements in the input/output array.
+        :return: Input/output array.; Number of elements in the input/output array."""
+        cdef int _c_ne = ne
+        cdef int _c_loc = loc
+        cdef int _c_na = na
+        cdef int _st = 0
+        cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+        self._enter()
+        try:
+            _st = pepper_remlai(self._ptr, _c_ne, _c_loc, <int*>cnp.PyArray_DATA(_a_array), &_c_na)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_array, _c_na
 
     def removd(self, item, inset=None):
         """Remove an item from a double precision set.
@@ -10359,6 +12318,7 @@ cdef class _ContextRoutines(_ContextBase):
         :return: Encoded representation of the clock count."""
         if _iterable(sclkch):
             return _stack([self.scencd(sc, _v, mxpart) for _v in sclkch])
+        if not sclkch: _empty_string('scencd', 'sclkch')
         cdef int _c_sc = sc
         cdef double _c_sclkdp = 0
         cdef int _st = 0
@@ -10508,6 +12468,27 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return (_c_error != 0), _s(_c_msg), _c_sclkdp
 
+    def scpart(self, sc):
+        """Get spacecraft clock partition information from a spacecraft clock kernel file.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/scpart.html
+        
+        :param sc: NAIF spacecraft identification code.
+        :return: The number of spacecraft clock partitions.; Array of partition start times.; Array of partition stop times."""
+        cdef int _c_sc = sc
+        cdef int _c_nparts = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_pstart = _empty(NPY_DOUBLE, max(<int>(9999), 1), -1)
+        cdef cnp.ndarray _a_pstop = _empty(NPY_DOUBLE, max(<int>(9999), 1), -1)
+        self._enter()
+        try:
+            _st = pepper_scpart(self._ptr, _c_sc, &_c_nparts, <double*>cnp.PyArray_DATA(_a_pstart), <double*>cnp.PyArray_DATA(_a_pstop))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_pstart[:_c_nparts], _a_pstop[:_c_nparts]
+
     def scps01(self, sc, clkstr):
         """Convert a character representation of a type 1 spacecraft clock count to ticks.
         
@@ -10541,6 +12522,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param sc: NAIF integer code for a spacecraft.
         :param sclkch: An SCLK string.
         :return: Ephemeris time, seconds past J2000."""
+        if not sclkch: _empty_string('scs2e', 'sclkch')
         cdef int _c_sc = sc
         cdef double _c_et = 0
         cdef int _st = 0
@@ -10607,6 +12589,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param sc: NAIF spacecraft identification code.
         :param clkstr: Character representation of a spacecraft clock.
         :return: Number of ticks represented by the clock string."""
+        if not clkstr: _empty_string('sctiks', 'clkstr')
         cdef int _c_sc = sc
         cdef double _c_ticks = 0
         cdef int _st = 0
@@ -11025,6 +13008,12 @@ cdef class _ContextRoutines(_ContextBase):
         :param dvec: Ray's direction vector.
         :return: Surface intercept point on the target body.; Intercept epoch.; Vector from observer to intercept point.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not method: _empty_string('sincpt', 'method')
+        if not target: _empty_string('sincpt', 'target')
+        if not fixref: _empty_string('sincpt', 'fixref')
+        if not abcorr: _empty_string('sincpt', 'abcorr')
+        if not obsrvr: _empty_string('sincpt', 'obsrvr')
+        if not dref: _empty_string('sincpt', 'dref')
         cdef double _c_et = et
         cdef double _c_trgepc = 0
         cdef int _c_found = 0
@@ -11361,6 +13350,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param first: The first epoch for which the segment is valid.
         :param last: The last epoch for which the segment is valid.
         :param chbdeg: The degree of the Chebyshev Polynomial used."""
+        if not segid: _empty_string('spk14b', 'segid')
+        if not framename: _empty_string('spk14b', 'frame')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -11452,6 +13443,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param abcorr: Aberration correction flag.
         :param obs: Observer.
         :return: State of target.; One way light time between observer and target.; Derivative of light time with respect to time."""
+        if not ref: _empty_string('spkacs', 'ref')
+        if not abcorr: _empty_string('spkacs', 'abcorr')
         cdef int _c_targ = targ
         cdef double _c_et = et
         cdef int _c_obs = obs
@@ -11483,6 +13476,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param sobs: State of observer wrt. solar system barycenter.
         :param abcorr: Aberration correction flag.
         :return: Position of target.; One way light time between observer and target."""
+        if not ref: _empty_string('spkapo', 'ref')
+        if not abcorr: _empty_string('spkapo', 'abcorr')
         cdef int _c_targ = targ
         cdef double _c_et = et
         cdef double _c_lt = 0
@@ -11513,6 +13508,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param sobs: State of observer wrt. solar system barycenter.
         :param abcorr: Aberration correction flag.
         :return: State of target.; One way light time between observer and target."""
+        if not ref: _empty_string('spkapp', 'ref')
+        if not abcorr: _empty_string('spkapp', 'abcorr')
         cdef int _c_targ = targ
         cdef double _c_et = et
         cdef double _c_lt = 0
@@ -11544,6 +13541,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param stobs: State of the observer relative to the SSB.
         :param accobs: Acceleration of the observer relative to the SSB.
         :return: State of target.; One way light time between observer and target.; Derivative of light time with respect to time."""
+        if not ref: _empty_string('spkaps', 'ref')
+        if not abcorr: _empty_string('spkaps', 'abcorr')
         cdef int _c_targ = targ
         cdef double _c_et = et
         cdef double _c_lt = 0
@@ -11592,6 +13591,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param idcode: ID code of ephemeris object.
         :param cover: Window giving coverage in SPKFNM for IDCODE.
         :return: Window giving coverage in SPKFNM for IDCODE."""
+        if not spk: _empty_string('spkcov', 'spkfnm')
         cdef int _c_idcode = idcode
         cdef int _st = 0
         cdef bytes _b_spkfnm = _b(spk)
@@ -11622,6 +13622,12 @@ cdef class _ContextRoutines(_ContextBase):
         :param obsctr: Center of motion of observer.
         :param obsref: Frame of observer position.
         :return: State of target with respect to observer.; One way light time between target and observer."""
+        if not target: _empty_string('spkcpo', 'target')
+        if not outref: _empty_string('spkcpo', 'outref')
+        if not refloc: _empty_string('spkcpo', 'refloc')
+        if not abcorr: _empty_string('spkcpo', 'abcorr')
+        if not obsctr: _empty_string('spkcpo', 'obsctr')
+        if not obsref: _empty_string('spkcpo', 'obsref')
         cdef double _c_et = et
         cdef double _c_lt = 0
         cdef int _st = 0
@@ -11662,6 +13668,12 @@ cdef class _ContextRoutines(_ContextBase):
         :param abcorr: Aberration correction.
         :param obsrvr: Name of observing ephemeris object.
         :return: State of target with respect to observer.; One way light time between target and observer."""
+        if not trgctr: _empty_string('spkcpt', 'trgctr')
+        if not trgref: _empty_string('spkcpt', 'trgref')
+        if not outref: _empty_string('spkcpt', 'outref')
+        if not refloc: _empty_string('spkcpt', 'refloc')
+        if not abcorr: _empty_string('spkcpt', 'abcorr')
+        if not obsrvr: _empty_string('spkcpt', 'obsrvr')
         cdef double _c_et = et
         cdef double _c_lt = 0
         cdef int _st = 0
@@ -11703,6 +13715,12 @@ cdef class _ContextRoutines(_ContextBase):
         :param obsctr: Center of motion of observer.
         :param obsref: Frame of observer state.
         :return: State of target with respect to observer.; One way light time between target and observer."""
+        if not target: _empty_string('spkcvo', 'target')
+        if not outref: _empty_string('spkcvo', 'outref')
+        if not refloc: _empty_string('spkcvo', 'refloc')
+        if not abcorr: _empty_string('spkcvo', 'abcorr')
+        if not obsctr: _empty_string('spkcvo', 'obsctr')
+        if not obsref: _empty_string('spkcvo', 'obsref')
         cdef double _c_et = et
         cdef double _c_obsepc = obsepc
         cdef double _c_lt = 0
@@ -11745,6 +13763,12 @@ cdef class _ContextRoutines(_ContextBase):
         :param abcorr: Aberration correction.
         :param obsrvr: Name of observing ephemeris object.
         :return: State of target with respect to observer.; One way light time between target and observer."""
+        if not trgctr: _empty_string('spkcvt', 'trgctr')
+        if not trgref: _empty_string('spkcvt', 'trgref')
+        if not outref: _empty_string('spkcvt', 'outref')
+        if not refloc: _empty_string('spkcvt', 'refloc')
+        if not abcorr: _empty_string('spkcvt', 'abcorr')
+        if not obsrvr: _empty_string('spkcvt', 'obsrvr')
         cdef double _c_trgepc = trgepc
         cdef double _c_et = et
         cdef double _c_lt = 0
@@ -11877,6 +13901,27 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_state
 
+    def spke09(self, et, record):
+        """Evaluate a single SPK data record from a segment of type 9 (discrete states, evaluated by Lagrange interpolation).
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spke09.html
+        
+        :param et: Target epoch.
+        :param record: Data record.
+        :return: Data record.; State (position and velocity)."""
+        cdef double _c_et = et
+        cdef int _st = 0
+        cdef cnp.ndarray _a_record = _rows(np.array(record, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_state = _empty(NPY_DOUBLE, 6, -1)
+        self._enter()
+        try:
+            _st = pepper_spke09(self._ptr, _c_et, <double*>cnp.PyArray_DATA(_a_record), <double*>cnp.PyArray_DATA(_a_state))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_record, _a_state
+
     def spke10(self, et, record):
         """Evaluate a single SPK data record from a segment of type 10 (NORAD two-line element sets.). This evaluator uses algorithms as described in Vallado 2006 [4].
         
@@ -12003,6 +14048,48 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_state
 
+    def spke18(self, et, record):
+        """Evaluate a single data record from a type 18 SPK segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spke18.html
+        
+        :param et: Epoch for which a state is desired.
+        :param record: Record from a type 18 SPK segment valid for ET. (PEPPER: its packets are transposed in place.)
+        :return: Record from a type 18 SPK segment valid for ET. (PEPPER: its packets are transposed in place.); State (position and velocity) at epoch ET."""
+        cdef double _c_et = et
+        cdef int _st = 0
+        cdef cnp.ndarray _a_record = _rows(np.array(record, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_state = _empty(NPY_DOUBLE, 6, -1)
+        self._enter()
+        try:
+            _st = pepper_spke18(self._ptr, _c_et, <double*>cnp.PyArray_DATA(_a_record), <double*>cnp.PyArray_DATA(_a_state))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_record, _a_state
+
+    def spke19(self, et, record):
+        """Evaluate a single data record from a type 19 SPK segment.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spke19.html
+        
+        :param et: Epoch for which a state is desired.
+        :param record: Record from a type 19 SPK segment valid for ET. (PEPPER: its packets are transposed in place.)
+        :return: Record from a type 19 SPK segment valid for ET. (PEPPER: its packets are transposed in place.); State (position and velocity) at epoch ET."""
+        cdef double _c_et = et
+        cdef int _st = 0
+        cdef cnp.ndarray _a_record = _rows(np.array(record, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+        cdef cnp.ndarray _a_state = _empty(NPY_DOUBLE, 6, -1)
+        self._enter()
+        try:
+            _st = pepper_spke19(self._ptr, _c_et, <double*>cnp.PyArray_DATA(_a_record), <double*>cnp.PyArray_DATA(_a_state))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_record, _a_state
+
     def spke20(self, et, record):
         """Evaluate a single data record from an SPK or PCK segment of type 20 (Chebyshev polynomials, velocity only).
         
@@ -12056,6 +14143,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param abcorr: Aberration correction flag.
         :param obs: Observing body.
         :return: State of target.; One way light time between observer and target."""
+        if not ref: _empty_string('spkez', 'ref')
+        if not abcorr: _empty_string('spkez', 'abcorr')
         cdef int _c_targ = targ
         cdef double _c_et = et
         cdef int _c_obs = obs
@@ -12086,6 +14175,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param abcorr: Aberration correction flag.
         :param obs: Observing body NAIF ID code.
         :return: Position of target.; One way light time between observer and target."""
+        if not ref: _empty_string('spkezp', 'ref')
+        if not abcorr: _empty_string('spkezp', 'abcorr')
         cdef int _c_targ = targ
         cdef double _c_et = et
         cdef int _c_obs = obs
@@ -12118,6 +14209,10 @@ cdef class _ContextRoutines(_ContextBase):
         :return: State of target.; One way light time between observer and target."""
         if _iterable(et):
             return _stack([self.spkezr(targ, _v, ref, abcorr, obs) for _v in et])
+        if not targ: _empty_string('spkezr', 'targ')
+        if not ref: _empty_string('spkezr', 'ref')
+        if not abcorr: _empty_string('spkezr', 'abcorr')
+        if not obs: _empty_string('spkezr', 'obs')
         cdef double _c_et = et
         cdef double _c_lt = 0
         cdef int _st = 0
@@ -12149,6 +14244,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param ref: Target reference frame.
         :param obs: Observing body.
         :return: State of target.; Light time."""
+        if not ref: _empty_string('spkgeo', 'ref')
         cdef int _c_targ = targ
         cdef double _c_et = et
         cdef int _c_obs = obs
@@ -12176,6 +14272,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param ref: Target reference frame.
         :param obs: Observing body.
         :return: Position of target.; Light time."""
+        if not ref: _empty_string('spkgps', 'ref')
         cdef int _c_targ = targ
         cdef double _c_et = et
         cdef int _c_obs = obs
@@ -12204,6 +14301,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param abcorr: Aberration correction flag.
         :param stobs: State of the observer relative to the SSB.
         :return: State of target.; One way light time between observer and target.; Derivative of light time with respect to time."""
+        if not ref: _empty_string('spkltc', 'ref')
+        if not abcorr: _empty_string('spkltc', 'abcorr')
         cdef int _c_targ = targ
         cdef double _c_et = et
         cdef double _c_lt = 0
@@ -12232,6 +14331,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param spk: Name of SPK file.
         :param out_cell: Set of ID codes of objects in SPK file.
         :return: Set of ID codes of objects in SPK file."""
+        if not spk: _empty_string('spkobj', 'spkfnm')
         cdef int _st = 0
         cdef bytes _b_spkfnm = _b(spk)
         cdef const char *_c_spkfnm = _b_spkfnm
@@ -12254,6 +14354,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param filename: The name of an existing SPK file.
         :return: Handle attached to the SPK file opened to append."""
+        if not filename: _empty_string('spkopa', 'file')
         cdef int _c_handle = 0
         cdef int _st = 0
         cdef bytes _b_file = _b(filename)
@@ -12276,6 +14377,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param ifname: The internal filename for the SPK file.
         :param ncomch: The number of characters to reserve for comments.
         :return: The handle of the opened SPK file."""
+        if not filename: _empty_string('spkopn', 'fname')
+        if not ifname: _empty_string('spkopn', 'ifname')
         cdef int _c_ncomch = ncomch
         cdef int _c_handle = 0
         cdef int _st = 0
@@ -12293,6 +14396,37 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _c_handle
 
+    def spkpds(self, body, center, framestr, typenum, first, last):
+        """Perform routine error checks and if all check pass, pack the descriptor for an SPK segment
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkpds.html
+        
+        :param body: The NAIF ID code for the body of the segment.
+        :param center: The center of motion for BODY.
+        :param framestr: The frame for this segment.
+        :param typenum: The type of SPK segment to create.
+        :param first: The first epoch for which the segment is valid.
+        :param last: The last  epoch for which the segment is valid.
+        :return: An SPK segment descriptor."""
+        if not framestr: _empty_string('spkpds', 'frame')
+        cdef int _c_body = body
+        cdef int _c_center = center
+        cdef int _c_type = typenum
+        cdef double _c_first = first
+        cdef double _c_last = last
+        cdef int _st = 0
+        cdef bytes _b_frame = _b(framestr)
+        cdef const char *_c_frame = _b_frame
+        cdef cnp.ndarray _a_descr = _empty(NPY_DOUBLE, max(<int>(5), 1), -1)
+        self._enter()
+        try:
+            _st = pepper_spkpds(self._ptr, _c_body, _c_center, _c_frame, _c_type, _c_first, _c_last, <double*>cnp.PyArray_DATA(_a_descr))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_descr
+
     def spkpos(self, targ, et, ref, abcorr, obs):
         """Return the position of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration.
         
@@ -12306,6 +14440,10 @@ cdef class _ContextRoutines(_ContextBase):
         :return: Position of target.; One way light time between observer and target."""
         if _iterable(et):
             return _stack([self.spkpos(targ, _v, ref, abcorr, obs) for _v in et])
+        if not targ: _empty_string('spkpos', 'targ')
+        if not ref: _empty_string('spkpos', 'ref')
+        if not abcorr: _empty_string('spkpos', 'abcorr')
+        if not obs: _empty_string('spkpos', 'obs')
         cdef double _c_et = et
         cdef double _c_lt = 0
         cdef int _st = 0
@@ -12781,6 +14919,33 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return None
 
+    def spksfs(self, body, et, idlen=None):
+        """Search through loaded SPK files to find the highest-priority segment applicable to the body and time specified and buffer searched segments in the process, to attempt to avoid re-reading files.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spksfs.html
+        
+        :param body: Body ID.
+        :param et: Ephemeris time.
+        :param idlen: (SpiceyPy compatibility; ignored)
+        :return: Handle of file containing the applicable segment.; Descriptor of the applicable segment.; Identifier of the applicable segment.
+            (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        cdef int _c_body = body
+        cdef double _c_et = et
+        cdef int _c_handle = 0
+        cdef char _c_ident[1024]
+        cdef int _c_found = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_descr = _empty(NPY_DOUBLE, max(<int>(5), 1), -1)
+        _c_ident[0] = 0
+        self._enter()
+        try:
+            _st = pepper_spksfs(self._ptr, _c_body, _c_et, &_c_handle, <double*>cnp.PyArray_DATA(_a_descr), 1024, _c_ident, &_c_found)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found('spksfs', (_c_handle, _a_descr, _s(_c_ident)), _c_found != 0)
+
     def spkssb(self, targ, et, ref):
         """Return the state (position and velocity) of a target body relative to the solar system barycenter.
         
@@ -12790,6 +14955,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param et: Target epoch.
         :param ref: Target reference frame.
         :return: State of target."""
+        if not ref: _empty_string('spkssb', 'ref')
         cdef int _c_targ = targ
         cdef double _c_et = et
         cdef int _st = 0
@@ -12816,6 +14982,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param begin: Beginning (initial epoch) of subset.
         :param end: End (final epoch) of subset.
         :param newh: Handle of new segment."""
+        if not identin: _empty_string('spksub', 'ident')
         cdef int _c_handle = handle
         cdef double _c_begin = begin
         cdef double _c_end = end
@@ -12876,6 +15043,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param polydg: Chebyshev polynomial degree.
         :param cdata: Array of Chebyshev coefficients.
         :param btime: Begin time of first logical record."""
+        if not inframe: _empty_string('spkw02', 'frame')
+        if not segid: _empty_string('spkw02', 'segid')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -12917,6 +15086,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param polydg: Chebyshev polynomial degree.
         :param cdata: Array of Chebyshev coefficients.
         :param btime: Begin time of first record."""
+        if not inframe: _empty_string('spkw03', 'frame')
+        if not segid: _empty_string('spkw03', 'segid')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -12957,6 +15128,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param n: Number of states and epochs.
         :param states: States.
         :param epochs: Epochs."""
+        if not inframe: _empty_string('spkw05', 'frame')
+        if not segid: _empty_string('spkw05', 'segid')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -12997,6 +15170,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param states: Array of states.
         :param epoch1: Epoch of first state in STATES array.
         :param step: Time step separating epochs of states."""
+        if not inframe: _empty_string('spkw08', 'frame')
+        if not segid: _empty_string('spkw08', 'segid')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -13037,6 +15212,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param n: Number of states.
         :param states: Array of states.
         :param epochs: Array of epochs corresponding to states."""
+        if not inframe: _empty_string('spkw09', 'frame')
+        if not segid: _empty_string('spkw09', 'segid')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -13076,6 +15253,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param n: The number of element/epoch pairs to be stored
         :param elems: The collection of 'two-line' element sets.
         :param epochs: The epochs associated with the element sets."""
+        if not inframe: _empty_string('spkw10', 'frame')
+        if not segid: _empty_string('spkw10', 'segid')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -13116,6 +15295,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param states: Array of states.
         :param epoch0: Epoch of first state in STATES array.
         :param step: Time step separating epochs of states."""
+        if not inframe: _empty_string('spkw12', 'frame')
+        if not segid: _empty_string('spkw12', 'segid')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -13156,6 +15337,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param n: Number of states.
         :param states: Array of states.
         :param epochs: Array of epochs corresponding to states."""
+        if not inframe: _empty_string('spkw13', 'frame')
+        if not segid: _empty_string('spkw13', 'segid')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -13201,6 +15384,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param gm: Central body GM.
         :param j2: Central body J2.
         :param radius: Equatorial radius of central body."""
+        if not inframe: _empty_string('spkw15', 'frame')
+        if not segid: _empty_string('spkw15', 'segid')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -13246,6 +15431,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param eqel: Array of equinoctial elements.
         :param rapol: Right Ascension of the reference plane's pole.
         :param decpol: Declination of the reference plane's pole."""
+        if not inframe: _empty_string('spkw17', 'frame')
+        if not segid: _empty_string('spkw17', 'segid')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -13285,6 +15472,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param degree: Degree of interpolating polynomials.
         :param packts: Array of packets.
         :param epochs: Array of epochs corresponding to packets."""
+        if not inframe: _empty_string('spkw18', 'frame')
+        if not segid: _empty_string('spkw18', 'segid')
         cdef int _c_handle = handle
         cdef int _c_subtyp = subtyp
         cdef int _c_body = body
@@ -13292,7 +15481,7 @@ cdef class _ContextRoutines(_ContextBase):
         cdef double _c_first = first
         cdef double _c_last = last
         cdef int _c_degree = degree
-        cdef int _c_n = np.size(packts)
+        cdef int _c_n = np.size(epochs)
         cdef int _st = 0
         cdef bytes _b_frame = _b(inframe)
         cdef bytes _b_segid = _b(segid)
@@ -13376,6 +15565,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param tscale: Time scale of data.
         :param initjd: Integer part of begin time (TDB Julian date) of first record.
         :param initfr: Fractional part of begin time of first record."""
+        if not inframe: _empty_string('spkw20', 'frame')
+        if not segid: _empty_string('spkw20', 'segid')
         cdef int _c_handle = handle
         cdef int _c_body = body
         cdef int _c_center = center
@@ -13477,6 +15668,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param srflen: (SpiceyPy compatibility; ignored)
         :return: String corresponding to surface ID code.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not bodstr: _empty_string('srfcss', 'bodstr')
         cdef int _c_code = code
         cdef char _c_srfstr[1024]
         cdef int _c_isname = 0
@@ -13492,6 +15684,42 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _found('srfcss', (_s(_c_srfstr),), _c_isname != 0)
+
+    def srfnrm(self, method, target, et, fixref, srfpts):
+        """Map array of surface points on a specified target body to the corresponding unit length outward surface normal vectors.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/srfnrm.html
+        
+        :param method: Computation method.
+        :param target: Name of target body.
+        :param et: Epoch in TDB seconds past J2000 TDB.
+        :param fixref: Body-fixed, body-centered target body frame.
+        :param srfpts: Array of surface points.
+        :return: Array of outward, unit length normal vectors."""
+        if not method: _empty_string('srfnrm', 'method')
+        if not target: _empty_string('srfnrm', 'target')
+        if not fixref: _empty_string('srfnrm', 'fixref')
+        cdef double _c_et = et
+        cdef int _c_npts = (np.shape(srfpts)[0] if np.ndim(srfpts) > 1 else np.size(srfpts))
+        cdef int _st = 0
+        cdef bytes _b_method = _b(method)
+        cdef bytes _b_target = _b(target)
+        cdef bytes _b_fixref = _b(fixref)
+        cdef const char *_c_method = _b_method
+        cdef const char *_c_target = _b_target
+        cdef const char *_c_fixref = _b_fixref
+        cdef cnp.ndarray _a_srfpts = _rows(srfpts, NPY_DOUBLE, 2)
+        cdef int _n_normls = max(<int>(_c_npts), 1)
+        cdef cnp.ndarray _a_normls = np.zeros((_n_normls, 3), dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32)
+        self._enter()
+        try:
+            with nogil:
+                _st = pepper_srfnrm(self._ptr, _c_method, _c_target, _c_et, _c_fixref, _c_npts, <const double*>cnp.PyArray_DATA(_a_srfpts), <double*>cnp.PyArray_DATA(_a_normls))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_normls
 
     def srfrec(self, body, longitude, latitude):
         """Convert planetocentric latitude and longitude of a surface point on a specified body to rectangular coordinates.
@@ -13525,6 +15753,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param bodstr: Body name or ID string.
         :return: Integer surface ID code.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not srfstr: _empty_string('srfs2c', 'srfstr')
+        if not bodstr: _empty_string('srfs2c', 'bodstr')
         cdef int _c_code = 0
         cdef int _c_found = 0
         cdef int _st = 0
@@ -13550,6 +15780,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param bodyid: Body ID code.
         :return: Integer surface ID code.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not srfstr: _empty_string('srfscc', 'srfstr')
         cdef int _c_bodyid = bodyid
         cdef int _c_code = 0
         cdef int _c_found = 0
@@ -13581,6 +15812,11 @@ cdef class _ContextRoutines(_ContextBase):
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
         if _iterable(et):
             return _stack([self.srfxpt(method, target, _v, abcorr, obsrvr, dref, dvec) for _v in et])
+        if not method: _empty_string('srfxpt', 'method')
+        if not target: _empty_string('srfxpt', 'target')
+        if not abcorr: _empty_string('srfxpt', 'abcorr')
+        if not obsrvr: _empty_string('srfxpt', 'obsrvr')
+        if not dref: _empty_string('srfxpt', 'dref')
         cdef double _c_et = et
         cdef double _c_dist = 0
         cdef double _c_trgepc = 0
@@ -13825,6 +16061,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param lenout: (SpiceyPy compatibility; ignored)
         :return: A full string concatenated across continuations.; The number of characters in the full string value.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not item: _empty_string('stpool', 'item')
+        if not contin: _empty_string('stpool', 'contin')
         cdef int _c_nth = nth + 1
         cdef char _c_nthstr[1024]
         cdef int _c_size = 0
@@ -13853,6 +16091,7 @@ cdef class _ContextRoutines(_ContextBase):
         :return: The equivalent value in seconds past J2000, TDB."""
         if _iterable(time):
             return _stack([self.str2et(_v) for _v in time])
+        if not time: _empty_string('str2et', 'timstr')
         cdef double _c_et = 0
         cdef int _st = 0
         cdef bytes _b_timstr = _b(time)
@@ -13878,6 +16117,11 @@ cdef class _ContextRoutines(_ContextBase):
         :param abcorr: Aberration correction.
         :param obsrvr: Name of observing body.
         :return: Sub-observer point on the target body.; Sub-observer point epoch.; Vector from observer to sub-observer point."""
+        if not method: _empty_string('subpnt', 'method')
+        if not target: _empty_string('subpnt', 'target')
+        if not fixref: _empty_string('subpnt', 'fixref')
+        if not abcorr: _empty_string('subpnt', 'abcorr')
+        if not obsrvr: _empty_string('subpnt', 'obsrvr')
         cdef double _c_et = et
         cdef double _c_trgepc = 0
         cdef int _st = 0
@@ -13916,6 +16160,10 @@ cdef class _ContextRoutines(_ContextBase):
         :return: Sub-observer point on the target body.; Altitude of the observer above the target body."""
         if _iterable(et):
             return _stack([self.subpt(method, target, _v, abcorr, obsrvr) for _v in et])
+        if not method: _empty_string('subpt', 'method')
+        if not target: _empty_string('subpt', 'target')
+        if not abcorr: _empty_string('subpt', 'abcorr')
+        if not obsrvr: _empty_string('subpt', 'obsrvr')
         cdef double _c_et = et
         cdef double _c_alt = 0
         cdef int _st = 0
@@ -13950,6 +16198,11 @@ cdef class _ContextRoutines(_ContextBase):
         :param abcorr: Aberration correction.
         :param obsrvr: Name of observing body.
         :return: Sub-solar point on the target body.; Sub-solar point epoch.; Vector from observer to sub-solar point."""
+        if not method: _empty_string('subslr', 'method')
+        if not target: _empty_string('subslr', 'target')
+        if not fixref: _empty_string('subslr', 'fixref')
+        if not abcorr: _empty_string('subslr', 'abcorr')
+        if not obsrvr: _empty_string('subslr', 'obsrvr')
         cdef double _c_et = et
         cdef double _c_trgepc = 0
         cdef int _st = 0
@@ -13986,6 +16239,10 @@ cdef class _ContextRoutines(_ContextBase):
         :param abcorr: Aberration correction.
         :param obsrvr: Name of observing body.
         :return: Sub-solar point on the target body."""
+        if not method: _empty_string('subsol', 'method')
+        if not target: _empty_string('subsol', 'target')
+        if not abcorr: _empty_string('subsol', 'abcorr')
+        if not obsrvr: _empty_string('subsol', 'obsrvr')
         cdef double _c_et = et
         cdef int _st = 0
         cdef bytes _b_method = _b(method)
@@ -14112,6 +16369,58 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _found('surfpv', (_a_stx,), _c_found != 0)
 
+    def swapad(self, n, locn, m, locm, array):
+        """Swap (exchange) two non-intersecting groups of contiguous elements of a double precision array.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/swapad.html
+        
+        :param n: Number of elements in the first group.
+        :param locn: Location of the first group.
+        :param m: Number of elements in the second group.
+        :param locm: Location of the second group.
+        :param array: The array.
+        :return: The array."""
+        cdef int _c_n = n
+        cdef int _c_locn = locn
+        cdef int _c_m = m
+        cdef int _c_locm = locm
+        cdef int _st = 0
+        cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_DOUBLE == NPY_DOUBLE else np.int32), NPY_DOUBLE, 1)
+        self._enter()
+        try:
+            _st = pepper_swapad(self._ptr, _c_n, _c_locn, _c_m, _c_locm, <double*>cnp.PyArray_DATA(_a_array))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_array
+
+    def swapai(self, n, locn, m, locm, array):
+        """Swap (exchange) two non-intersecting groups of contiguous elements of an integer array.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/swapai.html
+        
+        :param n: Number of elements in the first group.
+        :param locn: Location of the first group.
+        :param m: Number of elements in the second group.
+        :param locm: Location of the second group.
+        :param array: The array.
+        :return: The array."""
+        cdef int _c_n = n
+        cdef int _c_locn = locn
+        cdef int _c_m = m
+        cdef int _c_locm = locm
+        cdef int _st = 0
+        cdef cnp.ndarray _a_array = _rows(np.array(array, dtype=np.float64 if NPY_INT32 == NPY_DOUBLE else np.int32), NPY_INT32, 1)
+        self._enter()
+        try:
+            _st = pepper_swapai(self._ptr, _c_n, _c_locn, _c_m, _c_locm, <int*>cnp.PyArray_DATA(_a_array))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_array
+
     def swpool(self, agent, nnames, lenvals=None, names=None):
         """Add a name to the list of agents to notify whenever a member of a list of kernel variables is updated.
         
@@ -14121,6 +16430,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param nnames: The number of variables to associate with AGENT.
         :param lenvals: (SpiceyPy compatibility; ignored)
         :param names: Variable names whose update causes the"""
+        if not agent: _empty_string('swpool', 'agent')
         cdef int _c_nnames = nnames
         cdef int _st = 0
         cdef bytes _b_agent = _b(agent)
@@ -14150,6 +16460,8 @@ cdef class _ContextRoutines(_ContextBase):
         :return: A state transformation matrix."""
         if _iterable(et):
             return _stack([self.sxform(instring, tostring, _v) for _v in et])
+        if not instring: _empty_string('sxform', 'from')
+        if not tostring: _empty_string('sxform', 'to')
         cdef double _c_et = et
         cdef int _st = 0
         cdef bytes _b_from = _b(instring)
@@ -14174,6 +16486,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param name: Name of the parameter to be returned.
         :return: Value of parameter specified by NAME.
             (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        if not name: _empty_string('szpool', 'name')
         cdef int _c_n = 0
         cdef int _c_found = 0
         cdef int _st = 0
@@ -14203,6 +16516,13 @@ cdef class _ContextRoutines(_ContextBase):
         :param dref: Reference frame of ray direction vector.
         :param dvec: Ray direction vector.
         :return: 'Tangent point': point on ray nearest to surface.; Altitude of tangent point above surface.; Distance of tangent point from observer.; Point on surface nearest to tangent point.; Epoch associated with correction locus.; Vector from observer to surface point SRFPT."""
+        if not method: _empty_string('tangpt', 'method')
+        if not target: _empty_string('tangpt', 'target')
+        if not fixref: _empty_string('tangpt', 'fixref')
+        if not abcorr: _empty_string('tangpt', 'abcorr')
+        if not corloc: _empty_string('tangpt', 'corloc')
+        if not obsrvr: _empty_string('tangpt', 'obsrvr')
+        if not dref: _empty_string('tangpt', 'dref')
         cdef double _c_et = et
         cdef double _c_alt = 0
         cdef double _c_range = 0
@@ -14361,6 +16681,34 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _c_year
 
+    def timdef(self, action, item, lenout=None, value=None):
+        """Set and retrieve the defaults associated with calendar input strings.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/timdef.html
+        
+        :param action: Kind of action to take 'SET' or 'GET'.
+        :param item: Default item of interest.
+        :param lenout: (SpiceyPy compatibility; ignored)
+        :param value: Value associated with the default item.
+        :return: Value associated with the default item."""
+        if not action: _empty_string('timdef', 'action')
+        if not item: _empty_string('timdef', 'item')
+        cdef int _st = 0
+        cdef bytes _b_action = _b(action)
+        cdef bytes _b_item = _b(item)
+        cdef const char *_c_action = _b_action
+        cdef const char *_c_item = _b_item
+        cdef bytearray _ba_value = bytearray(_b(value if value is not None else '')[:1023].ljust(1024, b'\0'))
+        cdef char *_c_value = _ba_value
+        self._enter()
+        try:
+            _st = pepper_timdef(self._ptr, _c_action, _c_item, 1024, _c_value)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _s(_c_value)
+
     def timout(self, et, pictur, lenout=None):
         """Convert an input epoch represented in TDB seconds past the TDB epoch of J2000 to a character string formatted to the specifications of a user's format picture.
         
@@ -14372,6 +16720,7 @@ cdef class _ContextRoutines(_ContextBase):
         :return: A string representation of the input epoch."""
         if _iterable(et):
             return _stack([self.timout(_v, pictur, lenout) for _v in et])
+        if not pictur: _empty_string('timout', 'pictur')
         cdef double _c_et = et
         cdef char _c_output[1024]
         cdef int _st = 0
@@ -14396,6 +16745,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param body: ID code of body.
         :param et: Epoch of transformation.
         :return: Position transformation matrix, inertial to prime meridian."""
+        if not ref: _empty_string('tipbod', 'ref')
         cdef int _c_body = body
         cdef double _c_et = et
         cdef int _st = 0
@@ -14420,6 +16770,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param body: ID code of body
         :param et: Epoch of transformation
         :return: Transformation (state), inertial to prime meridian"""
+        if not ref: _empty_string('tisbod', 'ref')
         cdef int _c_body = body
         cdef double _c_et = et
         cdef int _st = 0
@@ -14465,6 +16816,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param item: Item for which a version string is desired.
         :return: Version string."""
+        if not item: _empty_string('tkvrsn', 'item')
         cdef char _c_verstr[1024]
         cdef int _st = 0
         cdef bytes _b_item = _b(item)
@@ -14503,6 +16855,7 @@ cdef class _ContextRoutines(_ContextBase):
         https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/tparch.html
         
         :param type: String: Use 'YES' to restrict time inputs."""
+        if not type: _empty_string('tparch', 'type')
         cdef int _st = 0
         cdef bytes _b_type = _b(type)
         cdef const char *_c_type = _b_type
@@ -14523,6 +16876,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param instring: Input time string, UTC.
         :param lenout: (SpiceyPy compatibility; ignored)
         :return: Equivalent UTC seconds past J2000.; Descriptive error message."""
+        if not instring: _empty_string('tparse', 'string')
         cdef double _c_sp2000 = 0
         cdef char _c_errmsg[1024]
         cdef int _st = 0
@@ -14547,6 +16901,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param lenout: (SpiceyPy compatibility; ignored)
         :param lenerr: (SpiceyPy compatibility; ignored)
         :return: is a format picture that describes SAMPLE; indicates success or failure to parse SAMPLE; a diagnostic returned if SAMPLE cannot be parsed"""
+        if not sample: _empty_string('tpictr', 'sample')
         cdef char _c_pictur[1024]
         cdef int _c_ok = 0
         cdef char _c_errmsg[1024]
@@ -14579,6 +16934,14 @@ cdef class _ContextRoutines(_ContextBase):
         :param obsrvr: Observing body name.
         :param abcorr: Aberration corrections flag.
         :return: the result"""
+        if not targ1: _empty_string('trgsep', 'targ1')
+        if not shape1: _empty_string('trgsep', 'shape1')
+        if not frame1: _empty_string('trgsep', 'frame1')
+        if not targ2: _empty_string('trgsep', 'targ2')
+        if not shape2: _empty_string('trgsep', 'shape2')
+        if not frame2: _empty_string('trgsep', 'frame2')
+        if not obsrvr: _empty_string('trgsep', 'obsrvr')
+        if not abcorr: _empty_string('trgsep', 'abcorr')
         cdef double _c_et = et
         cdef double _c_fresult = 0
         cdef int _st = 0
@@ -14788,6 +17151,8 @@ cdef class _ContextRoutines(_ContextBase):
         :param insys: The time scale associated with the input EPOCH.
         :param outsys: The time scale associated with the function value.
         :return: the result"""
+        if not insys: _empty_string('unitim', 'insys')
+        if not outsys: _empty_string('unitim', 'outsys')
         cdef double _c_epoch = epoch
         cdef double _c_fresult = 0
         cdef int _st = 0
@@ -14811,6 +17176,7 @@ cdef class _ContextRoutines(_ContextBase):
         
         :param utcstr: Input time string, UTC.
         :return: Output epoch, ephemeris seconds past J2000."""
+        if not utcstr: _empty_string('utc2et', 'utcstr')
         cdef double _c_et = 0
         cdef int _st = 0
         cdef bytes _b_utcstr = _b(utcstr)
@@ -14869,6 +17235,52 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return a
+
+    def vprjp(self, vin, plane):
+        """Project a vector onto a specified plane, orthogonally.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/vprjp.html
+        
+        :param vin: Vector to be projected.
+        :param plane: A SPICE plane onto which VIN is projected.
+        :return: Vector resulting from projection."""
+        cdef int _st = 0
+        cdef cnp.ndarray _a_vin = _input(vin, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_plane = _input(plane, NPY_DOUBLE, 4, -1, False)
+        cdef cnp.ndarray _a_vout = _empty(NPY_DOUBLE, 3, -1)
+        self._enter()
+        try:
+            _st = pepper_vprjp(self._ptr, <double*>cnp.PyArray_DATA(_a_vin), <double*>cnp.PyArray_DATA(_a_plane), <double*>cnp.PyArray_DATA(_a_vout))
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _a_vout
+
+    def vprjpi(self, vin, projpl, invpl):
+        """Find the vector in a specified plane that maps to a specified vector in another plane under orthogonal projection.
+        
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/vprjpi.html
+        
+        :param vin: The projected vector.
+        :param projpl: Plane containing VIN.
+        :param invpl: Plane containing inverse image of VIN.
+        :return: Inverse projection of VIN.
+            (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
+        cdef int _c_found = 0
+        cdef int _st = 0
+        cdef cnp.ndarray _a_vin = _input(vin, NPY_DOUBLE, 3, -1, False)
+        cdef cnp.ndarray _a_projpl = _input(projpl, NPY_DOUBLE, 4, -1, False)
+        cdef cnp.ndarray _a_invpl = _input(invpl, NPY_DOUBLE, 4, -1, False)
+        cdef cnp.ndarray _a_vout = _empty(NPY_DOUBLE, 3, -1)
+        self._enter()
+        try:
+            _st = pepper_vprjpi(self._ptr, <double*>cnp.PyArray_DATA(_a_vin), <double*>cnp.PyArray_DATA(_a_projpl), <double*>cnp.PyArray_DATA(_a_invpl), <double*>cnp.PyArray_DATA(_a_vout), &_c_found)
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found('vprjpi', (_a_vout,), _c_found != 0)
 
     def wncard(self, window):
         """Return the cardinality (number of intervals) of a double precision window.
@@ -15168,6 +17580,7 @@ cdef class _ContextRoutines(_ContextBase):
         :param op: Comparison operator.
         :param b: Second window.
         :return: the result"""
+        if not op: _empty_string('wnreld', 'op')
         cdef int _c_fresult = 0
         cdef int _st = 0
         cdef bytes _b_op = _b(op)
@@ -15417,6 +17830,9 @@ cdef class _ContextRoutines(_ContextBase):
         :param output_coord_sys: Desired (output) coordinate system.
         :param body: Name or NAIF ID of body with which coordinates are associated (if applicable).
         :return: Converted output state."""
+        if not input_coord_sys: _empty_string('xfmsta', 'icosys')
+        if not output_coord_sys: _empty_string('xfmsta', 'ocosys')
+        if not body: _empty_string('xfmsta', 'body')
         cdef int _st = 0
         cdef bytes _b_icosys = _b(input_coord_sys)
         cdef bytes _b_ocosys = _b(output_coord_sys)

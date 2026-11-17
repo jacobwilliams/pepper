@@ -25,6 +25,7 @@ import numpy as np
 from . import config
 from .cells import SpiceCell, DOUBLE as _CDOUBLE, INT as _CINT, from_values as _from_values
 from .exceptions import (NotFoundError, SpiceyError, dynamically_instantiate_spiceyerror)
+from .utils.support_types import Plane, Ellipse, SpiceDLADescr, SpiceDSKDescr, SpiceEKAttDsc
 
 cnp.import_array()
 
@@ -98,6 +99,11 @@ cdef tuple _strblock(object strings):
     cdef list bs = [_b(x) for x in strings]
     cdef int width = max([len(x) for x in bs] + [1]) + 1
     return b''.join([x.ljust(width, b'\0') for x in bs]), len(bs), width
+
+
+cdef list _strs(bytearray b, int n, int w):
+    """An array of n strings out, each in w bytes (NUL-terminated)."""
+    return [bytes(b[i * w:(i + 1) * w]).split(b'\0', 1)[0].decode('latin-1').rstrip() for i in range(n)]
 
 
 cdef cnp.ndarray _empty(int dt, int d1, int d2):
@@ -1025,6 +1031,67 @@ cdef class Context(_ContextRoutines):
         finally:
             self._leave()
 
+    def uddf(self, udfunc, double x, double dx):
+        """The derivative of a scalar function of time at x, from its values
+        at x - dx and x + dx (UDDF)."""
+        holder = _GFHolder(udfunc, None)
+        cdef double deriv = 0.0
+        cdef int st
+        cdef void *user = <void*>holder
+        self._enter()
+        try:
+            with nogil:
+                st = pepper_uddf(self._ptr, _scalar_cb, user, x, dx, &deriv)
+            if st:
+                self._raise()
+            return deriv
+        finally:
+            self._leave()
+
+    def _gf_hooks_on(self, step=None, refn=None, repi=None, repu=None, repf=None, bail=None):
+        """Set the GF hooks (GFEVNT, GFFOVE, GFOCCE) for a search: Python
+        functions, or PEPPER's own routines where the function given is
+        PepperyPy's gfstep, gfrefn, gfrepi, gfrepu or gfrepf (or None).
+        Returns the object that holds them, to keep until `_gf_hooks_off`."""
+        cdef pepper_step_fn fs = NULL
+        cdef pepper_refn_fn fr = NULL
+        cdef pepper_repi_fn fi = NULL
+        cdef pepper_repu_fn fu = NULL
+        cdef pepper_repf_fn ff = NULL
+        cdef pepper_bail_fn fb = NULL
+        cdef _GFHooks h = _GFHooks(step, refn, repi, repu, repf, bail)
+        if h.step is not None:
+            fs = _step_cb
+        if h.refn is not None:
+            fr = _refn_cb
+        if h.repi is not None:
+            fi = _repi_cb
+        if h.repu is not None:
+            fu = _repu_cb
+        if h.repf is not None:
+            ff = _repf_cb
+        if h.bail is not None:
+            fb = _bail_cb
+        pepper_gf_set_hooks(self._ptr, fs, fr, fi, fu, ff, fb, <void*>h)
+        return h
+
+    def _zzdynrot(self, int infram, int center, double et):
+        """The rotation of a dynamic frame to its base frame (ZZDYNROT)."""
+        cdef cnp.ndarray r = _empty(NPY_DOUBLE, 3, 3)
+        cdef int basfrm = 0, st
+        self._enter()
+        try:
+            st = pepper_zzdynrot(self._ptr, infram, center, et, <double*>cnp.PyArray_DATA(r), &basfrm)
+            if st:
+                self._raise()
+            return r, basfrm
+        finally:
+            self._leave()
+
+    def _gf_hooks_off(self):
+        """Clear the GF hooks (PEPPER's own routines again)."""
+        pepper_gf_set_hooks(self._ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+
     def uddc(self, udfuns, double x, double dx):
         """Whether a scalar function of time is decreasing at x: its
         derivative from its values at x - dx and x + dx (UDDC)."""
@@ -1073,6 +1140,92 @@ cdef void _bool_cb(void *ctx, void *user, double et, int *value) noexcept with g
         value[0] = 1 if h.other(h.udfuns, et) else 0
     except BaseException as e:
         _callback_failed(ctx, e)
+
+
+cdef class _GFHooks:
+    """The Python functions of a GF search's hooks (None: PEPPER's routine)."""
+    cdef public object step, refn, repi, repu, repf, bail
+
+    def __cinit__(self, step, refn, repi, repu, repf, bail):
+        g = globals()
+        # PepperyPy's own routines: PEPPER's, without a trip through Python
+        self.step = None if step is None or step is g.get('gfstep') else step
+        self.refn = None if refn is None or refn is g.get('gfrefn') else refn
+        self.repi = None if repi is None or repi is g.get('gfrepi') else repi
+        self.repu = None if repu is None or repu is g.get('gfrepu') else repu
+        self.repf = None if repf is None or repf is g.get('gfrepf') else repf
+        self.bail = bail
+
+
+cdef void _step_cb(void *ctx, void *user, double time, double *step) noexcept with gil:
+    step[0] = 0.0
+    if pepper_failed(ctx):
+        return
+    try:
+        step[0] = float((<_GFHooks>user).step(time))
+    except BaseException as e:
+        _callback_failed(ctx, e)
+
+
+cdef void _refn_cb(void *ctx, void *user, double t1, double t2, int s1, int s2, double *t) noexcept with gil:
+    t[0] = 0.5 * (t1 + t2)
+    if pepper_failed(ctx):
+        return
+    try:
+        t[0] = float((<_GFHooks>user).refn(t1, t2, s1 != 0, s2 != 0))
+    except BaseException as e:
+        _callback_failed(ctx, e)
+
+
+cdef void _repi_cb(void *ctx, void *user, int n, const double *window, const char *begmss,
+                   const char *endmss) noexcept with gil:
+    if pepper_failed(ctx):
+        return
+    try:
+        w = _from_values([window[i] for i in range(n)], _CDOUBLE, size=max(n, 2))
+        (<_GFHooks>user).repi(w, _s(begmss), _s(endmss))
+    except BaseException as e:
+        _callback_failed(ctx, e)
+
+
+cdef void _repu_cb(void *ctx, void *user, double ivbeg, double ivend, double time) noexcept with gil:
+    if pepper_failed(ctx):
+        return
+    try:
+        (<_GFHooks>user).repu(ivbeg, ivend, time)
+    except BaseException as e:
+        _callback_failed(ctx, e)
+
+
+cdef void _repf_cb(void *ctx, void *user) noexcept with gil:
+    if pepper_failed(ctx):
+        return
+    try:
+        (<_GFHooks>user).repf()
+    except BaseException as e:
+        _callback_failed(ctx, e)
+
+
+cdef int _bail_cb(void *ctx, void *user) noexcept with gil:
+    if pepper_failed(ctx):
+        return 1
+    try:
+        return 1 if (<_GFHooks>user).bail() else 0
+    except BaseException as e:
+        _callback_failed(ctx, e)
+        return 1
+
+
+def _ftncls(int unit):
+    """Close a Fortran logical unit (CSPICE's FTNCLS)."""
+    pepper_ftncls(unit)
+
+
+def _empty_string(caller, name):
+    """CSPICE's check of a string argument (CHKFSTR): SPICE(EMPTYSTRING)."""
+    raise dynamically_instantiate_spiceyerror(
+        short='SPICE(EMPTYSTRING)', explain='',
+        long=f'String "{name}" has length zero.', traceback=f'{caller}_c')
 
 
 class KernelLoader:

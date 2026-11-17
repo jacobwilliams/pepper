@@ -41,8 +41,12 @@ source-form = "default"
 # and rewrites expressions that SPICELIB writes in a careful order (VPROJ
 # scales its vectors so that 1e300-long vectors do not overflow; the fast
 # model undoes that and returns Inf/NaN). -fp-model precise (/fp:precise)
-# keeps the source's arithmetic. gfortran needs no option (it does not
-# reassociate without -ffast-math).
+# keeps the source's arithmetic. gfortran does not reassociate without
+# -ffast-math, but by default it fuses a multiplication and an addition
+# into one instruction (FMA) where the processor has one (arm64, recent
+# x86-64), which rounds once instead of twice: results then differ from
+# SPICELIB's (CSPICE's) in their last bits, which SpiceyPy's tests see (a GF
+# search time). -ffp-contract=off keeps the two roundings.
 #
 # The library needs no large stack (its largest frame is about 64 KB), nor
 # do the tests. NAIF's tspice test code does on Windows (tspice/fpm.toml).
@@ -53,7 +57,7 @@ source-form = "default"
 # Intel Fortran's is 8 bits, though it counts RECL= in 4-byte words.)
 # NAIF's tspice test code does need the option (tspice/fpm.toml).
 [features]
-platform.gfortran.flags = "-frecursive"
+platform.gfortran.flags = "-frecursive -ffp-contract=off"
 platform.ifx.flags = "-recursive -fp-model precise"
 platform.ifort.flags = "-recursive -fp-model precise"
 platform.windows.ifx.flags = "/recursive /fp:precise"

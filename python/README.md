@@ -33,6 +33,9 @@ PepperyPy is Cython extension modules over PEPPER's C interface (no
 ctypes): a call costs a fraction of a microsecond, 3 to 5 times less than
 SpiceyPy's (see Speed).
 
+Moving code from SpiceyPy: see the [porting guide](../guides/spiceypy_porting.md)
+(what differs, and why).
+
 PepperyPy is not SpiceyPy, and is not supported by SpiceyPy's maintainers,
 nor by NAIF. See [LICENSE](LICENSE).
 

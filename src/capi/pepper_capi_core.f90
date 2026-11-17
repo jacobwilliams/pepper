@@ -28,7 +28,8 @@ module pepper_capi_core
    use pepper_kinds, only: ip, wp
    use pepper_containers, only: string
    use pepper_instance_module, only: pepper_instance, pepper_context, state_query, rotation_query, &
-                              ephemeris_provider, frame_provider, gf_scalar, kernel_builder, kernel_loader
+                              ephemeris_provider, frame_provider, gf_scalar, kernel_builder, kernel_loader, &
+                              zzdynrot
    implicit none
    ! Public: the bind(c) procedures must stay global symbols at any
    ! optimization level.
@@ -65,6 +66,16 @@ module pepper_capi_core
       type(c_ptr) :: scalar_user = c_null_ptr  !! its data
       type(c_funptr) :: bool_fn = c_null_funptr  !! the boolean function or the decreasing test ([[pepper_bool_fn]])
       type(c_ptr) :: bool_user = c_null_ptr  !! its data
+      ! The GF hooks ([[pepper_gf_set_hooks]]): the step, refinement,
+      ! progress report and interrupt routines of the searches that take
+      ! them (GFEVNT, GFFOVE, GFOCCE). Null: PEPPER's own routine.
+      type(c_funptr) :: step_fn = c_null_funptr  !! the step ([[pepper_step_fn]])
+      type(c_funptr) :: refn_fn = c_null_funptr  !! the refinement ([[pepper_refn_fn]])
+      type(c_funptr) :: repi_fn = c_null_funptr  !! the report's start ([[pepper_repi_fn]])
+      type(c_funptr) :: repu_fn = c_null_funptr  !! the report's update ([[pepper_repu_fn]])
+      type(c_funptr) :: repf_fn = c_null_funptr  !! the report's end ([[pepper_repf_fn]])
+      type(c_funptr) :: bail_fn = c_null_funptr  !! the interrupt test ([[pepper_bail_fn]])
+      type(c_ptr) :: hooks_user = c_null_ptr  !! the data of the hooks
    end type capi_context
 
    !> A programmatic body whose states come from a C function.
@@ -116,6 +127,65 @@ module pepper_capi_core
          real(c_double), value :: et  !! the time (TDB seconds past J2000)
          integer(c_int), intent(out) :: value  !! the condition (0: false)
       end subroutine pepper_bool_fn
+
+      !> A GF step routine: the time step to take from `time`.
+      subroutine pepper_step_fn ( ctx, user, time, step ) bind(c)
+         import :: c_ptr, c_double
+         type(c_ptr), value :: ctx  !! the context of the search
+         type(c_ptr), value :: user  !! the caller's data
+         real(c_double), value :: time  !! the time (TDB seconds past J2000)
+         real(c_double), intent(out) :: step  !! the time step (seconds)
+      end subroutine pepper_step_fn
+
+      !> A GF refinement routine: a time between `t1` and `t2`, at which
+      !> the condition is `s1` and `s2` (0: false).
+      subroutine pepper_refn_fn ( ctx, user, t1, t2, s1, s2, t ) bind(c)
+         import :: c_ptr, c_double, c_int
+         type(c_ptr), value :: ctx  !! the context of the search
+         type(c_ptr), value :: user  !! the caller's data
+         real(c_double), value :: t1  !! one of the times
+         real(c_double), value :: t2  !! the other time
+         integer(c_int), value :: s1  !! the condition at t1
+         integer(c_int), value :: s2  !! the condition at t2
+         real(c_double), intent(out) :: t  !! the time between them
+      end subroutine pepper_refn_fn
+
+      !> The start of a GF progress report: the window searched (`n`
+      !> numbers: the endpoints of its intervals) and the text before and
+      !> after the percentage.
+      subroutine pepper_repi_fn ( ctx, user, n, window, begmss, endmss ) bind(c)
+         import :: c_ptr, c_double, c_int, c_char
+         type(c_ptr), value :: ctx  !! the context of the search
+         type(c_ptr), value :: user  !! the caller's data
+         integer(c_int), value :: n  !! the number of endpoints
+         real(c_double), intent(in) :: window(*)  !! the endpoints
+         character(kind=c_char), intent(in) :: begmss(*)  !! the text before (NUL-terminated)
+         character(kind=c_char), intent(in) :: endmss(*)  !! the text after (NUL-terminated)
+      end subroutine pepper_repi_fn
+
+      !> An update of a GF progress report.
+      subroutine pepper_repu_fn ( ctx, user, ivbeg, ivend, time ) bind(c)
+         import :: c_ptr, c_double
+         type(c_ptr), value :: ctx  !! the context of the search
+         type(c_ptr), value :: user  !! the caller's data
+         real(c_double), value :: ivbeg  !! the start of the interval searched
+         real(c_double), value :: ivend  !! its end
+         real(c_double), value :: time  !! the time reached
+      end subroutine pepper_repu_fn
+
+      !> The end of a GF progress report.
+      subroutine pepper_repf_fn ( ctx, user ) bind(c)
+         import :: c_ptr
+         type(c_ptr), value :: ctx  !! the context of the search
+         type(c_ptr), value :: user  !! the caller's data
+      end subroutine pepper_repf_fn
+
+      !> A GF interrupt test: nonzero to stop the search.
+      integer(c_int) function pepper_bail_fn ( ctx, user ) bind(c)
+         import :: c_ptr, c_int
+         type(c_ptr), value :: ctx  !! the context of the search
+         type(c_ptr), value :: user  !! the caller's data
+      end function pepper_bail_fn
 
       !> The state of a programmatic body: relative to its registered
       !> center, in its registered frame. Returns 0 if no state is
@@ -764,6 +834,194 @@ contains
       isdecr = merge(1_c_int, 0_c_int, decr)
       pepper_uddc = status_of(c)
    end function pepper_uddc
+
+   !> The derivative of a scalar function of time at `x` (UDDF), from its
+   !> values at `x - dx` and `x + dx`.
+   integer(c_int) function pepper_uddf ( ctx, scalar, user, x, dx, deriv ) bind(c, name='pepper_uddf')
+      type(c_ptr), value :: ctx  !! the context
+      type(c_funptr), value :: scalar  !! the scalar function ([[pepper_scalar_fn]])
+      type(c_ptr), value :: user  !! its data
+      real(c_double), value :: x  !! the time
+      real(c_double), value :: dx  !! the half-interval of the derivative
+      real(c_double), intent(out) :: deriv  !! the derivative
+      type(capi_context), pointer :: c
+      type(c_funptr) :: saved_scalar
+      type(c_ptr) :: saved_scalar_user
+      real(wp) :: d
+      c => context_of(ctx)
+      saved_scalar = c%scalar_fn; saved_scalar_user = c%scalar_user
+      c%scalar_fn = scalar; c%scalar_user = user
+      call c%uddf(capi_gf_scalar, x, dx, d)
+      c%scalar_fn = saved_scalar; c%scalar_user = saved_scalar_user
+      deriv = d
+      pepper_uddf = status_of(c)
+   end function pepper_uddf
+
+   !> Set the GF hooks of a context: the routines GFEVNT, GFFOVE and
+   !> GFOCCE call to step, refine, report progress and test for an
+   !> interrupt. A null pointer selects PEPPER's routine (GFSTEP, GFREFN,
+   !> GFREPI, GFREPU, GFREPF, GFBAIL). They stay set until changed.
+   subroutine pepper_gf_set_hooks ( ctx, step, refn, repi, repu, repf, bail, user ) &
+         bind(c, name='pepper_gf_set_hooks')
+      type(c_ptr), value :: ctx  !! the context
+      type(c_funptr), value :: step  !! the step ([[pepper_step_fn]]), or null
+      type(c_funptr), value :: refn  !! the refinement ([[pepper_refn_fn]]), or null
+      type(c_funptr), value :: repi  !! the report's start ([[pepper_repi_fn]]), or null
+      type(c_funptr), value :: repu  !! the report's update ([[pepper_repu_fn]]), or null
+      type(c_funptr), value :: repf  !! the report's end ([[pepper_repf_fn]]), or null
+      type(c_funptr), value :: bail  !! the interrupt test ([[pepper_bail_fn]]), or null
+      type(c_ptr), value :: user  !! the data given to them
+      type(capi_context), pointer :: c
+      c => context_of(ctx)
+      c%step_fn = step; c%refn_fn = refn
+      c%repi_fn = repi; c%repu_fn = repu; c%repf_fn = repf
+      c%bail_fn = bail
+      c%hooks_user = user
+   end subroutine pepper_gf_set_hooks
+
+   !> [[gf_step]] of the C interface: the context's step hook, or GFSTEP.
+   subroutine capi_gf_step ( ctx, time, step )
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      real(wp), intent(in) :: time  !! the time
+      real(wp), intent(out) :: step  !! the step
+      procedure(pepper_step_fn), pointer :: fn
+      step = 0.0_wp
+      select type (ctx)
+      type is (capi_context)
+         if (c_associated(ctx%step_fn)) then
+            call c_f_procpointer(ctx%step_fn, fn)
+            call fn(ctx%self, ctx%hooks_user, time, step)
+            return
+         end if
+      end select
+      call ctx%gfstep(time, step)
+   end subroutine capi_gf_step
+
+   !> [[gf_refine]] of the C interface: the context's refinement hook, or
+   !> GFREFN.
+   subroutine capi_gf_refn ( ctx, t1, t2, s1, s2, t )
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      real(wp), intent(in) :: t1  !! one of the times
+      real(wp), intent(in) :: t2  !! the other time
+      logical, intent(in) :: s1  !! the condition at T1
+      logical, intent(in) :: s2  !! the condition at T2
+      real(wp), intent(out) :: t  !! the time between them
+      procedure(pepper_refn_fn), pointer :: fn
+      t = 0.0_wp
+      select type (ctx)
+      type is (capi_context)
+         if (c_associated(ctx%refn_fn)) then
+            call c_f_procpointer(ctx%refn_fn, fn)
+            call fn(ctx%self, ctx%hooks_user, t1, t2, merge(1_c_int, 0_c_int, s1), merge(1_c_int, 0_c_int, s2), t)
+            return
+         end if
+      end select
+      call ctx%gfrefn(t1, t2, s1, s2, t)
+   end subroutine capi_gf_refn
+
+   !> [[gf_rep_init]] of the C interface: the context's report start
+   !> hook, or GFREPI.
+   subroutine capi_gf_repi ( ctx, window, begmss, endmss )
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      integer(ip), parameter :: lbcell = -5  !! lower bound of a SPICE cell
+      real(wp), intent(in) :: window(lbcell:*)  !! the window searched
+      character(*), intent(in) :: begmss  !! the text before the percentage
+      character(*), intent(in) :: endmss  !! the text after it
+      procedure(pepper_repi_fn), pointer :: fn
+      integer(c_int) :: n
+      select type (ctx)
+      type is (capi_context)
+         if (c_associated(ctx%repi_fn)) then
+            call c_f_procpointer(ctx%repi_fn, fn)
+            n = int(window(0), c_int)
+            call fn(ctx%self, ctx%hooks_user, n, window(1:max(n, 1)), &
+                    trim(begmss)//c_null_char, trim(endmss)//c_null_char)
+            return
+         end if
+      end select
+      call ctx%gfrepi(window, begmss, endmss)
+   end subroutine capi_gf_repi
+
+   !> [[gf_rep_update]] of the C interface: the context's report update
+   !> hook, or GFREPU.
+   subroutine capi_gf_repu ( ctx, ivbeg, ivend, time )
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      real(wp), intent(in) :: ivbeg  !! the start of the interval searched
+      real(wp), intent(in) :: ivend  !! its end
+      real(wp), intent(in) :: time  !! the time reached
+      procedure(pepper_repu_fn), pointer :: fn
+      select type (ctx)
+      type is (capi_context)
+         if (c_associated(ctx%repu_fn)) then
+            call c_f_procpointer(ctx%repu_fn, fn)
+            call fn(ctx%self, ctx%hooks_user, ivbeg, ivend, time)
+            return
+         end if
+      end select
+      call ctx%gfrepu(ivbeg, ivend, time)
+   end subroutine capi_gf_repu
+
+   !> [[gf_rep_final]] of the C interface: the context's report end hook,
+   !> or GFREPF.
+   subroutine capi_gf_repf ( ctx )
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      procedure(pepper_repf_fn), pointer :: fn
+      select type (ctx)
+      type is (capi_context)
+         if (c_associated(ctx%repf_fn)) then
+            call c_f_procpointer(ctx%repf_fn, fn)
+            call fn(ctx%self, ctx%hooks_user)
+            return
+         end if
+      end select
+      call ctx%gfrepf()
+   end subroutine capi_gf_repf
+
+   !> [[gf_bail]] of the C interface: the context's interrupt hook, or
+   !> GFBAIL.
+   logical function capi_gf_bail ( ctx )
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      procedure(pepper_bail_fn), pointer :: fn
+      select type (ctx)
+      type is (capi_context)
+         if (c_associated(ctx%bail_fn)) then
+            call c_f_procpointer(ctx%bail_fn, fn)
+            capi_gf_bail = fn(ctx%self, ctx%hooks_user) /= 0
+            return
+         end if
+      end select
+      capi_gf_bail = ctx%gfbail()
+   end function capi_gf_bail
+
+   !> The rotation of a dynamic frame to its base frame at `et` (the private
+   !> ZZDYNROT, which SpiceyPy exports).
+   integer(c_int) function pepper_zzdynrot ( ctx, infram, center, et, rotate, basfrm ) &
+         bind(c, name='pepper_zzdynrot')
+      type(c_ptr), value :: ctx  !! the context
+      integer(c_int), value :: infram  !! the frame's ID code
+      integer(c_int), value :: center  !! its center
+      real(c_double), value :: et  !! the epoch
+      real(c_double), intent(out) :: rotate(3, 3)  !! the rotation (column-major) to BASFRM
+      integer(c_int), intent(out) :: basfrm  !! the base frame's ID code
+      type(capi_context), pointer :: c
+      real(wp) :: r(3, 3)
+      integer(ip) :: b
+      c => context_of(ctx)
+      r = 0.0_wp
+      b = 0
+      call zzdynrot(c, int(infram, ip), int(center, ip), et, r, b)
+      rotate = r
+      basfrm = int(b, c_int)
+      pepper_zzdynrot = status_of(c)
+   end function pepper_zzdynrot
+
+   !> Close a Fortran logical unit (CSPICE's FTNCLS): a file opened by
+   !> TXTOPN or TXTOPR.
+   subroutine pepper_ftncls ( unit ) bind(c, name='pepper_ftncls')
+      integer(c_int), value :: unit  !! the logical unit
+      integer :: ios
+      close (unit=unit, iostat=ios)
+   end subroutine pepper_ftncls
 
    ! ------------------------------------------------------------------
    ! Programmatic ephemerides and frames
