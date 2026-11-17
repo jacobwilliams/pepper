@@ -1,0 +1,115 @@
+name: Release WebAssembly package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package and plugin manifest version
+        required: true
+        type: string
+      dry_run:
+        description: Upload artifacts without creating a release
+        type: boolean
+        default: true
+  push:
+    tags: [wasm-v*]
+  # A pull request that changes the build or this workflow runs it as a dry
+  # run: everything except the release, with the assets kept as an artifact.
+  pull_request:
+    paths:
+      - .github/workflows/release-wasm.yml
+      - wasm/**
+      - package.json
+      - package-lock.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-wasm-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SDM_MODULE_UNSIGNED_BUILD: '1'
+      PEPPER_WASM_OPT: '1'
+      BINARYEN_CORES: '4'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24.11.1'
+          cache: npm
+
+      - name: Validate requested version
+        id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            version="${GITHUB_REF_NAME#wasm-v}"
+          elif [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            version="$(node -p "require('./package.json').version")"
+          else
+            version="$REQUESTED_VERSION"
+          fi
+          node wasm/release-package.mjs version "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Install locked packages
+        run: npm ci
+
+      - name: Cache compiler, runtime, and kernels
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            .cache/flang-wasm
+            .cache/wasi-sdk
+            .cache/binaryen
+            .cache/chromium
+            .cache/downloads
+            .cache/kernels
+          key: pepper-linux-x64-flang21.1.8-wasi29-binaryen125-${{ hashFiles('wasm/build.mjs', 'wasm/setup-linux.mjs', 'wasm/toolchain-downloads.mjs', 'package-lock.json') }}
+
+      - name: Prepare pinned Linux compilers and Chromium
+        run: node wasm/setup-linux.mjs
+
+      - name: Build module and guest libraries
+        run: npm run build:wasm
+      - name: Check module
+        run: npm run check:wasm
+      - name: Check propagator conformance
+        run: npm run conformance:wasm
+      - name: Run Node and headless Chromium end-to-end tests
+        run: |
+          test -x "$CHROME_BIN"
+          npm test
+
+      - name: Pack and checksum release assets
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: node wasm/release-package.mjs pack "$RELEASE_VERSION"
+
+      - name: Upload dry-run assets
+        if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pepper-wasm-${{ steps.version.outputs.version }}
+          path: dist/release/*
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.dry_run)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "wasm-v$RELEASE_VERSION" dist/release/* \
+            --target "$GITHUB_SHA" --title "PEPPER WebAssembly $RELEASE_VERSION" \
+            --notes "Unsigned WebAssembly module and guest-link package. SHA256SUMS covers the attached assets."

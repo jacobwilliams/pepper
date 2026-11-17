@@ -11894,7 +11894,11 @@ contains
             end if
 
             ! PEPPER: the source of the assignment (the buffer of LMPOOL, and its line)
-            call ps%note_source ( nameat, '(LMPOOL)', linnum - 1 )
+            if ( allocated ( ps%setter ) ) then
+               call ps%note_source ( nameat, ps%setter, linnum - 1 )
+            else
+               call ps%note_source ( nameat, '(LMPOOL)', linnum - 1 )
+            end if
 
 !
 !           If this is a vector, the next thing on the line will be a
@@ -12900,6 +12904,76 @@ contains
       end if
       end associate
       end subroutine ldpool
+
+      !> Load an in-memory text or JSON kernel string into the kernel pool
+      !> without touching the filesystem (PEPPER).
+      module subroutine ldpool_text ( ctx, fname, text )
+      use pepper_kinds, only: ip
+      use pepper_inc_zzctr
+      implicit none
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      character(*), intent(in) :: fname  !! Virtual name of the text or JSON kernel.
+      character(*), intent(in) :: text  !! Kernel contents.
+      integer(ip), parameter :: pool_linlen = 132
+      character(pool_linlen) :: line
+      character(pool_linlen), allocatable :: cvals(:)
+      integer :: ntext, pos_cur, pos_nl, pos_end, pass, idx
+      integer(ip) :: nlines
+      logical :: in_data
+      associate ( ps => ctx%spice%pool )
+      if ( ctx%failed() ) return
+      if ( ps%first ) call zzpini ( ctx, ps )
+      call zzctrinc ( ctx, ps%subctr )
+      if ( is_json_kernel ( fname ) ) then
+         call ldjson_text ( ctx, ps, fname, text )
+         return
+      end if
+      ntext = len ( text )
+      nlines = 0_ip
+      do pass = 1, 2
+         if ( pass == 2 ) then
+            if ( nlines == 0_ip ) return
+            allocate ( cvals(nlines) )
+            nlines = 0_ip
+         end if
+         in_data = .false.
+         pos_cur = 1
+         do while ( pos_cur <= ntext )
+            pos_nl = index ( text(pos_cur:ntext), achar(10) )
+            if ( pos_nl == 0 ) then
+               pos_end = ntext
+               pos_nl  = ntext + 1
+            else
+               pos_end = pos_cur + pos_nl - 2
+               pos_nl  = pos_cur + pos_nl
+            end if
+            if ( pos_end >= pos_cur ) then
+               if ( text(pos_end:pos_end) == achar(13) ) pos_end = pos_end - 1
+            end if
+            line = ' '
+            if ( pos_end >= pos_cur ) then
+               line = text(pos_cur : min(pos_end, pos_cur + pool_linlen - 1))
+            end if
+            do idx = 1, len_trim ( line )
+               if ( ichar(line(idx:idx)) == 9 ) line(idx:idx) = ' '
+            end do
+            line = adjustl ( line )
+            if ( line == '\begintext' ) then
+               in_data = .false.
+            else if ( line == '\begindata' ) then
+               in_data = .true.
+            else if ( in_data .and. line /= ' ' ) then
+               nlines = nlines + 1_ip
+               if ( pass == 2 ) cvals(nlines) = line
+            end if
+            pos_cur = pos_nl
+         end do
+      end do
+      end associate
+      ctx%spice%pool%setter = trim ( fname )
+      call lmpool ( ctx, cvals, nlines )
+      if ( allocated ( ctx%spice%pool%setter ) ) deallocate ( ctx%spice%pool%setter )
+      end subroutine ldpool_text
 
       !> Return the value of a kernel variable from the kernel pool.
       !>
@@ -17518,8 +17592,25 @@ contains
          return
       end if
 
-      call json_kernel_parse(text, items, nitems, ok, short, long, line)
+      call ldjson_text(ctx, ps, fname, text)
       deallocate (text)
+   end subroutine ldjson
+
+   !> Parse and load a JSON kernel string already in memory into `ps`.
+   subroutine ldjson_text(ctx, ps, fname, text)
+      use pepper_json, only: json_assignment, json_kernel_parse, json_numeric, json_character
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      type(pool_state), intent(inout) :: ps  !! the kernel pool
+      character(*), intent(in) :: fname  !! virtual or disk file name for error messages
+      character(*), intent(in) :: text  !! JSON kernel source text
+      character(:), allocatable :: short, long
+      type(json_assignment), allocatable :: items(:)
+      type(string_map) :: kinds
+      character(len=1024) :: errmsg
+      integer(ip) :: nitems, line, k, j, at, kind
+      logical :: ok, found
+
+      call json_kernel_parse(text, items, nitems, ok, short, long, line)
       if (.not. ok) then
          call ctx%setmsg('Line # of the JSON kernel ''#'': #.')
          call ctx%errint('#', line)
@@ -17604,6 +17695,6 @@ contains
             call pool_changed(ctx%spice, a%name)
          end associate
       end do
-   end subroutine ldjson
+   end subroutine ldjson_text
 
 end submodule pepper_pool

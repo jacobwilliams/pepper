@@ -1509,6 +1509,9 @@ module pepper_states
       !> PEPPER: the description of a kernel built in memory (the builder's
       !> [[kb_set_format]]); blank for SPICE's own kernels.
       character(:), allocatable :: format
+      !> Source text when loaded from memory ([[spice_furnsh_memory]]), so
+      !> [[unload]] can reload remaining in-memory text kernels without a file.
+      character(:), allocatable :: memory_text
    end type keeper_kernel
 
    !> The kernels loaded through FURNSH, in load order.
@@ -3416,6 +3419,9 @@ module pepper_states
       !> loader's): `image` is the whole file and there is no file behind
       !> it, so the file is never opened, inquired or read by its name.
       logical :: synthetic = .false.
+      !> Raw 1024-byte records when loaded directly from a byte buffer in
+      !> memory ([[spice_furnsh_memory]]), with no OS file.
+      character(len=1024), allocatable :: raw_records(:)
    end type ddh_file
 
    !> The file table: the files in increasing order of abs(handle) (the
@@ -5604,6 +5610,7 @@ contains
       call move_alloc(from%name, to%name)
       call move_alloc(from%loader, to%loader)
       call move_alloc(from%format, to%format)
+      call move_alloc(from%memory_text, to%memory_text)
    end subroutine move_kernel
 
    !> Set the initial values of a new [[limbpt_state]]: SPICELIB's DATA
@@ -6104,6 +6111,7 @@ contains
       call move_alloc(from%name, to%name)
       call move_alloc(from%image, to%image)
       to%synthetic = from%synthetic
+      call move_alloc(from%raw_records, to%raw_records)
    end subroutine move_file
 
    !> Set the initial values of a new [[zzdsksbf_state]]: SPICELIB's DATA

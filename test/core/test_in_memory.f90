@@ -6,7 +6,7 @@
 !> of the file is translated when it is read into memory.
 program test_in_memory
 
-   use, intrinsic :: iso_fortran_env, only: int64
+   use, intrinsic :: iso_fortran_env, only: int8, int64
    use pepper_kinds, only: ip, wp
    use pepper_instance_module, only: pepper_instance, pepper_context
    use pepper_test_kernels, only: write_spk, delete_file
@@ -26,6 +26,8 @@ program test_in_memory
    type(pepper_context) :: m2
    integer(int64) :: size_bytes
    integer :: failures = 0
+   integer :: memory_unit
+   integer(int8), allocatable :: legacy_bytes(:)
 
    f => from_file%context()
    m => in_memory%context()
@@ -84,6 +86,20 @@ program test_in_memory
    call check(in_memory%kernel_memory() == size_bytes, 'the big-endian SPK takes its size')
    call same_states(m2, 'big-endian, in memory: the same states as the native file')
    call in_memory%kclear()
+
+   ! Load a legacy identification word from bytes with no backing file.
+   allocate (legacy_bytes(size_bytes))
+   open (newunit=memory_unit, file=spk, access='stream', form='unformatted', status='old')
+   read (memory_unit) legacy_bytes
+   close (memory_unit)
+   legacy_bytes(1:8) = [78_int8, 65_int8, 73_int8, 70_int8, 47_int8, 68_int8, 65_int8, 70_int8]
+   call in_memory%furnsh_memory('legacy-memory.bsp', legacy_bytes)
+   call check(.not. in_memory%failed(), 'legacy bytes load without a backing file')
+   call same_states(m2, 'legacy bytes: the same states as the file')
+   call check(in_memory%kernel_memory() == size_bytes, 'legacy bytes remain resident')
+   call in_memory%unload('legacy-memory.bsp')
+   call check(in_memory%kernel_memory() == 0, 'legacy bytes are freed by UNLOAD')
+   call check(.not. found(m2), 'after legacy UNLOAD the segment is gone')
 
    call from_file%kclear()
    call in_memory%kclear()

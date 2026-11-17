@@ -6396,6 +6396,56 @@ contains
       end if
 
 !
+!     PEPPER: in-memory binary DAF (furnsh_memory): decode the file record
+!     directly from raw_records without opening a logical unit.
+!
+      i = daf_raw_slot ( ctx, handle )
+      if ( i > 0 ) then
+         if ( frlocr < 1 .or. frlocr > size(ctx%spice%zzddhman%files(i)%raw_records) ) return
+         chrbuf = ctx%spice%zzddhman%files(i)%raw_records(frlocr)
+         locidw = chrbuf( 1      : idwlen            )
+         locifn = chrbuf( ifnstr : (ifnstr+ifnlen-1) )
+         if ( ibff == natbff ) then
+            cindex = idwlen + 1
+            locnd  = transfer ( chrbuf(cindex:cindex+inlen-1), 0_ip )
+            cindex = cindex + inlen
+            locni  = transfer ( chrbuf(cindex:cindex+inlen-1), 0_ip )
+            cindex = ifnstr + ifnlen
+            locfwd = transfer ( chrbuf(cindex:cindex+inlen-1), 0_ip )
+            cindex = cindex + inlen
+            locbwd = transfer ( chrbuf(cindex:cindex+inlen-1), 0_ip )
+            cindex = cindex + inlen
+            locfre = transfer ( chrbuf(cindex:cindex+inlen-1), 0_ip )
+         else
+            cindex = idwlen + 1
+            call zzxlatei ( ctx, ibff, chrbuf(cindex:cindex+inlen-1), 1, ival )
+            locnd = ival(1)
+            cindex = cindex + inlen
+            call zzxlatei ( ctx, ibff, chrbuf(cindex:cindex+inlen-1), 1, ival )
+            locni = ival(1)
+            cindex = ifnstr + ifnlen
+            call zzxlatei ( ctx, ibff, chrbuf(cindex:cindex+inlen-1), 1, ival )
+            locfwd = ival(1)
+            cindex = cindex + inlen
+            call zzxlatei ( ctx, ibff, chrbuf(cindex:cindex+inlen-1), 1, ival )
+            locbwd = ival(1)
+            cindex = cindex + inlen
+            call zzxlatei ( ctx, ibff, chrbuf(cindex:cindex+inlen-1), 1, ival )
+            locfre = ival(1)
+            if ( ctx%failed() ) return
+         end if
+         found  = .true.
+         idword = locidw
+         nd     = locnd
+         ni     = locni
+         ifname = locifn
+         fward  = locfwd
+         bward  = locbwd
+         free   = locfre
+         return
+      end if
+
+!
 !     Now get a logical unit for the handle.  Check FAILED() in
 !     case an error occurs.
 !
@@ -7238,14 +7288,29 @@ contains
       end if
 
 !
+!     PEPPER: in-memory binary DAF (furnsh_memory): read summary records
+!     from image / raw_records without opening a logical unit.
+!
+      i = daf_raw_slot ( ctx, handle )
+      if ( i > 0 ) then
+         if ( recno < 1 .or. recno > size(ctx%spice%zzddhman%files(i)%raw_records) ) return
+         if ( ibff == natbff ) then
+            dprec(1:128) = ctx%spice%zzddhman%files(i)%image(128*(recno-1)+1 : 128*recno)
+            found = .true.
+            return
+         end if
+         chrbuf = ctx%spice%zzddhman%files(i)%raw_records(recno)
+      else
+!
 !     Now get a logical unit for the handle.  Check FAILED()
 !     in case an error occurs.
 !
-      call zzddhhlu ( ctx, handle, 'DAF', .false., lun )
+         call zzddhhlu ( ctx, handle, 'DAF', .false., lun )
 
-      if ( ctx%failed() ) then
-         found = .false.
-         return
+         if ( ctx%failed() ) then
+            found = .false.
+            return
+         end if
       end if
 
 !
@@ -7275,18 +7340,20 @@ contains
 !
       else
 
+         if ( daf_raw_slot ( ctx, handle ) == 0 ) then
 !
 !        Read the record as characters.
 !
-         read ( unit   = lun, &
-                rec    = recno, &
-                iostat = iostat ) chrbuf
+            read ( unit   = lun, &
+                   rec    = recno, &
+                   iostat = iostat ) chrbuf
 
 !
 !        Again, since this routine does not signal any IOSTAT
 !        based errors, return if one occurs.
 !
-         if ( iostat /= 0 ) return
+            if ( iostat /= 0 ) return
+         end if
 
 !
 !        Translate the summary record.  First extract the leading
@@ -16136,6 +16203,23 @@ contains
       else
 
 !
+!        PEPPER: in-memory binary DAF (furnsh_memory): copy character
+!        record directly from raw_records without opening a logical unit.
+!
+         unit = daf_raw_slot ( ctx, handle )
+         if ( unit > 0 ) then
+            if ( recno < 1 .or. recno > size(ctx%spice%zzddhman%files(unit)%raw_records) ) then
+               call ctx%setmsg ( 'Could not read record #. IOSTAT was #.' )
+               call ctx%errint ( '#', recno                               )
+               call ctx%errint ( '#', -1_ip                               )
+               call ctx%sigerr ( 'SPICE(DAFCRNOTFOUND)'                   )
+            else
+               crec = ctx%spice%zzddhman%files(unit)%raw_records(recno)(1:1000)
+            end if
+            return
+         end if
+
+!
 !        Retrieve a logical unit for this handle.  This has the
 !        side-effect of locking this UNIT to HANDLE.
 !
@@ -18564,6 +18648,7 @@ contains
       integer(ip) :: free
       integer(ip) :: nd
       integer(ip) :: ni
+      integer(ip) :: raw_slot
       logical :: empty
       logical :: eol
       logical :: found
@@ -18628,7 +18713,8 @@ contains
       end if
 !
 !     Convert the DAF handle to its corresponding Fortran logical
-!     unit number for reading the comment records.
+!     unit number for reading the comment records (unless in memory).
+!
 !
 !     PEPPER: a DAF built in memory has no comments.
 !
@@ -18637,9 +18723,12 @@ contains
          done = .true.
          return
       end if
-      call zzddhhlu ( ctx, handle, 'DAF', .false., daflun )
 
-      if ( ctx%failed() ) return
+      raw_slot = daf_raw_slot ( ctx, handle )
+      if ( raw_slot == 0 ) then
+         call zzddhhlu ( ctx, handle, 'DAF', .false., daflun )
+         if ( ctx%failed() ) return
+      end if
 !
 !     Get the length of a single character string in the buffer.
 !
@@ -18705,14 +18794,27 @@ contains
 
                recno = ncomr + 1
 
-               read ( daflun, rec=recno, iostat=iostat ) crecrd
+               if ( raw_slot > 0 ) then
+                  if ( recno >= 1 .and. recno <= size(ctx%spice%zzddhman%files(raw_slot)%raw_records) ) then
+                     crecrd = ctx%spice%zzddhman%files(raw_slot)%raw_records(recno)(1:len(crecrd))
+                     iostat = 0
+                  else
+                     iostat = -1
+                  end if
+               else
+                  read ( daflun, rec=recno, iostat=iostat ) crecrd
+               end if
 
                if ( iostat /= 0 ) then
 
                   call ctx%setmsg ( 'Error reading comment area of' // &
                                 ' binary file named ''#''.'     // &
                                 ' IOSTAT = #.'                   )
-                  call ctx%errfnm ( '#', daflun                      )
+                  if ( raw_slot > 0 ) then
+                     call ctx%errhan ( '#', handle                      )
+                  else
+                     call ctx%errfnm ( '#', daflun                      )
+                  end if
                   call ctx%errint ( '#', iostat                      )
                   call ctx%sigerr ( 'SPICE(FILEREADFAILED)'          )
                   return
@@ -18754,7 +18856,11 @@ contains
                call ctx%setmsg ( 'The comment area in the DAF file'   // &
                              ' ''#'' may be damaged. The end of'  // &
                              ' the comments could not be found.'   )
-               call ctx%errfnm ( '#', daflun                           )
+               if ( raw_slot > 0 ) then
+                  call ctx%errhan ( '#', handle                           )
+               else
+                  call ctx%errfnm ( '#', daflun                           )
+               end if
                call ctx%sigerr ( 'SPICE(BADCOMMENTAREA)'               )
                return
 
@@ -18803,14 +18909,27 @@ contains
 !        from the DAF comment area. Otherwise the record was saved and
 !        so we don't need to read it in.
 !
-         read ( daflun, rec=recno, iostat=iostat ) crecrd
+         if ( raw_slot > 0 ) then
+            if ( recno >= 1 .and. recno <= size(ctx%spice%zzddhman%files(raw_slot)%raw_records) ) then
+               crecrd = ctx%spice%zzddhman%files(raw_slot)%raw_records(recno)(1:len(crecrd))
+               iostat = 0
+            else
+               iostat = -1
+            end if
+         else
+            read ( daflun, rec=recno, iostat=iostat ) crecrd
+         end if
 
          if ( iostat /= 0 ) then
 
             call ctx%setmsg ( 'Error reading comment area of binary' // &
                           ' file named FILE.  IOSTAT = *.'        )
             call ctx%errint ( '*', iostat                             )
-            call ctx%errfnm ( 'FILE', daflun                          )
+            if ( raw_slot > 0 ) then
+               call ctx%errhan ( 'FILE', handle                          )
+            else
+               call ctx%errfnm ( 'FILE', daflun                          )
+            end if
             call ctx%sigerr ( 'SPICE(FILEREADFAILED)'                 )
             return
 
@@ -18874,14 +18993,27 @@ contains
             if ( curpos == mxcrec ) then
 
                recno = recno + 1
-               read ( daflun, rec=recno, iostat=iostat ) crecrd
+               if ( raw_slot > 0 ) then
+                  if ( recno >= 1 .and. recno <= size(ctx%spice%zzddhman%files(raw_slot)%raw_records) ) then
+                     crecrd = ctx%spice%zzddhman%files(raw_slot)%raw_records(recno)(1:len(crecrd))
+                     iostat = 0
+                  else
+                     iostat = -1
+                  end if
+               else
+                  read ( daflun, rec=recno, iostat=iostat ) crecrd
+               end if
 
                if ( iostat /= 0 ) then
 
                   call ctx%setmsg ( 'Error reading comment area of'  // &
                                 ' binary file named #.'          // &
                                 '  IOSTAT = #.'                   )
-                  call ctx%errfnm ( '#', daflun                       )
+                  if ( raw_slot > 0 ) then
+                     call ctx%errhan ( '#', handle                       )
+                  else
+                     call ctx%errfnm ( '#', daflun                       )
+                  end if
                   call ctx%errint ( '#', iostat                       )
                   call ctx%sigerr ( 'SPICE(FILEREADFAILED)'           )
                   return
@@ -19040,13 +19172,17 @@ contains
       integer(ip) :: ncomr
       integer(ip) :: nd
       integer(ip) :: ni
+      integer(ip) :: raw_slot
       allocate ( lines(0) )
       if ( ctx%failed() ) return
       call dafsih ( ctx, handle, 'READ' )
       if ( ctx%failed() ) return
       ! PEPPER: a DAF built in memory has no comments
       if ( daf_synthetic_slot ( ctx, handle ) > 0 ) return
-      call zzddhhlu ( ctx, handle, 'DAF', .false., daflun )
+      raw_slot = daf_raw_slot ( ctx, handle )
+      if ( raw_slot == 0 ) then
+         call zzddhhlu ( ctx, handle, 'DAF', .false., daflun )
+      end if
       call dafrfr ( ctx, handle, nd, ni, ifname, fward, bward, free )
       if ( ctx%failed() ) return
 !
@@ -19056,12 +19192,25 @@ contains
       if ( ncomr < 1 ) return
       allocate ( character(mxcrec*ncomr) :: text )
       do k = 1, ncomr
-         read ( daflun, rec=k+1, iostat=iostat ) crecrd
+         if ( raw_slot > 0 ) then
+            if ( k+1 <= size(ctx%spice%zzddhman%files(raw_slot)%raw_records) ) then
+               crecrd = ctx%spice%zzddhman%files(raw_slot)%raw_records(k+1)(1:mxcrec)
+               iostat = 0
+            else
+               iostat = -1
+            end if
+         else
+            read ( daflun, rec=k+1, iostat=iostat ) crecrd
+         end if
          if ( iostat /= 0 ) then
             call ctx%setmsg ( 'Error reading comment area of' // &
                           ' binary file named ''#''.'     // &
                           ' IOSTAT = #.'                   )
-            call ctx%errfnm ( '#', daflun                      )
+            if ( raw_slot > 0 ) then
+               call ctx%errhan ( '#', handle                      )
+            else
+               call ctx%errfnm ( '#', daflun                      )
+            end if
             call ctx%errint ( '#', iostat                      )
             call ctx%sigerr ( 'SPICE(FILEREADFAILED)'          )
             return
@@ -19074,7 +19223,11 @@ contains
             call ctx%setmsg ( 'The comment area in the DAF file'   // &
                           ' ''#'' may be damaged. The end of'  // &
                           ' the comments could not be found.'   )
-            call ctx%errfnm ( '#', daflun                           )
+            if ( raw_slot > 0 ) then
+               call ctx%errhan ( '#', handle                           )
+            else
+               call ctx%errfnm ( '#', daflun                           )
+            end if
             call ctx%sigerr ( 'SPICE(BADCOMMENTAREA)'               )
          end if
          return

@@ -543,6 +543,38 @@ contains
       pepper_spice_furnsh = spice_status(s)
    end function pepper_spice_furnsh
 
+   !> Load a binary DAF (SPK/CK/PCK), ASCII text kernel, or JSON kernel
+   !> directly from `nbytes` bytes in memory without touching the filesystem.
+   integer(c_int) function pepper_spice_furnsh_memory ( spice, name, bytes, nbytes ) &
+         bind(c, name='pepper_spice_furnsh_memory')
+      type(c_ptr), value :: spice  !! the instance
+      character(kind=c_char), intent(in) :: name(*)  !! virtual kernel name
+      type(c_ptr), value :: bytes  !! pointer to raw kernel bytes (may be NULL when nbytes == 0)
+      integer(c_int64_t), value :: nbytes  !! number of bytes
+      type(pepper_instance), pointer :: s
+      type(pepper_context), pointer :: own
+      character(:), allocatable :: f_name
+      integer(c_int8_t), pointer :: f_bytes(:)
+      integer(c_int8_t), target :: empty_bytes(0)
+      s => spice_of(spice)
+      call c_to_f(name, f_name)
+      if (nbytes < 0_c_int64_t) then
+         own => s%context()
+         call own%setmsg('pepper_spice_furnsh_memory: negative byte length.')
+         call own%sigerr('SPICE(INVALIDARGUMENT)')
+      else if (nbytes == 0_c_int64_t) then
+         call s%furnsh_memory(f_name, empty_bytes)
+      else if (.not. c_associated(bytes)) then
+         own => s%context()
+         call own%setmsg('pepper_spice_furnsh_memory: NULL bytes pointer with positive length.')
+         call own%sigerr('SPICE(NULLPOINTER)')
+      else
+         call c_f_pointer(bytes, f_bytes, [nbytes])
+         call s%furnsh_memory(f_name, f_bytes)
+      end if
+      pepper_spice_furnsh_memory = spice_status(s)
+   end function pepper_spice_furnsh_memory
+
    !> Set strings of the kernel pool (PCPOOL): `n` strings of `width`
    !> characters each in `cvals`.
    integer(c_int) function pepper_spice_pcpool ( spice, name, n, width, cvals ) bind(c, name='pepper_spice_pcpool')

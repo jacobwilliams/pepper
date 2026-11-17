@@ -30,6 +30,9 @@ tspice = { cmd = "fpm run --profile debug --runner 'python ../tools/run_tspice.p
 tspice-release = { cmd = "fpm run --profile release --runner 'python ../tools/run_tspice.py' --", cwd = "tspice", depends-on = ["clean-stale"], description = "Run the tspice test families against the optimized library (-O3, as PepperyPy ships it)" }
 tspice-list = { cmd = "fpm run --profile debug --runner 'python ../tools/run_tspice.py' -- --list", cwd = "tspice", description = "List the tspice test families" }
 inventory = { cmd = "python tools/state_inventory.py", description = "Summarize the saved state in SPICELIB sources (see tools/state_inventory.py; --list, --json PATH)" }
+wasm-build = { cmd = "npm run build:wasm", description = "Compile PEPPER + SpaceDataStandards.org / space-data-module-sdk bridge to WebAssembly (dist/isomorphic/module.wasm)" }
+wasm-serve = { cmd = "npm run serve:wasm", description = "Serve the interactive PEPPER WASM browser workbench (web/wasm.html) with COOP/COEP headers" }
+wasm-test = { cmd = "npm run test:wasm", depends-on = ["wasm-build"], description = "Run SDK compliance, propagator conformance, SDS physics verification, and headless browser e2e tests" }
 
 # Rust, only for the ANISE comparison (bench/anise; pixi run -e anise compare-anise)
 [feature.anise.dependencies]

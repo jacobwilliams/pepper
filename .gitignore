@@ -12,3 +12,11 @@ pass[0-9][0-9][0-9][0-9].log
 /fdoc
 /doc
 
+# WebAssembly / Node build outputs and tool caches
+node_modules/
+dist/
+.cache/
+web/wasm/
+vectors/
+
+
