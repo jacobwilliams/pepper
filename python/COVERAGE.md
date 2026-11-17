@@ -273,7 +273,7 @@ Of SpiceyPy's 651 functions, PepperyPy has **650** (99%); it also has 403 functi
 | `gcpool` | written for SpiceyPy's signature |
 | `gdpool` | written for SpiceyPy's signature |
 | `georec` | generated |
-| `getelm` | generated |
+| `getelm` | written for SpiceyPy's signature |
 | `getfat` | generated |
 | `getfov` | written for SpiceyPy's signature |
 | `getfvn` | written for SpiceyPy's signature |

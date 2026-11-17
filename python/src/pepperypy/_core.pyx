@@ -124,11 +124,20 @@ cdef inline bint _isvec(object x, int d):
     cdef type t = type(x)
     if t is float or t is int or t is str or t is bytes:
         return False
+    cdef int k
+    cdef object y = x
     if t is list or t is tuple:
-        if d == 0:
+        # nested lists: a number within d levels is one element; d + 1
+        # levels of lists are several
+        for k in range(d + 1):
+            t = type(y)
+            if t is float or t is int:
+                return False
+            if not (t is list or t is tuple) or not len(y):
+                break
+            y = y[0]
+        else:
             return True
-        if len(x) and (type(x[0]) is float or type(x[0]) is int):
-            return False
     elif isinstance(x, (str, bytes)):
         return False
     return np.ndim(x) > d

@@ -192,7 +192,8 @@ SpiceyPy's own tests and benchmarks of cyice pass this way.
   `bytes`) calls the scalar function. SpiceyPy's own `spkezr` and the
   others that accept lists of epochs return the same arrays as before.
 - **The `_v` functions** are C loops over PEPPER's C interface with the GIL
-  released, generated like the rest (`tools/gen_capi.py`), 71 of them;
+  released, generated like the rest (`tools/gen_capi.py`): cyice's 71, and
+  [46 more](#vectorized-functions-beyond-cyice);
   `spkezr_v`, `pxform_v` and `sxform_v` use prepared queries, which give
   the same results. They are also methods of a `Context`
   (`ctx.subpnt_v(...)`). They are as fast as cyice's or faster, but for
@@ -215,8 +216,34 @@ SpiceyPy's own tests and benchmarks of cyice pass this way.
   (cyice: to `maxn`); zeros past an epoch's points. `getelm_v` takes pairs
   of lines ((n, 2)).
 - String results are NumPy string arrays (of up to 255 characters).
+- Each element of a `_v` function's results is the scalar function's
+  result, to the last bit.
 - cyice's `cyice_found_exception_thrower` decorator does not exist (the
   functions handle found flags themselves).
+
+### Vectorized functions beyond cyice
+
+PepperyPy has `_v` functions (and `_s` and dispatching `<name>`, as for
+cyice's) for 46 routines that cyice does not vectorize:
+
+| Group | Routines | Arrays of |
+|---|---|---|
+| Propagation | `prop2b`, `eqncpv`, `dpspce` | states and times (`prop2b`), epochs |
+| Frames | `tipbod`, `tisbod`, `bodeul`, `pxfrm2`, `ckfrot`, `ckfxfm` | epochs (`pxfrm2`: both) |
+| States with aberration corrections | `spkltc`, `spkacs`, `spkaps`, `spkapp`, `stelab`, `stlabx` | epochs, observer states and accelerations; vectors |
+| SCLK | `sce2t` | epochs |
+| Ellipsoids | `nearpt`, `surfpt`, `surfnm`, `npedln`, `edpnt` | points, rays, lines |
+| Jacobians | `drdlat`, `drdcyl`, `drdsph`, `drdgeo`, `drdpgr`, `drdazl`, `dlatdr`, `dcyldr`, `dsphdr`, `dgeodr`, `dpgrdr`, `dazldr` | coordinates |
+| Rotations | `axisar`, `rotate`, `rotvec`, `eul2m`, `eul2xf` | axes, angles, vectors, Euler angles |
+| Matrices | `m2eul`, `xf2eul`, `m2q`, `q2m`, `xf2rav`, `rav2xf`, `raxisa`, `invstm` | matrices (n, 3, 3) or (n, 6, 6); quaternions |
+
+The looped arguments broadcast together (`prop2b_v(gm, state, dts)`
+propagates one state to many times, `prop2b_v(gm, states, dt)` many states
+by one time). Matrices are NumPy's (n, rows, columns), as the scalar
+functions return them. `ckfrot_v`, `ckfxfm_v` and `surfpt_v` handle found
+flags as `sincpt_v` does. One matrix (a 3x3 array or nested lists) is a
+scalar call: `m2q(r)` is `m2q_s(r)`, `m2q(rs)` with `rs` (n, 3, 3) is
+`m2q_v(rs)`.
 
 ### No ctypes access to CSPICE
 
@@ -363,3 +390,7 @@ described above.
     its arguments; the `_v` functions (71 of them) are C loops over PEPPER
     with the GIL released, also `Context` methods; `ckgp_v`, `ckgpav_v`
     and `sincpt_v` handle found flags as cyice does.
+  - `_v` functions for 46 more routines (propagation, frames, aberration
+    corrections, ellipsoids, Jacobians, rotations, matrices; see
+    [Vectorized functions beyond cyice](#vectorized-functions-beyond-cyice)).
+    `<name>` of these routines dispatches to `<name>_v` when given arrays.

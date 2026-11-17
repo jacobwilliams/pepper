@@ -271,6 +271,39 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _c_ra, _c_dec, _c_w, _c_lambda
 
+    def bodeul_v(self, body, et):
+        """`bodeul` at each element of `et` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `bodeul`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is bodeul's)")
+        cdef int _c_body = body
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0]])
+        cdef cnp.ndarray _o_ra = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_ra = <double*>cnp.PyArray_DATA(_o_ra)
+        cdef cnp.ndarray _o_dec = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_dec = <double*>cnp.PyArray_DATA(_o_dec)
+        cdef cnp.ndarray _o_w = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_w = <double*>cnp.PyArray_DATA(_o_w)
+        cdef cnp.ndarray _o_lambda = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_lambda = <double*>cnp.PyArray_DATA(_o_lambda)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_bodeul(self._ptr, _c_body, _pv_et[_i * _s_et], _q_ra + _i, _q_dec + _i, _q_w + _i, _q_lambda + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_ra[:_n], _o_dec[:_n], _o_w[:_n], _o_lambda[:_n]
+
     def bodfnd(self, body, item):
         """Determine whether values exist for some item for any body in the kernel pool.
         
@@ -897,6 +930,37 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _found('ckfrot', (_a_rotate, _c_ref), _c_found != 0)
 
+    def ckfrot_v(self, inst, et):
+        """`ckfrot` at each element of `et` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `ckfrot`. The results are arrays whose first dimension is the number of elements. A found flag false at any element raises NotFoundError (the flags are returned last under `no_found_check`)."""
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is ckfrot's)")
+        cdef int _c_inst = inst
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0]])
+        cdef cnp.ndarray _o_rotate = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_rotate = <double*>cnp.PyArray_DATA(_o_rotate)
+        cdef cnp.ndarray _o_ref = np.empty(max(_n, 1), dtype=np.int32)
+        cdef int *_q_ref = <int*>cnp.PyArray_DATA(_o_ref)
+        cdef cnp.ndarray _o_found = np.empty(max(_n, 1), dtype=np.int32)
+        cdef int *_q_found = <int*>cnp.PyArray_DATA(_o_found)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_ckfrot(self._ptr, _c_inst, _pv_et[_i * _s_et], _q_rotate + _i * 9, _q_ref + _i, _q_found + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found_v('ckfrot', (np.ascontiguousarray(_o_rotate[:_n].reshape(_n, 3, 3).transpose(0, 2, 1)), _o_ref[:_n],), (_o_found[:_n] != 0))
+
     def ckfxfm(self, inst, et):
         """Find the state transformation matrix from a C-kernel (CK) frame with the specified frame class ID (CK ID) to the base frame of the highest priority CK segment containing orientation and angular velocity data for this CK frame at the time requested.
         
@@ -920,6 +984,37 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _found('ckfxfm', (_a_xform, _c_ref), _c_found != 0)
+
+    def ckfxfm_v(self, inst, et):
+        """`ckfxfm` at each element of `et` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `ckfxfm`. The results are arrays whose first dimension is the number of elements. A found flag false at any element raises NotFoundError (the flags are returned last under `no_found_check`)."""
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is ckfxfm's)")
+        cdef int _c_inst = inst
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0]])
+        cdef cnp.ndarray _o_xform = np.empty((max(_n, 1), 36), dtype=np.float64)
+        cdef double *_q_xform = <double*>cnp.PyArray_DATA(_o_xform)
+        cdef cnp.ndarray _o_ref = np.empty(max(_n, 1), dtype=np.int32)
+        cdef int *_q_ref = <int*>cnp.PyArray_DATA(_o_ref)
+        cdef cnp.ndarray _o_found = np.empty(max(_n, 1), dtype=np.int32)
+        cdef int *_q_found = <int*>cnp.PyArray_DATA(_o_found)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_ckfxfm(self._ptr, _c_inst, _pv_et[_i * _s_et], _q_xform + _i * 36, _q_ref + _i, _q_found + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found_v('ckfxfm', (np.ascontiguousarray(_o_xform[:_n].reshape(_n, 6, 6).transpose(0, 2, 1)), _o_ref[:_n],), (_o_found[:_n] != 0))
 
     def ckgp(self, inst, sclkdp, tol, ref):
         """Get pointing (attitude) for a specified spacecraft clock time.
@@ -4290,6 +4385,40 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_jacobi
 
+    def dazldr_v(self, x, y, z, azccw, elplsz):
+        """`dazldr` at each element of `x`, `y`, `z` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `dazldr`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(x) == 0 and np.ndim(y) == 0 and np.ndim(z) == 0: raise ValueError("expected an array (a scalar is dazldr's)")
+        cdef int _c_azccw = 1 if azccw else 0
+        cdef int _c_elplsz = 1 if elplsz else 0
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_x = np.ascontiguousarray(x, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_x = <const double*>cnp.PyArray_DATA(_v_x)
+        cdef Py_ssize_t _s_x = 0 if _v_x.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_y = np.ascontiguousarray(y, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_y = <const double*>cnp.PyArray_DATA(_v_y)
+        cdef Py_ssize_t _s_y = 0 if _v_y.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_z = np.ascontiguousarray(z, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_z = <const double*>cnp.PyArray_DATA(_v_z)
+        cdef Py_ssize_t _s_z = 0 if _v_z.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_x.shape[0], _v_y.shape[0], _v_z.shape[0]])
+        cdef cnp.ndarray _o_jacobi = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_jacobi = <double*>cnp.PyArray_DATA(_o_jacobi)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_dazldr(self._ptr, _pv_x[_i * _s_x], _pv_y[_i * _s_y], _pv_z[_i * _s_z], _c_azccw, _c_elplsz, _q_jacobi + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_jacobi[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
+
     def dcyldr(self, x, y, z):
         """Compute the Jacobian matrix of the transformation from rectangular to cylindrical coordinates.
         
@@ -4312,6 +4441,38 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_jacobi
+
+    def dcyldr_v(self, x, y, z):
+        """`dcyldr` at each element of `x`, `y`, `z` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `dcyldr`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(x) == 0 and np.ndim(y) == 0 and np.ndim(z) == 0: raise ValueError("expected an array (a scalar is dcyldr's)")
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_x = np.ascontiguousarray(x, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_x = <const double*>cnp.PyArray_DATA(_v_x)
+        cdef Py_ssize_t _s_x = 0 if _v_x.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_y = np.ascontiguousarray(y, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_y = <const double*>cnp.PyArray_DATA(_v_y)
+        cdef Py_ssize_t _s_y = 0 if _v_y.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_z = np.ascontiguousarray(z, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_z = <const double*>cnp.PyArray_DATA(_v_z)
+        cdef Py_ssize_t _s_z = 0 if _v_z.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_x.shape[0], _v_y.shape[0], _v_z.shape[0]])
+        cdef cnp.ndarray _o_jacobi = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_jacobi = <double*>cnp.PyArray_DATA(_o_jacobi)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_dcyldr(self._ptr, _pv_x[_i * _s_x], _pv_y[_i * _s_y], _pv_z[_i * _s_z], _q_jacobi + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_jacobi[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
 
     def dechar(self, string):
         """Decode a character string encoded by `enchar`.
@@ -4429,6 +4590,40 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_jacobi
+
+    def dgeodr_v(self, x, y, z, re, f):
+        """`dgeodr` at each element of `x`, `y`, `z` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `dgeodr`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(x) == 0 and np.ndim(y) == 0 and np.ndim(z) == 0: raise ValueError("expected an array (a scalar is dgeodr's)")
+        cdef double _c_re = re
+        cdef double _c_f = f
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_x = np.ascontiguousarray(x, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_x = <const double*>cnp.PyArray_DATA(_v_x)
+        cdef Py_ssize_t _s_x = 0 if _v_x.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_y = np.ascontiguousarray(y, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_y = <const double*>cnp.PyArray_DATA(_v_y)
+        cdef Py_ssize_t _s_y = 0 if _v_y.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_z = np.ascontiguousarray(z, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_z = <const double*>cnp.PyArray_DATA(_v_z)
+        cdef Py_ssize_t _s_z = 0 if _v_z.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_x.shape[0], _v_y.shape[0], _v_z.shape[0]])
+        cdef cnp.ndarray _o_jacobi = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_jacobi = <double*>cnp.PyArray_DATA(_o_jacobi)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_dgeodr(self._ptr, _pv_x[_i * _s_x], _pv_y[_i * _s_y], _pv_z[_i * _s_z], _c_re, _c_f, _q_jacobi + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_jacobi[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
 
     def dhfa(self, state, bodyr):
         """Calculate the value of the time derivative of the half angle of a spherical body given a state vector STATE and body radius BODYR.
@@ -4701,6 +4896,38 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_jacobi
 
+    def dlatdr_v(self, x, y, z):
+        """`dlatdr` at each element of `x`, `y`, `z` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `dlatdr`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(x) == 0 and np.ndim(y) == 0 and np.ndim(z) == 0: raise ValueError("expected an array (a scalar is dlatdr's)")
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_x = np.ascontiguousarray(x, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_x = <const double*>cnp.PyArray_DATA(_v_x)
+        cdef Py_ssize_t _s_x = 0 if _v_x.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_y = np.ascontiguousarray(y, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_y = <const double*>cnp.PyArray_DATA(_v_y)
+        cdef Py_ssize_t _s_y = 0 if _v_y.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_z = np.ascontiguousarray(z, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_z = <const double*>cnp.PyArray_DATA(_v_z)
+        cdef Py_ssize_t _s_z = 0 if _v_z.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_x.shape[0], _v_y.shape[0], _v_z.shape[0]])
+        cdef cnp.ndarray _o_jacobi = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_jacobi = <double*>cnp.PyArray_DATA(_o_jacobi)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_dlatdr(self._ptr, _pv_x[_i * _s_x], _pv_y[_i * _s_y], _pv_z[_i * _s_z], _q_jacobi + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_jacobi[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
+
     def dnearp(self, state, a, b, c):
         """Compute the state (position and velocity) of an ellipsoid surface point nearest to the position component of a specified state.
         
@@ -4805,6 +5032,43 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_jacobi
 
+    def dpgrdr_v(self, body, x, y, z, re, f):
+        """`dpgrdr` at each element of `x`, `y`, `z` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `dpgrdr`. The results are arrays whose first dimension is the number of elements."""
+        if not body: _empty_string('dpgrdr', 'body')
+        if np.ndim(x) == 0 and np.ndim(y) == 0 and np.ndim(z) == 0: raise ValueError("expected an array (a scalar is dpgrdr's)")
+        cdef double _c_re = re
+        cdef double _c_f = f
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef bytes _b_body = _b(body)
+        cdef const char *_c_body = _b_body
+        cdef cnp.ndarray _v_x = np.ascontiguousarray(x, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_x = <const double*>cnp.PyArray_DATA(_v_x)
+        cdef Py_ssize_t _s_x = 0 if _v_x.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_y = np.ascontiguousarray(y, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_y = <const double*>cnp.PyArray_DATA(_v_y)
+        cdef Py_ssize_t _s_y = 0 if _v_y.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_z = np.ascontiguousarray(z, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_z = <const double*>cnp.PyArray_DATA(_v_z)
+        cdef Py_ssize_t _s_z = 0 if _v_z.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_x.shape[0], _v_y.shape[0], _v_z.shape[0]])
+        cdef cnp.ndarray _o_jacobi = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_jacobi = <double*>cnp.PyArray_DATA(_o_jacobi)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_dpgrdr(self._ptr, _c_body, _pv_x[_i * _s_x], _pv_y[_i * _s_y], _pv_z[_i * _s_z], _c_re, _c_f, _q_jacobi + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_jacobi[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
+
     def dpspce(self, et, geophs, elems):
         """**Deprecated:** This routine has been superseded by the SPICELIB routine `evsgp4`. *ALL* TLE evaluations should use that routine. NAIF supports `dpspce` only for backward compatibility.
         
@@ -4827,6 +5091,36 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_state
+
+    def dpspce_v(self, et, geophs, elems):
+        """`dpspce` at each element of `et` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `dpspce`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is dpspce's)")
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef cnp.ndarray _a_geophs = _input(geophs, NPY_DOUBLE, 8, -1, False)
+        cdef const double *_p_geophs = <const double*>cnp.PyArray_DATA(_a_geophs)
+        cdef cnp.ndarray _a_elems = _input(elems, NPY_DOUBLE, 10, -1, False)
+        cdef const double *_p_elems = <const double*>cnp.PyArray_DATA(_a_elems)
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0]])
+        cdef cnp.ndarray _o_state = np.empty((max(_n, 1), 6), dtype=np.float64)
+        cdef double *_q_state = <double*>cnp.PyArray_DATA(_o_state)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_dpspce(self._ptr, _pv_et[_i * _s_et], _p_geophs, _p_elems, _q_state + _i * 6)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_state[:_n]
 
     def dpstrf(self, x, sigdig, format):
         """Take a double precision number and convert it to an equivalent formatted character string representation (base 10).
@@ -4880,6 +5174,40 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_jacobi
 
+    def drdazl_v(self, inrange, az, el, azccw, elplsz):
+        """`drdazl` at each element of `inrange`, `az`, `el` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `drdazl`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(inrange) == 0 and np.ndim(az) == 0 and np.ndim(el) == 0: raise ValueError("expected an array (a scalar is drdazl's)")
+        cdef int _c_azccw = 1 if azccw else 0
+        cdef int _c_elplsz = 1 if elplsz else 0
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_range = np.ascontiguousarray(inrange, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_range = <const double*>cnp.PyArray_DATA(_v_range)
+        cdef Py_ssize_t _s_range = 0 if _v_range.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_az = np.ascontiguousarray(az, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_az = <const double*>cnp.PyArray_DATA(_v_az)
+        cdef Py_ssize_t _s_az = 0 if _v_az.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_el = np.ascontiguousarray(el, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_el = <const double*>cnp.PyArray_DATA(_v_el)
+        cdef Py_ssize_t _s_el = 0 if _v_el.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_range.shape[0], _v_az.shape[0], _v_el.shape[0]])
+        cdef cnp.ndarray _o_jacobi = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_jacobi = <double*>cnp.PyArray_DATA(_o_jacobi)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_drdazl(self._ptr, _pv_range[_i * _s_range], _pv_az[_i * _s_az], _pv_el[_i * _s_el], _c_azccw, _c_elplsz, _q_jacobi + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_jacobi[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
+
     def drdgeo(self, lon, lat, alt, re, f):
         """Compute the Jacobian matrix of the transformation from geodetic to rectangular coordinates.
         
@@ -4906,6 +5234,40 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_jacobi
+
+    def drdgeo_v(self, lon, lat, alt, re, f):
+        """`drdgeo` at each element of `lon`, `lat`, `alt` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `drdgeo`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(lon) == 0 and np.ndim(lat) == 0 and np.ndim(alt) == 0: raise ValueError("expected an array (a scalar is drdgeo's)")
+        cdef double _c_re = re
+        cdef double _c_f = f
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_lon = np.ascontiguousarray(lon, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_lon = <const double*>cnp.PyArray_DATA(_v_lon)
+        cdef Py_ssize_t _s_lon = 0 if _v_lon.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_lat = np.ascontiguousarray(lat, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_lat = <const double*>cnp.PyArray_DATA(_v_lat)
+        cdef Py_ssize_t _s_lat = 0 if _v_lat.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_alt = np.ascontiguousarray(alt, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_alt = <const double*>cnp.PyArray_DATA(_v_alt)
+        cdef Py_ssize_t _s_alt = 0 if _v_alt.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_lon.shape[0], _v_lat.shape[0], _v_alt.shape[0]])
+        cdef cnp.ndarray _o_jacobi = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_jacobi = <double*>cnp.PyArray_DATA(_o_jacobi)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_drdgeo(self._ptr, _pv_lon[_i * _s_lon], _pv_lat[_i * _s_lat], _pv_alt[_i * _s_alt], _c_re, _c_f, _q_jacobi + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_jacobi[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
 
     def drdpgr(self, body, lon, lat, alt, re, f):
         """Compute the Jacobian matrix of the transformation from planetographic to rectangular coordinates.
@@ -4937,6 +5299,43 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_jacobi
+
+    def drdpgr_v(self, body, lon, lat, alt, re, f):
+        """`drdpgr` at each element of `lon`, `lat`, `alt` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `drdpgr`. The results are arrays whose first dimension is the number of elements."""
+        if not body: _empty_string('drdpgr', 'body')
+        if np.ndim(lon) == 0 and np.ndim(lat) == 0 and np.ndim(alt) == 0: raise ValueError("expected an array (a scalar is drdpgr's)")
+        cdef double _c_re = re
+        cdef double _c_f = f
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef bytes _b_body = _b(body)
+        cdef const char *_c_body = _b_body
+        cdef cnp.ndarray _v_lon = np.ascontiguousarray(lon, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_lon = <const double*>cnp.PyArray_DATA(_v_lon)
+        cdef Py_ssize_t _s_lon = 0 if _v_lon.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_lat = np.ascontiguousarray(lat, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_lat = <const double*>cnp.PyArray_DATA(_v_lat)
+        cdef Py_ssize_t _s_lat = 0 if _v_lat.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_alt = np.ascontiguousarray(alt, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_alt = <const double*>cnp.PyArray_DATA(_v_alt)
+        cdef Py_ssize_t _s_alt = 0 if _v_alt.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_lon.shape[0], _v_lat.shape[0], _v_alt.shape[0]])
+        cdef cnp.ndarray _o_jacobi = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_jacobi = <double*>cnp.PyArray_DATA(_o_jacobi)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_drdpgr(self._ptr, _c_body, _pv_lon[_i * _s_lon], _pv_lat[_i * _s_lat], _pv_alt[_i * _s_alt], _c_re, _c_f, _q_jacobi + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_jacobi[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
 
     def drotat(self, angle, iaxis):
         """Calculate the derivative with respect to the angle of rotation of a 3x3 coordinate system rotation matrix generated by a rotation of a specified angle about a specified axis.
@@ -5663,6 +6062,38 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_jacobi
 
+    def dsphdr_v(self, x, y, z):
+        """`dsphdr` at each element of `x`, `y`, `z` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `dsphdr`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(x) == 0 and np.ndim(y) == 0 and np.ndim(z) == 0: raise ValueError("expected an array (a scalar is dsphdr's)")
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_x = np.ascontiguousarray(x, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_x = <const double*>cnp.PyArray_DATA(_v_x)
+        cdef Py_ssize_t _s_x = 0 if _v_x.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_y = np.ascontiguousarray(y, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_y = <const double*>cnp.PyArray_DATA(_v_y)
+        cdef Py_ssize_t _s_y = 0 if _v_y.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_z = np.ascontiguousarray(z, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_z = <const double*>cnp.PyArray_DATA(_v_z)
+        cdef Py_ssize_t _s_z = 0 if _v_z.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_x.shape[0], _v_y.shape[0], _v_z.shape[0]])
+        cdef cnp.ndarray _o_jacobi = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_jacobi = <double*>cnp.PyArray_DATA(_o_jacobi)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_dsphdr(self._ptr, _pv_x[_i * _s_x], _pv_y[_i * _s_y], _pv_z[_i * _s_z], _q_jacobi + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_jacobi[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
+
     def dtpool(self, name):
         """Return the data about a kernel pool variable.
         
@@ -5801,6 +6232,36 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_ep
+
+    def edpnt_v(self, p, a, b, c):
+        """`edpnt` at each element of `p` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `edpnt`. The results are arrays whose first dimension is the number of elements."""
+        cdef double _c_a = a
+        cdef double _c_b = b
+        cdef double _c_c = c
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_p = np.ascontiguousarray(p, dtype=np.float64)
+        if _v_p.ndim == 1: _v_p = _v_p.reshape(1, -1)
+        if _v_p.ndim != 2 or _v_p.shape[1] != 3: raise ValueError("p: expected vectors of 3 values")
+        cdef const double *_pv_p = <const double*>cnp.PyArray_DATA(_v_p)
+        cdef Py_ssize_t _s_p = 0 if _v_p.shape[0] == 1 else 3
+        cdef Py_ssize_t _n = _vlen([_v_p.shape[0]])
+        cdef cnp.ndarray _o_ep = np.empty((max(_n, 1), 3), dtype=np.float64)
+        cdef double *_q_ep = <double*>cnp.PyArray_DATA(_o_ep)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_edpnt(self._ptr, _pv_p + _i * _s_p, _c_a, _c_b, _c_c, _q_ep + _i * 3)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_ep[:_n]
 
     def edterm(self, trmtyp, source, target, et, fixref, abcorr, obsrvr, npts):
         """Compute a set of points on the umbral or penumbral terminator of a specified target body, where the target shape is modeled as an ellipsoid.
@@ -6999,6 +7460,37 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_state
 
+    def eqncpv_v(self, et, epoch, eqel, rapol, decpol):
+        """`eqncpv` at each element of `et` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `eqncpv`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is eqncpv's)")
+        cdef double _c_epoch = epoch
+        cdef double _c_rapol = rapol
+        cdef double _c_decpol = decpol
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef cnp.ndarray _a_eqel = _input(eqel, NPY_DOUBLE, 9, -1, False)
+        cdef const double *_p_eqel = <const double*>cnp.PyArray_DATA(_a_eqel)
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0]])
+        cdef cnp.ndarray _o_state = np.empty((max(_n, 1), 6), dtype=np.float64)
+        cdef double *_q_state = <double*>cnp.PyArray_DATA(_o_state)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_eqncpv(self._ptr, _pv_et[_i * _s_et], _c_epoch, _p_eqel, _c_rapol, _c_decpol, _q_state + _i * 6)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_state[:_n]
+
     def et2lst(self, et, body, lon, typein, timlen=None, ampmlen=None):
         """Compute the local solar time for a given ephemeris epoch ET for an object on the surface of a body at a specified longitude.
         
@@ -7210,6 +7702,41 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_r
 
+    def eul2m_v(self, angle3, angle2, angle1, axis3, axis2, axis1):
+        """`eul2m` at each element of `angle3`, `angle2`, `angle1` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `eul2m`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(angle3) == 0 and np.ndim(angle2) == 0 and np.ndim(angle1) == 0: raise ValueError("expected an array (a scalar is eul2m's)")
+        cdef int _c_axis3 = axis3
+        cdef int _c_axis2 = axis2
+        cdef int _c_axis1 = axis1
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_angle3 = np.ascontiguousarray(angle3, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_angle3 = <const double*>cnp.PyArray_DATA(_v_angle3)
+        cdef Py_ssize_t _s_angle3 = 0 if _v_angle3.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_angle2 = np.ascontiguousarray(angle2, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_angle2 = <const double*>cnp.PyArray_DATA(_v_angle2)
+        cdef Py_ssize_t _s_angle2 = 0 if _v_angle2.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_angle1 = np.ascontiguousarray(angle1, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_angle1 = <const double*>cnp.PyArray_DATA(_v_angle1)
+        cdef Py_ssize_t _s_angle1 = 0 if _v_angle1.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_angle3.shape[0], _v_angle2.shape[0], _v_angle1.shape[0]])
+        cdef cnp.ndarray _o_r = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_r = <double*>cnp.PyArray_DATA(_o_r)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_eul2m(self._ptr, _pv_angle3[_i * _s_angle3], _pv_angle2[_i * _s_angle2], _pv_angle1[_i * _s_angle1], _c_axis3, _c_axis2, _c_axis1, _q_r + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_r[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
+
     def eul2xf(self, eulang, axisa, axisb, axisc):
         """Compute a state transformation from an Euler angle factorization of a rotation and the derivatives of those Euler angles.
         
@@ -7234,6 +7761,36 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_xform
+
+    def eul2xf_v(self, eulang, axisa, axisb, axisc):
+        """`eul2xf` at each element of `eulang` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `eul2xf`. The results are arrays whose first dimension is the number of elements."""
+        cdef int _c_axisa = axisa
+        cdef int _c_axisb = axisb
+        cdef int _c_axisc = axisc
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_eulang = np.ascontiguousarray(eulang, dtype=np.float64)
+        if _v_eulang.ndim == 1: _v_eulang = _v_eulang.reshape(1, -1)
+        if _v_eulang.ndim != 2 or _v_eulang.shape[1] != 6: raise ValueError("eulang: expected vectors of 6 values")
+        cdef const double *_pv_eulang = <const double*>cnp.PyArray_DATA(_v_eulang)
+        cdef Py_ssize_t _s_eulang = 0 if _v_eulang.shape[0] == 1 else 6
+        cdef Py_ssize_t _n = _vlen([_v_eulang.shape[0]])
+        cdef cnp.ndarray _o_xform = np.empty((max(_n, 1), 36), dtype=np.float64)
+        cdef double *_q_xform = <double*>cnp.PyArray_DATA(_o_xform)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_eul2xf(self._ptr, _pv_eulang + _i * _s_eulang, _c_axisa, _c_axisb, _c_axisc, _q_xform + _i * 36)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_xform[:_n].reshape(_n, 6, 6).transpose(0, 2, 1))
 
     def ev2lin(self, et, geophs, elems):
         """**Deprecated:** This routine has been superseded by the SPICELIB routine `evsgp4`. *ALL* TLE evaluations should use that routine. NAIF supports `ev2lin` only for backward compatibility.
@@ -9805,6 +10362,34 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_invmat
 
+    def invstm_v(self, mat):
+        """`invstm` at each element of `mat` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `invstm`. The results are arrays whose first dimension is the number of elements."""
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_mat = np.asarray(mat, dtype=np.float64)
+        if _v_mat.ndim == 2: _v_mat = _v_mat.reshape(1, _v_mat.shape[0], _v_mat.shape[1])
+        if _v_mat.ndim != 3 or _v_mat.shape[1] != 6 or _v_mat.shape[2] != 6: raise ValueError("mat: expected 6x6 matrices")
+        _v_mat = np.ascontiguousarray(_v_mat.transpose(0, 2, 1))
+        cdef const double *_pv_mat = <const double*>cnp.PyArray_DATA(_v_mat)
+        cdef Py_ssize_t _s_mat = 0 if _v_mat.shape[0] == 1 else 36
+        cdef Py_ssize_t _n = _vlen([_v_mat.shape[0]])
+        cdef cnp.ndarray _o_invmat = np.empty((max(_n, 1), 36), dtype=np.float64)
+        cdef double *_q_invmat = <double*>cnp.PyArray_DATA(_o_invmat)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_invstm(self._ptr, _pv_mat + _i * _s_mat, _q_invmat + _i * 36)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_invmat[:_n].reshape(_n, 6, 6).transpose(0, 2, 1))
+
     def ioerr(self, action, file, iostat):
         """Set the long error message equal to a standard I/O error message composed from an action, the name of a file, and a value of IOSTAT.
         
@@ -10729,6 +11314,41 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _c_angle3, _c_angle2, _c_angle1
 
+    def m2eul_v(self, r, axis3, axis2, axis1):
+        """`m2eul` at each element of `r` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `m2eul`. The results are arrays whose first dimension is the number of elements."""
+        cdef int _c_axis3 = axis3
+        cdef int _c_axis2 = axis2
+        cdef int _c_axis1 = axis1
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_r = np.asarray(r, dtype=np.float64)
+        if _v_r.ndim == 2: _v_r = _v_r.reshape(1, _v_r.shape[0], _v_r.shape[1])
+        if _v_r.ndim != 3 or _v_r.shape[1] != 3 or _v_r.shape[2] != 3: raise ValueError("r: expected 3x3 matrices")
+        _v_r = np.ascontiguousarray(_v_r.transpose(0, 2, 1))
+        cdef const double *_pv_r = <const double*>cnp.PyArray_DATA(_v_r)
+        cdef Py_ssize_t _s_r = 0 if _v_r.shape[0] == 1 else 9
+        cdef Py_ssize_t _n = _vlen([_v_r.shape[0]])
+        cdef cnp.ndarray _o_angle3 = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_angle3 = <double*>cnp.PyArray_DATA(_o_angle3)
+        cdef cnp.ndarray _o_angle2 = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_angle2 = <double*>cnp.PyArray_DATA(_o_angle2)
+        cdef cnp.ndarray _o_angle1 = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_angle1 = <double*>cnp.PyArray_DATA(_o_angle1)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_m2eul(self._ptr, _pv_r + _i * _s_r, _c_axis3, _c_axis2, _c_axis1, _q_angle3 + _i, _q_angle2 + _i, _q_angle1 + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_angle3[:_n], _o_angle2[:_n], _o_angle1[:_n]
+
     def m2q(self, r):
         """Find a unit quaternion corresponding to a specified rotation matrix.
         
@@ -10747,6 +11367,34 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_q
+
+    def m2q_v(self, r):
+        """`m2q` at each element of `r` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `m2q`. The results are arrays whose first dimension is the number of elements."""
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_r = np.asarray(r, dtype=np.float64)
+        if _v_r.ndim == 2: _v_r = _v_r.reshape(1, _v_r.shape[0], _v_r.shape[1])
+        if _v_r.ndim != 3 or _v_r.shape[1] != 3 or _v_r.shape[2] != 3: raise ValueError("r: expected 3x3 matrices")
+        _v_r = np.ascontiguousarray(_v_r.transpose(0, 2, 1))
+        cdef const double *_pv_r = <const double*>cnp.PyArray_DATA(_v_r)
+        cdef Py_ssize_t _s_r = 0 if _v_r.shape[0] == 1 else 9
+        cdef Py_ssize_t _n = _vlen([_v_r.shape[0]])
+        cdef cnp.ndarray _o_q = np.empty((max(_n, 1), 4), dtype=np.float64)
+        cdef double *_q_q = <double*>cnp.PyArray_DATA(_o_q)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_m2q(self._ptr, _pv_r + _i * _s_r, _q_q + _i * 4)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_q[:_n]
 
     def namfrm(self, frname):
         """Look up the frame ID code associated with a string.
@@ -10795,6 +11443,38 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_npoint, _c_alt
 
+    def nearpt_v(self, positn, a, b, c):
+        """`nearpt` at each element of `positn` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `nearpt`. The results are arrays whose first dimension is the number of elements."""
+        cdef double _c_a = a
+        cdef double _c_b = b
+        cdef double _c_c = c
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_positn = np.ascontiguousarray(positn, dtype=np.float64)
+        if _v_positn.ndim == 1: _v_positn = _v_positn.reshape(1, -1)
+        if _v_positn.ndim != 2 or _v_positn.shape[1] != 3: raise ValueError("positn: expected vectors of 3 values")
+        cdef const double *_pv_positn = <const double*>cnp.PyArray_DATA(_v_positn)
+        cdef Py_ssize_t _s_positn = 0 if _v_positn.shape[0] == 1 else 3
+        cdef Py_ssize_t _n = _vlen([_v_positn.shape[0]])
+        cdef cnp.ndarray _o_npoint = np.empty((max(_n, 1), 3), dtype=np.float64)
+        cdef double *_q_npoint = <double*>cnp.PyArray_DATA(_o_npoint)
+        cdef cnp.ndarray _o_alt = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_alt = <double*>cnp.PyArray_DATA(_o_alt)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_nearpt(self._ptr, _pv_positn + _i * _s_positn, _c_a, _c_b, _c_c, _q_npoint + _i * 3, _q_alt + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_npoint[:_n], _o_alt[:_n]
+
     def npedln(self, a, b, c, linept, linedr):
         """Find nearest point on a triaxial ellipsoid to a specified line, and the distance from the ellipsoid to the line.
         
@@ -10822,6 +11502,43 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_pnear, _c_dist
+
+    def npedln_v(self, a, b, c, linept, linedr):
+        """`npedln` at each element of `linept`, `linedr` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `npedln`. The results are arrays whose first dimension is the number of elements."""
+        cdef double _c_a = a
+        cdef double _c_b = b
+        cdef double _c_c = c
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_linept = np.ascontiguousarray(linept, dtype=np.float64)
+        if _v_linept.ndim == 1: _v_linept = _v_linept.reshape(1, -1)
+        if _v_linept.ndim != 2 or _v_linept.shape[1] != 3: raise ValueError("linept: expected vectors of 3 values")
+        cdef const double *_pv_linept = <const double*>cnp.PyArray_DATA(_v_linept)
+        cdef Py_ssize_t _s_linept = 0 if _v_linept.shape[0] == 1 else 3
+        cdef cnp.ndarray _v_linedr = np.ascontiguousarray(linedr, dtype=np.float64)
+        if _v_linedr.ndim == 1: _v_linedr = _v_linedr.reshape(1, -1)
+        if _v_linedr.ndim != 2 or _v_linedr.shape[1] != 3: raise ValueError("linedr: expected vectors of 3 values")
+        cdef const double *_pv_linedr = <const double*>cnp.PyArray_DATA(_v_linedr)
+        cdef Py_ssize_t _s_linedr = 0 if _v_linedr.shape[0] == 1 else 3
+        cdef Py_ssize_t _n = _vlen([_v_linept.shape[0], _v_linedr.shape[0]])
+        cdef cnp.ndarray _o_pnear = np.empty((max(_n, 1), 3), dtype=np.float64)
+        cdef double *_q_pnear = <double*>cnp.PyArray_DATA(_o_pnear)
+        cdef cnp.ndarray _o_dist = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_dist = <double*>cnp.PyArray_DATA(_o_dist)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_npedln(self._ptr, _c_a, _c_b, _c_c, _pv_linept + _i * _s_linept, _pv_linedr + _i * _s_linedr, _q_pnear + _i * 3, _q_dist + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_pnear[:_n], _o_dist[:_n]
 
     def npelpt(self, point, ellips):
         """Find the nearest point on an ellipse to a specified point, both in three-dimensional space, and find the distance between the ellipse and the point.
@@ -12069,6 +12786,37 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_pvprop
 
+    def prop2b_v(self, gm, pvinit, dt):
+        """`prop2b` at each element of `pvinit`, `dt` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `prop2b`. The results are arrays whose first dimension is the number of elements."""
+        cdef double _c_gm = gm
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_pvinit = np.ascontiguousarray(pvinit, dtype=np.float64)
+        if _v_pvinit.ndim == 1: _v_pvinit = _v_pvinit.reshape(1, -1)
+        if _v_pvinit.ndim != 2 or _v_pvinit.shape[1] != 6: raise ValueError("pvinit: expected vectors of 6 values")
+        cdef const double *_pv_pvinit = <const double*>cnp.PyArray_DATA(_v_pvinit)
+        cdef Py_ssize_t _s_pvinit = 0 if _v_pvinit.shape[0] == 1 else 6
+        cdef cnp.ndarray _v_dt = np.ascontiguousarray(dt, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_dt = <const double*>cnp.PyArray_DATA(_v_dt)
+        cdef Py_ssize_t _s_dt = 0 if _v_dt.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_pvinit.shape[0], _v_dt.shape[0]])
+        cdef cnp.ndarray _o_pvprop = np.empty((max(_n, 1), 6), dtype=np.float64)
+        cdef double *_q_pvprop = <double*>cnp.PyArray_DATA(_o_pvprop)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_prop2b(self._ptr, _c_gm, _pv_pvinit + _i * _s_pvinit, _pv_dt[_i * _s_dt], _q_pvprop + _i * 6)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_pvprop[:_n]
+
     def prsdp(self, string):
         """Parse a string as a double precision number, encapsulating error handling.
         
@@ -12262,6 +13010,41 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_rotate
 
+    def pxfrm2_v(self, frame_from, frame_to, etfrom, etto):
+        """`pxfrm2` at each element of `etfrom`, `etto` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `pxfrm2`. The results are arrays whose first dimension is the number of elements."""
+        if not frame_from: _empty_string('pxfrm2', 'from')
+        if not frame_to: _empty_string('pxfrm2', 'to')
+        if np.ndim(etfrom) == 0 and np.ndim(etto) == 0: raise ValueError("expected an array (a scalar is pxfrm2's)")
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef bytes _b_from = _b(frame_from)
+        cdef const char *_c_from = _b_from
+        cdef bytes _b_to = _b(frame_to)
+        cdef const char *_c_to = _b_to
+        cdef cnp.ndarray _v_etfrom = np.ascontiguousarray(etfrom, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_etfrom = <const double*>cnp.PyArray_DATA(_v_etfrom)
+        cdef Py_ssize_t _s_etfrom = 0 if _v_etfrom.shape[0] == 1 else 1
+        cdef cnp.ndarray _v_etto = np.ascontiguousarray(etto, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_etto = <const double*>cnp.PyArray_DATA(_v_etto)
+        cdef Py_ssize_t _s_etto = 0 if _v_etto.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_etfrom.shape[0], _v_etto.shape[0]])
+        cdef cnp.ndarray _o_rotate = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_rotate = <double*>cnp.PyArray_DATA(_o_rotate)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_pxfrm2(self._ptr, _c_from, _c_to, _pv_etfrom[_i * _s_etfrom], _pv_etto[_i * _s_etto], _q_rotate + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_rotate[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
+
     def qderiv(self, f0, f2, delta):
         """Estimate the derivative of a function by finding the derivative of a quadratic approximating function. This derivative estimate is equivalent to that found by computing the average of forward and backward differences.
         
@@ -12305,6 +13088,36 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_axis, _c_angle
+
+    def raxisa_v(self, matrix):
+        """`raxisa` at each element of `matrix` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `raxisa`. The results are arrays whose first dimension is the number of elements."""
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_matrix = np.asarray(matrix, dtype=np.float64)
+        if _v_matrix.ndim == 2: _v_matrix = _v_matrix.reshape(1, _v_matrix.shape[0], _v_matrix.shape[1])
+        if _v_matrix.ndim != 3 or _v_matrix.shape[1] != 3 or _v_matrix.shape[2] != 3: raise ValueError("matrix: expected 3x3 matrices")
+        _v_matrix = np.ascontiguousarray(_v_matrix.transpose(0, 2, 1))
+        cdef const double *_pv_matrix = <const double*>cnp.PyArray_DATA(_v_matrix)
+        cdef Py_ssize_t _s_matrix = 0 if _v_matrix.shape[0] == 1 else 9
+        cdef Py_ssize_t _n = _vlen([_v_matrix.shape[0]])
+        cdef cnp.ndarray _o_axis = np.empty((max(_n, 1), 3), dtype=np.float64)
+        cdef double *_q_axis = <double*>cnp.PyArray_DATA(_o_axis)
+        cdef cnp.ndarray _o_angle = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_angle = <double*>cnp.PyArray_DATA(_o_angle)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_raxisa(self._ptr, _pv_matrix + _i * _s_matrix, _q_axis + _i * 3, _q_angle + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_axis[:_n], _o_angle[:_n]
 
     def rdkdat(self):
         """Read the next line of data from a SPICE ASCII kernel file.
@@ -12951,6 +13764,33 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_mout
 
+    def rotate_v(self, angle, iaxis):
+        """`rotate` at each element of `angle` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `rotate`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(angle) == 0: raise ValueError("expected an array (a scalar is rotate's)")
+        cdef int _c_iaxis = iaxis
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_angle = np.ascontiguousarray(angle, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_angle = <const double*>cnp.PyArray_DATA(_v_angle)
+        cdef Py_ssize_t _s_angle = 0 if _v_angle.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_angle.shape[0]])
+        cdef cnp.ndarray _o_mout = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_mout = <double*>cnp.PyArray_DATA(_o_mout)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_rotate(self._ptr, _pv_angle[_i * _s_angle], _c_iaxis, _q_mout + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_mout[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
+
     def rotget(self, infrm, et):
         """Find the rotation from a user specified frame to another frame at a user specified epoch.
         
@@ -13020,6 +13860,37 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_vout
+
+    def rotvec_v(self, v1, angle, iaxis):
+        """`rotvec` at each element of `v1`, `angle` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `rotvec`. The results are arrays whose first dimension is the number of elements."""
+        cdef int _c_iaxis = iaxis
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_v1 = np.ascontiguousarray(v1, dtype=np.float64)
+        if _v_v1.ndim == 1: _v_v1 = _v_v1.reshape(1, -1)
+        if _v_v1.ndim != 2 or _v_v1.shape[1] != 3: raise ValueError("v1: expected vectors of 3 values")
+        cdef const double *_pv_v1 = <const double*>cnp.PyArray_DATA(_v_v1)
+        cdef Py_ssize_t _s_v1 = 0 if _v_v1.shape[0] == 1 else 3
+        cdef cnp.ndarray _v_angle = np.ascontiguousarray(angle, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_angle = <const double*>cnp.PyArray_DATA(_v_angle)
+        cdef Py_ssize_t _s_angle = 0 if _v_angle.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_v1.shape[0], _v_angle.shape[0]])
+        cdef cnp.ndarray _o_vout = np.empty((max(_n, 1), 3), dtype=np.float64)
+        cdef double *_q_vout = <double*>cnp.PyArray_DATA(_o_vout)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_rotvec(self._ptr, _pv_v1 + _i * _s_v1, _pv_angle[_i * _s_angle], _c_iaxis, _q_vout + _i * 3)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_vout[:_n]
 
     def rquad(self, a, b, c):
         """Find the roots of a quadratic equation.
@@ -13278,6 +14149,33 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _c_sclkdp
+
+    def sce2t_v(self, sc, et):
+        """`sce2t` at each element of `et` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `sce2t`. The results are arrays whose first dimension is the number of elements."""
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is sce2t's)")
+        cdef int _c_sc = sc
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0]])
+        cdef cnp.ndarray _o_sclkdp = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_sclkdp = <double*>cnp.PyArray_DATA(_o_sclkdp)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_sce2t(self._ptr, _c_sc, _pv_et[_i * _s_et], _q_sclkdp + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_sclkdp[:_n]
 
     def scec01(self, sc, et):
         """Convert ephemeris seconds past J2000 (ET) to continuous encoded type 1 spacecraft clock (`ticks').  The output value need not be integral.
@@ -14595,6 +15493,44 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_starg, _c_lt, _c_dlt
 
+    def spkacs_v(self, targ, et, ref, abcorr, obs):
+        """`spkacs` at each element of `et` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `spkacs`. The results are arrays whose first dimension is the number of elements."""
+        if not ref: _empty_string('spkacs', 'ref')
+        if not abcorr: _empty_string('spkacs', 'abcorr')
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is spkacs's)")
+        cdef int _c_targ = targ
+        cdef int _c_obs = obs
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef bytes _b_ref = _b(ref)
+        cdef const char *_c_ref = _b_ref
+        cdef bytes _b_abcorr = _b(abcorr)
+        cdef const char *_c_abcorr = _b_abcorr
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0]])
+        cdef cnp.ndarray _o_starg = np.empty((max(_n, 1), 6), dtype=np.float64)
+        cdef double *_q_starg = <double*>cnp.PyArray_DATA(_o_starg)
+        cdef cnp.ndarray _o_lt = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_lt = <double*>cnp.PyArray_DATA(_o_lt)
+        cdef cnp.ndarray _o_dlt = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_dlt = <double*>cnp.PyArray_DATA(_o_dlt)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_spkacs(self._ptr, _c_targ, _pv_et[_i * _s_et], _c_ref, _c_abcorr, _c_obs, _q_starg + _i * 6, _q_lt + _i, _q_dlt + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_starg[:_n], _o_lt[:_n], _o_dlt[:_n]
+
     def spkapo(self, targ, et, ref, sobs, abcorr):
         """Return the position of a target body relative to an observer, optionally corrected for light time and stellar aberration.
         
@@ -14696,6 +15632,45 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_starg, _c_lt
 
+    def spkapp_v(self, targ, et, ref, sobs, abcorr):
+        """`spkapp` at each element of `et`, `sobs` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `spkapp`. The results are arrays whose first dimension is the number of elements."""
+        if not ref: _empty_string('spkapp', 'ref')
+        if not abcorr: _empty_string('spkapp', 'abcorr')
+        cdef int _c_targ = targ
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef bytes _b_ref = _b(ref)
+        cdef const char *_c_ref = _b_ref
+        cdef cnp.ndarray _v_sobs = np.ascontiguousarray(sobs, dtype=np.float64)
+        if _v_sobs.ndim == 1: _v_sobs = _v_sobs.reshape(1, -1)
+        if _v_sobs.ndim != 2 or _v_sobs.shape[1] != 6: raise ValueError("sobs: expected vectors of 6 values")
+        cdef const double *_pv_sobs = <const double*>cnp.PyArray_DATA(_v_sobs)
+        cdef Py_ssize_t _s_sobs = 0 if _v_sobs.shape[0] == 1 else 6
+        cdef bytes _b_abcorr = _b(abcorr)
+        cdef const char *_c_abcorr = _b_abcorr
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0], _v_sobs.shape[0]])
+        cdef cnp.ndarray _o_starg = np.empty((max(_n, 1), 6), dtype=np.float64)
+        cdef double *_q_starg = <double*>cnp.PyArray_DATA(_o_starg)
+        cdef cnp.ndarray _o_lt = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_lt = <double*>cnp.PyArray_DATA(_o_lt)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_spkapp(self._ptr, _c_targ, _pv_et[_i * _s_et], _c_ref, _pv_sobs + _i * _s_sobs, _c_abcorr, _q_starg + _i * 6, _q_lt + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_starg[:_n], _o_lt[:_n]
+
     def spkaps(self, targ, et, ref, abcorr, stobs, accobs):
         """Return the state (position and velocity) of a target body relative to an observer specified by its state and acceleration relative to the solar system barycenter. The returned state may be optionally corrected for light time and stellar aberration. All input and output vectors are expressed relative to an inertial reference frame.
         
@@ -14730,6 +15705,52 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_starg, _c_lt, _c_dlt
+
+    def spkaps_v(self, targ, et, ref, abcorr, stobs, accobs):
+        """`spkaps` at each element of `et`, `stobs`, `accobs` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `spkaps`. The results are arrays whose first dimension is the number of elements."""
+        if not ref: _empty_string('spkaps', 'ref')
+        if not abcorr: _empty_string('spkaps', 'abcorr')
+        cdef int _c_targ = targ
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef bytes _b_ref = _b(ref)
+        cdef const char *_c_ref = _b_ref
+        cdef bytes _b_abcorr = _b(abcorr)
+        cdef const char *_c_abcorr = _b_abcorr
+        cdef cnp.ndarray _v_stobs = np.ascontiguousarray(stobs, dtype=np.float64)
+        if _v_stobs.ndim == 1: _v_stobs = _v_stobs.reshape(1, -1)
+        if _v_stobs.ndim != 2 or _v_stobs.shape[1] != 6: raise ValueError("stobs: expected vectors of 6 values")
+        cdef const double *_pv_stobs = <const double*>cnp.PyArray_DATA(_v_stobs)
+        cdef Py_ssize_t _s_stobs = 0 if _v_stobs.shape[0] == 1 else 6
+        cdef cnp.ndarray _v_accobs = np.ascontiguousarray(accobs, dtype=np.float64)
+        if _v_accobs.ndim == 1: _v_accobs = _v_accobs.reshape(1, -1)
+        if _v_accobs.ndim != 2 or _v_accobs.shape[1] != 3: raise ValueError("accobs: expected vectors of 3 values")
+        cdef const double *_pv_accobs = <const double*>cnp.PyArray_DATA(_v_accobs)
+        cdef Py_ssize_t _s_accobs = 0 if _v_accobs.shape[0] == 1 else 3
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0], _v_stobs.shape[0], _v_accobs.shape[0]])
+        cdef cnp.ndarray _o_starg = np.empty((max(_n, 1), 6), dtype=np.float64)
+        cdef double *_q_starg = <double*>cnp.PyArray_DATA(_o_starg)
+        cdef cnp.ndarray _o_lt = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_lt = <double*>cnp.PyArray_DATA(_o_lt)
+        cdef cnp.ndarray _o_dlt = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_dlt = <double*>cnp.PyArray_DATA(_o_dlt)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_spkaps(self._ptr, _c_targ, _pv_et[_i * _s_et], _c_ref, _c_abcorr, _pv_stobs + _i * _s_stobs, _pv_accobs + _i * _s_accobs, _q_starg + _i * 6, _q_lt + _i, _q_dlt + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_starg[:_n], _o_lt[:_n], _o_dlt[:_n]
 
     def spkcls(self, handle):
         """Close an open SPK file.
@@ -15861,6 +16882,47 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_starg, _c_lt, _c_dlt
+
+    def spkltc_v(self, targ, et, ref, abcorr, stobs):
+        """`spkltc` at each element of `et`, `stobs` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `spkltc`. The results are arrays whose first dimension is the number of elements."""
+        if not ref: _empty_string('spkltc', 'ref')
+        if not abcorr: _empty_string('spkltc', 'abcorr')
+        cdef int _c_targ = targ
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef bytes _b_ref = _b(ref)
+        cdef const char *_c_ref = _b_ref
+        cdef bytes _b_abcorr = _b(abcorr)
+        cdef const char *_c_abcorr = _b_abcorr
+        cdef cnp.ndarray _v_stobs = np.ascontiguousarray(stobs, dtype=np.float64)
+        if _v_stobs.ndim == 1: _v_stobs = _v_stobs.reshape(1, -1)
+        if _v_stobs.ndim != 2 or _v_stobs.shape[1] != 6: raise ValueError("stobs: expected vectors of 6 values")
+        cdef const double *_pv_stobs = <const double*>cnp.PyArray_DATA(_v_stobs)
+        cdef Py_ssize_t _s_stobs = 0 if _v_stobs.shape[0] == 1 else 6
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0], _v_stobs.shape[0]])
+        cdef cnp.ndarray _o_starg = np.empty((max(_n, 1), 6), dtype=np.float64)
+        cdef double *_q_starg = <double*>cnp.PyArray_DATA(_o_starg)
+        cdef cnp.ndarray _o_lt = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_lt = <double*>cnp.PyArray_DATA(_o_lt)
+        cdef cnp.ndarray _o_dlt = np.empty(max(_n, 1), dtype=np.float64)
+        cdef double *_q_dlt = <double*>cnp.PyArray_DATA(_o_dlt)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_spkltc(self._ptr, _c_targ, _pv_et[_i * _s_et], _c_ref, _c_abcorr, _pv_stobs + _i * _s_stobs, _q_starg + _i * 6, _q_lt + _i, _q_dlt + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_starg[:_n], _o_lt[:_n], _o_dlt[:_n]
 
     def spkobj(self, spk, out_cell=None):
         """Find the set of ID codes of all objects in a specified SPK file.
@@ -17679,6 +18741,38 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_appobj
 
+    def stelab_v(self, pobj, vobs):
+        """`stelab` at each element of `pobj`, `vobs` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `stelab`. The results are arrays whose first dimension is the number of elements."""
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_pobj = np.ascontiguousarray(pobj, dtype=np.float64)
+        if _v_pobj.ndim == 1: _v_pobj = _v_pobj.reshape(1, -1)
+        if _v_pobj.ndim != 2 or _v_pobj.shape[1] != 3: raise ValueError("pobj: expected vectors of 3 values")
+        cdef const double *_pv_pobj = <const double*>cnp.PyArray_DATA(_v_pobj)
+        cdef Py_ssize_t _s_pobj = 0 if _v_pobj.shape[0] == 1 else 3
+        cdef cnp.ndarray _v_vobs = np.ascontiguousarray(vobs, dtype=np.float64)
+        if _v_vobs.ndim == 1: _v_vobs = _v_vobs.reshape(1, -1)
+        if _v_vobs.ndim != 2 or _v_vobs.shape[1] != 3: raise ValueError("vobs: expected vectors of 3 values")
+        cdef const double *_pv_vobs = <const double*>cnp.PyArray_DATA(_v_vobs)
+        cdef Py_ssize_t _s_vobs = 0 if _v_vobs.shape[0] == 1 else 3
+        cdef Py_ssize_t _n = _vlen([_v_pobj.shape[0], _v_vobs.shape[0]])
+        cdef cnp.ndarray _o_appobj = np.empty((max(_n, 1), 3), dtype=np.float64)
+        cdef double *_q_appobj = <double*>cnp.PyArray_DATA(_o_appobj)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_stelab(self._ptr, _pv_pobj + _i * _s_pobj, _pv_vobs + _i * _s_vobs, _q_appobj + _i * 3)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_appobj[:_n]
+
     def stlabx(self, pobj, vobs):
         """Correct the position of a target for the stellar aberration effect on radiation transmitted from a specified observer to the target.
         
@@ -17699,6 +18793,38 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_corpos
+
+    def stlabx_v(self, pobj, vobs):
+        """`stlabx` at each element of `pobj`, `vobs` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `stlabx`. The results are arrays whose first dimension is the number of elements."""
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_pobj = np.ascontiguousarray(pobj, dtype=np.float64)
+        if _v_pobj.ndim == 1: _v_pobj = _v_pobj.reshape(1, -1)
+        if _v_pobj.ndim != 2 or _v_pobj.shape[1] != 3: raise ValueError("pobj: expected vectors of 3 values")
+        cdef const double *_pv_pobj = <const double*>cnp.PyArray_DATA(_v_pobj)
+        cdef Py_ssize_t _s_pobj = 0 if _v_pobj.shape[0] == 1 else 3
+        cdef cnp.ndarray _v_vobs = np.ascontiguousarray(vobs, dtype=np.float64)
+        if _v_vobs.ndim == 1: _v_vobs = _v_vobs.reshape(1, -1)
+        if _v_vobs.ndim != 2 or _v_vobs.shape[1] != 3: raise ValueError("vobs: expected vectors of 3 values")
+        cdef const double *_pv_vobs = <const double*>cnp.PyArray_DATA(_v_vobs)
+        cdef Py_ssize_t _s_vobs = 0 if _v_vobs.shape[0] == 1 else 3
+        cdef Py_ssize_t _n = _vlen([_v_pobj.shape[0], _v_vobs.shape[0]])
+        cdef cnp.ndarray _o_corpos = np.empty((max(_n, 1), 3), dtype=np.float64)
+        cdef double *_q_corpos = <double*>cnp.PyArray_DATA(_o_corpos)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_stlabx(self._ptr, _pv_pobj + _i * _s_pobj, _pv_vobs + _i * _s_vobs, _q_corpos + _i * 3)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_corpos[:_n]
 
     def stmp03(self, x):
         """Compute the values of the Stumpff functions C_0 through C_3 at a specified point.
@@ -18101,6 +19227,36 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_normal
 
+    def surfnm_v(self, a, b, c, point):
+        """`surfnm` at each element of `point` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `surfnm`. The results are arrays whose first dimension is the number of elements."""
+        cdef double _c_a = a
+        cdef double _c_b = b
+        cdef double _c_c = c
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_point = np.ascontiguousarray(point, dtype=np.float64)
+        if _v_point.ndim == 1: _v_point = _v_point.reshape(1, -1)
+        if _v_point.ndim != 2 or _v_point.shape[1] != 3: raise ValueError("point: expected vectors of 3 values")
+        cdef const double *_pv_point = <const double*>cnp.PyArray_DATA(_v_point)
+        cdef Py_ssize_t _s_point = 0 if _v_point.shape[0] == 1 else 3
+        cdef Py_ssize_t _n = _vlen([_v_point.shape[0]])
+        cdef cnp.ndarray _o_normal = np.empty((max(_n, 1), 3), dtype=np.float64)
+        cdef double *_q_normal = <double*>cnp.PyArray_DATA(_o_normal)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_surfnm(self._ptr, _c_a, _c_b, _c_c, _pv_point + _i * _s_point, _q_normal + _i * 3)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_normal[:_n]
+
     def surfpt(self, positn, u, a, b, c):
         """Determine the intersection of a line-of-sight vector with the surface of an ellipsoid.
         
@@ -18129,6 +19285,43 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _found('surfpt', (_a_point,), _c_found != 0)
+
+    def surfpt_v(self, positn, u, a, b, c):
+        """`surfpt` at each element of `positn`, `u` (arrays, broadcast together), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `surfpt`. The results are arrays whose first dimension is the number of elements. A found flag false at any element raises NotFoundError (the flags are returned last under `no_found_check`)."""
+        cdef double _c_a = a
+        cdef double _c_b = b
+        cdef double _c_c = c
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_positn = np.ascontiguousarray(positn, dtype=np.float64)
+        if _v_positn.ndim == 1: _v_positn = _v_positn.reshape(1, -1)
+        if _v_positn.ndim != 2 or _v_positn.shape[1] != 3: raise ValueError("positn: expected vectors of 3 values")
+        cdef const double *_pv_positn = <const double*>cnp.PyArray_DATA(_v_positn)
+        cdef Py_ssize_t _s_positn = 0 if _v_positn.shape[0] == 1 else 3
+        cdef cnp.ndarray _v_u = np.ascontiguousarray(u, dtype=np.float64)
+        if _v_u.ndim == 1: _v_u = _v_u.reshape(1, -1)
+        if _v_u.ndim != 2 or _v_u.shape[1] != 3: raise ValueError("u: expected vectors of 3 values")
+        cdef const double *_pv_u = <const double*>cnp.PyArray_DATA(_v_u)
+        cdef Py_ssize_t _s_u = 0 if _v_u.shape[0] == 1 else 3
+        cdef Py_ssize_t _n = _vlen([_v_positn.shape[0], _v_u.shape[0]])
+        cdef cnp.ndarray _o_point = np.empty((max(_n, 1), 3), dtype=np.float64)
+        cdef double *_q_point = <double*>cnp.PyArray_DATA(_o_point)
+        cdef cnp.ndarray _o_found = np.empty(max(_n, 1), dtype=np.int32)
+        cdef int *_q_found = <int*>cnp.PyArray_DATA(_o_found)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_surfpt(self._ptr, _pv_positn + _i * _s_positn, _pv_u + _i * _s_u, _c_a, _c_b, _c_c, _q_point + _i * 3, _q_found + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _found_v('surfpt', (_o_point[:_n],), (_o_found[:_n] != 0))
 
     def surfpv(self, stvrtx, stdir, a, b, c):
         """Find the state (position and velocity) of the surface intercept defined by a specified ray, ray velocity, and ellipsoid.
@@ -18671,6 +19864,36 @@ cdef class _ContextRoutines(_ContextBase):
             self._leave()
         return _a_tipm
 
+    def tipbod_v(self, ref, body, et):
+        """`tipbod` at each element of `et` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `tipbod`. The results are arrays whose first dimension is the number of elements."""
+        if not ref: _empty_string('tipbod', 'ref')
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is tipbod's)")
+        cdef int _c_body = body
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef bytes _b_ref = _b(ref)
+        cdef const char *_c_ref = _b_ref
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0]])
+        cdef cnp.ndarray _o_tipm = np.empty((max(_n, 1), 9), dtype=np.float64)
+        cdef double *_q_tipm = <double*>cnp.PyArray_DATA(_o_tipm)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_tipbod(self._ptr, _c_ref, _c_body, _pv_et[_i * _s_et], _q_tipm + _i * 9)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_tipm[:_n].reshape(_n, 3, 3).transpose(0, 2, 1))
+
     def tisbod(self, ref, body, et):
         """Return a 6x6 matrix that transforms states in inertial coordinates to states in body-equator-and-prime-meridian coordinates.
         
@@ -18695,6 +19918,36 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_tsipm
+
+    def tisbod_v(self, ref, body, et):
+        """`tisbod` at each element of `et` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `tisbod`. The results are arrays whose first dimension is the number of elements."""
+        if not ref: _empty_string('tisbod', 'ref')
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is tisbod's)")
+        cdef int _c_body = body
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef bytes _b_ref = _b(ref)
+        cdef const char *_c_ref = _b_ref
+        cdef cnp.ndarray _v_et = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+        cdef const double *_pv_et = <const double*>cnp.PyArray_DATA(_v_et)
+        cdef Py_ssize_t _s_et = 0 if _v_et.shape[0] == 1 else 1
+        cdef Py_ssize_t _n = _vlen([_v_et.shape[0]])
+        cdef cnp.ndarray _o_tsipm = np.empty((max(_n, 1), 36), dtype=np.float64)
+        cdef double *_q_tsipm = <double*>cnp.PyArray_DATA(_o_tsipm)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_tisbod(self._ptr, _c_ref, _c_body, _pv_et[_i * _s_et], _q_tsipm + _i * 36)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return np.ascontiguousarray(_o_tsipm[:_n].reshape(_n, 6, 6).transpose(0, 2, 1))
 
     def tkfram(self, typid):
         """Find the position rotation matrix from a Text Kernel (TK) frame with the specified frame class ID to its base frame.
@@ -19839,6 +21092,39 @@ cdef class _ContextRoutines(_ContextBase):
         finally:
             self._leave()
         return _a_eulang, (_c_unique != 0)
+
+    def xf2eul_v(self, xform, axisa, axisb, axisc):
+        """`xf2eul` at each element of `xform` (arrays), in a C loop with the GIL released (PepperyPy's; SpiceyPy's cyice has none).
+        
+        The other arguments are those of `xf2eul`. The results are arrays whose first dimension is the number of elements."""
+        cdef int _c_axisa = axisa
+        cdef int _c_axisb = axisb
+        cdef int _c_axisc = axisc
+        cdef Py_ssize_t _i
+        cdef int _st = 0
+        cdef cnp.ndarray _v_xform = np.asarray(xform, dtype=np.float64)
+        if _v_xform.ndim == 2: _v_xform = _v_xform.reshape(1, _v_xform.shape[0], _v_xform.shape[1])
+        if _v_xform.ndim != 3 or _v_xform.shape[1] != 6 or _v_xform.shape[2] != 6: raise ValueError("xform: expected 6x6 matrices")
+        _v_xform = np.ascontiguousarray(_v_xform.transpose(0, 2, 1))
+        cdef const double *_pv_xform = <const double*>cnp.PyArray_DATA(_v_xform)
+        cdef Py_ssize_t _s_xform = 0 if _v_xform.shape[0] == 1 else 36
+        cdef Py_ssize_t _n = _vlen([_v_xform.shape[0]])
+        cdef cnp.ndarray _o_eulang = np.empty((max(_n, 1), 6), dtype=np.float64)
+        cdef double *_q_eulang = <double*>cnp.PyArray_DATA(_o_eulang)
+        cdef cnp.ndarray _o_unique = np.empty(max(_n, 1), dtype=np.int32)
+        cdef int *_q_unique = <int*>cnp.PyArray_DATA(_o_unique)
+        self._enter()
+        try:
+            with nogil:
+                for _i in range(_n):
+                    _st = pepper_xf2eul(self._ptr, _pv_xform + _i * _s_xform, _c_axisa, _c_axisb, _c_axisc, _q_eulang + _i * 6, _q_unique + _i)
+                    if _st:
+                        break
+            if _st:
+                self._raise()
+        finally:
+            self._leave()
+        return _o_eulang[:_n], (_o_unique[:_n] != 0)
 
     def xfmsta(self, input_state, input_coord_sys, output_coord_sys, body):
         """Transform a state between coordinate systems.

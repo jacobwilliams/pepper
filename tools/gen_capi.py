@@ -1410,7 +1410,32 @@ VECTORIZED = {
     'sphcyl': ('radius', 'colat', 'slon'), 'sphlat': ('r', 'colat', 'slon'), 'sphrec': ('r', 'colat', 'slon'),
     'recazl': ('rectan',), 'reccyl': ('rectan',), 'recgeo': ('rectan',), 'reclat': ('rectan',),
     'recpgr': ('rectan',), 'recrad': ('rectan',), 'recsph': ('rectan',),
+    # PepperyPy's, beyond cyice's: propagation, frames, aberration-corrected
+    # states, SCLK, ellipsoid geometry, Jacobians, rotations
+    'prop2b': ('pvinit', 'dt'), 'eqncpv': ('et',), 'dpspce': ('et',),
+    'tipbod': ('et',), 'tisbod': ('et',), 'bodeul': ('et',), 'pxfrm2': ('etfrom', 'etto'),
+    'ckfrot': ('et',), 'ckfxfm': ('et',),
+    'spkltc': ('et', 'stobs'), 'spkacs': ('et',), 'spkaps': ('et', 'stobs', 'accobs'), 'spkapp': ('et', 'sobs'),
+    'sce2t': ('et',),
+    'nearpt': ('positn',), 'surfpt': ('positn', 'u'), 'surfnm': ('point',), 'npedln': ('linept', 'linedr'),
+    'edpnt': ('p',),
+    'drdlat': ('r', 'lon', 'lat'), 'drdcyl': ('r', 'clon', 'z'), 'drdsph': ('r', 'colat', 'slon'),
+    'drdgeo': ('lon', 'lat', 'alt'), 'drdpgr': ('lon', 'lat', 'alt'), 'drdazl': ('range', 'az', 'el'),
+    'dlatdr': ('x', 'y', 'z'), 'dcyldr': ('x', 'y', 'z'), 'dsphdr': ('x', 'y', 'z'), 'dgeodr': ('x', 'y', 'z'),
+    'dpgrdr': ('x', 'y', 'z'), 'dazldr': ('x', 'y', 'z'),
+    'axisar': ('axis', 'angle'), 'rotate': ('angle',), 'rotvec': ('v1', 'angle'),
+    'eul2m': ('angle3', 'angle2', 'angle1'), 'eul2xf': ('eulang',), 'stelab': ('pobj', 'vobs'),
+    'stlabx': ('pobj', 'vobs'),
+    # over matrices (n, 3, 3) or (n, 6, 6)
+    'm2eul': ('r',), 'xf2eul': ('xform',), 'm2q': ('r',), 'q2m': ('q',), 'xf2rav': ('xform',),
+    'rav2xf': ('rot', 'av'), 'raxisa': ('matrix',), 'invstm': ('mat',),
 }
+# Those beyond SpiceyPy's cyice (the docs say so).
+VEC_PEPPER = {'prop2b', 'eqncpv', 'dpspce', 'tipbod', 'tisbod', 'bodeul', 'pxfrm2', 'ckfrot', 'ckfxfm', 'spkltc',
+              'spkacs', 'spkaps', 'spkapp', 'sce2t', 'nearpt', 'surfpt', 'surfnm', 'npedln', 'edpnt', 'drdlat',
+              'drdcyl', 'drdsph', 'drdgeo', 'drdpgr', 'drdazl', 'dlatdr', 'dcyldr', 'dsphdr', 'dgeodr', 'dpgrdr',
+              'dazldr', 'axisar', 'rotate', 'rotvec', 'eul2m', 'eul2xf', 'stelab', 'stlabx', 'm2eul', 'xf2eul',
+              'm2q', 'q2m', 'xf2rav', 'rav2xf', 'raxisa', 'invstm'}
 # Routines evaluated at every pair (epoch, vector) of their two arrays, as
 # cyice does: results (n epochs, m vectors, ...).
 VEC_OUTER = {'azlcpo', 'illumf', 'illumg', 'ilumin'}
@@ -1434,7 +1459,8 @@ def cython_vec_method(p, spy):
     if any(a.kind not in ('str_in', 'num_in', 'arr_in', 'num_out', 'arr_out', 'str_out') for a in allargs):
         return None
     vecs = [next((a for a in p.args if a.name == v), None) for v in vnames]
-    if None in vecs or any(a.kind not in ('num_in', 'str_in', 'arr_in') or (a.kind == 'arr_in' and a.rank != 1)
+    if None in vecs or any(a.kind not in ('num_in', 'str_in', 'arr_in') or
+                           (a.kind == 'arr_in' and not all(extent(d).isdigit() for d in a.dims))
                            for a in vecs):
         return None
     params, aligned, _ = python_params(p, spy)
@@ -1469,6 +1495,18 @@ def cython_vec_method(p, spy):
             conv.append(f'cdef Py_ssize_t _s_{n} = 0 if _v_{n}.shape[0] == 1 else 1')
             sizes.append(f'_v_{n}.shape[0]')
             cargs.append(f'_pv_{n}[{index(a)} * _s_{n}]' + (' + 1' if n in ZERO_BASED_IN.get(p.name, ()) else ''))
+        elif a in vecs and k == 'arr_in' and a.rank == 2:
+            # matrices (n, rows, columns), each passed in Fortran order
+            r_, c_ = extent(a.dims[0]), extent(a.dims[1])
+            conv.append(f'cdef cnp.ndarray _v_{n} = np.asarray({pn}, dtype={npt})')
+            conv.append(f'if _v_{n}.ndim == 2: _v_{n} = _v_{n}.reshape(1, _v_{n}.shape[0], _v_{n}.shape[1])')
+            conv.append(f'if _v_{n}.ndim != 3 or _v_{n}.shape[1] != {r_} or _v_{n}.shape[2] != {c_}: '
+                        f'raise ValueError("{pn}: expected {r_}x{c_} matrices")')
+            conv.append(f'_v_{n} = np.ascontiguousarray(_v_{n}.transpose(0, 2, 1))')
+            conv.append(f'cdef const {ct} *_pv_{n} = <const {ct}*>cnp.PyArray_DATA(_v_{n})')
+            conv.append(f'cdef Py_ssize_t _s_{n} = 0 if _v_{n}.shape[0] == 1 else {int(r_) * int(c_)}')
+            sizes.append(f'_v_{n}.shape[0]')
+            cargs.append(f'_pv_{n} + {index(a)} * _s_{n}')
         elif a in vecs and k == 'arr_in':
             m = extent(a.dims[0])
             conv.append(f'cdef cnp.ndarray _v_{n} = np.ascontiguousarray({pn}, dtype={npt})')
@@ -1578,10 +1616,11 @@ def cython_vec_method(p, spy):
     else:
         lines.append(f'return {results[0]}' if len(results) == 1 else f'return {", ".join(results)}')
     # the looped arguments and the dimensions of one element, for the dispatch
-    vinfo = [(pymap[id(a)], 1 if a.kind == 'arr_in' else 0) for a in vecs]
+    vinfo = [(pymap[id(a)], a.rank if a.kind == 'arr_in' else 0) for a in vecs]
     vlist = ', '.join(f'`{pymap[id(a)]}`' for a in vecs)
     doc = (f'`{p.name}` at each element of {vlist} (arrays{", broadcast together" if len(vecs) > 1 else ""}), '
-           f'in a C loop with the GIL released (SpiceyPy\'s cyice `{p.name}_v`).\n\n'
+           f'in a C loop with the GIL released'
+           f'{" (PepperyPy\'s; SpiceyPy\'s cyice has none)" if p.name in VEC_PEPPER else f" (SpiceyPy\'s cyice `{p.name}_v`)"}.\n\n'
            f'The other arguments are those of `{p.name}`. The results are arrays whose first dimension is the '
            f'number of elements. {"A found flag false at any element raises NotFoundError (the flags are returned last under `no_found_check`)." if found else ""}'.rstrip())
     psig = ', '.join(f'{pn}={d}' if d is not None else pn for pn, a, d in params)
@@ -1610,8 +1649,7 @@ def dispatcher(p, params, vinfo, scalar, doc):
     scall = ', '.join(f'_sc({pn})' if pn in looped else pn for pn, a, d in params)
     test = ' or '.join(f'_isvec({pn}, {d})' for pn, d in vinfo)
     names = ', '.join(f'`{pn}`' for pn, d in vinfo)
-    doc = doc.rstrip() + (f'\n\n    With arrays for {names}: `{p.name}_v` (PepperyPy\'s, and SpiceyPy\'s cyice, '
-                          f'dispatch); `{p.name}_s` is always the scalar form.')
+    doc = doc.rstrip() + (f'\n\n    With arrays for {names}: `{p.name}_v`. `{p.name}_s` is always the scalar form.')
     return (f'def {p.name}({sig}):\n'
             f'    """{doc}"""\n'
             f'    if {test}:\n'
@@ -1625,8 +1663,7 @@ def inline_dispatcher(p, params, vinfo, code):
     a = code.index('"""') + 3
     b = code.index('"""', a)
     names = ', '.join(f'`{pn}`' for pn, d in vinfo)
-    extra = (f'\n\n    With arrays for {names}: `{p.name}_v` (PepperyPy\'s, and SpiceyPy\'s cyice, '
-             f'dispatch); `{p.name}_s` is always the scalar form.')
+    extra = f'\n\n    With arrays for {names}: `{p.name}_v`. `{p.name}_s` is always the scalar form.'
     call = ', '.join(pn for pn, a_, d in params)
     test = ' or '.join(f'_isvec({pn}, {d})' for pn, d in vinfo)
     lines = [f'    if {test}:', f'        return {p.name}_v({call})']
