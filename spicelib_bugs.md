@@ -113,6 +113,7 @@ what SPICELIB does; PEPPER declares them `intent(inout)`):
 | ZZASCII | TERMIN marked `0` (zero) instead of `O`; LINE (a work buffer) marked I. |
 | ZZDPPER | XLL marked `0` (zero) instead of `O`. |
 | ZZDPSEC | OMGDOT missing from the table. |
+| ZZDPSEC | XN is marked O (the umbrella ZZNRDDP's table: I); it is both. For an orbit without resonance the entry returns before setting it, and DPSPCE uses the value it set before the call (XNODP). PEPPER had declared it `intent(out)` from the table: optimized builds then dropped DPSPCE's assignment, and DPSPCE returned NaN for deep-space orbits without resonance (TLE 11801). Now `intent(inout)`. |
 | ZZDYNOAC | MAXN missing from the table. |
 | ZZDSKBSR (ZZDSKSNS) | `DLSDSC` for `DLADSC`. |
 | ZZSEGBOX | The table and Detailed_Output name the arguments CENTER and RADIUS; they are BOXCTR and MAXR. |

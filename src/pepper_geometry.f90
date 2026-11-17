@@ -9903,10 +9903,12 @@ contains
 !     information.  Now check for the presence of the FOV class
 !     specification keyword.  If it's absent, we default to CORNERS.
 !
-      spec = 'CORNERS'
-
       call repmi  ( ctx, kwspec, '#',    instid, kword )
       call gcpool ( ctx, kword, 1, 1, i, spec,   found )
+
+!     (SPICELIB sets the default before the call and relies on GCPOOL
+!     leaving it unchanged; PEPPER's GCPOOL output is INTENT(OUT).)
+      if ( .not. found ) spec = 'CORNERS'
 
       if ( eqstr('CORNERS', spec) ) then
 
@@ -49664,7 +49666,7 @@ contains
       real(wp), intent(in) :: t  !! Time to calculate perturbation
       real(wp), intent(out) :: xinc  !! Perturbed inclination of the orbit plane at time T
       real(wp), intent(inout) :: xll  !! Long-period periodic term
-      real(wp), intent(out) :: xn  !! Perturbed mean motion of the orbit at time T
+      real(wp), intent(inout) :: xn  !! In: the mean motion at epoch (XNODP); out: the perturbed mean motion at time T (unchanged for an orbit without resonance)
       real(wp), intent(inout) :: xnodes  !! Perturbed argument of ascending node
       real(wp), parameter :: step2 = 259200.0_wp
       real(wp) :: xnddt

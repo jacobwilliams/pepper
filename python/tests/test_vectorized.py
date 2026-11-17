@@ -65,6 +65,30 @@ def test_deep_space_sgp4(core):
     check('dpspce', [epoch + np.linspace(0.0, 86400.0, N), geophs, elems], {0})
 
 
+@pytest.mark.parametrize('tle', [
+    # geosynchronous (one-day resonance)
+    ['1 26038U 00004A   06120.80873521 -.00000277  00000-0  10000-3 0  9998',
+     '2 26038   0.0322 274.4469 0003033 168.1009 196.5432  1.00271186 22916'],
+    # 11801: deep space without resonance (zzdpsec leaves the mean motion
+    # unchanged; it was intent(out), so optimized builds returned NaN)
+    ['1 11801U          80230.29629788  .01431103  00000-0  14311-1      13',
+     '2 11801  46.7916 230.4354 7318036  47.4722  10.4117  2.28537848    13']], ids=['26038', '11801'])
+def test_dpspce_against_cspice(core, tle):
+    """DPSPCE against CSPICE's (its f2c translation, dpspce_, in SpiceyPy's
+    library: SpiceyPy has no wrapper)."""
+    import ctypes
+    from spiceypy.utils.libspicehelper import libspice
+    geophs = np.array([1.082616e-3, -2.53881e-6, -1.65597e-6, 7.43669161e-2, 120.0, 78.0, 6378.135, 1.0])
+    epoch, elems = p.getelm(1957, tle)
+    dp = ctypes.POINTER(ctypes.c_double)
+    for dt in (0.0, 600.0, 86400.0, -86400.0 * 3):
+        et = ctypes.c_double(epoch + dt)
+        expected = np.zeros(6)
+        libspice.dpspce_(ctypes.byref(et), geophs.ctypes.data_as(dp), np.asarray(elems).ctypes.data_as(dp),
+                         expected.ctypes.data_as(dp))
+        np.testing.assert_allclose(p.dpspce(epoch + dt, geophs, elems), expected, rtol=1e-9, atol=1e-6)
+
+
 def test_frames(ets):
     check('tipbod', ['J2000', 399, ets], {2})
     check('tisbod', ['J2000', 301, ets], {2})
