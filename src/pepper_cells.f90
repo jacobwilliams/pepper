@@ -12140,6 +12140,7 @@ contains
 
       integer(ip) :: card
       integer(ip) :: i
+      logical :: trivl  !! the complement is the whole interval
 
 !
 !     Set up the error processing.
@@ -12172,9 +12173,10 @@ contains
 !     intersect the input interval. In either case, the complement is
 !     the entire interval.
 !
-      if (       card         == 0 &
-           .or.  window(1)    >= right &
-           .or.  window(card) <= left  ) then
+      trivl = card == 0
+      if ( .not. trivl ) trivl = window(1) >= right .or. window(card) <= left
+
+      if ( trivl ) then
 
          call wninsd ( ctx, left, right, result )
 

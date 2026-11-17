@@ -4811,6 +4811,7 @@ contains
       integer(ip) :: pos
 
       logical :: even
+      logical :: none  !! no token can start at FIRST
 
 !
 !     Error free, no check-in required.
@@ -4821,10 +4822,10 @@ contains
 !     Handle the cases in which we can tell right away that
 !     no token can be found.
 !
-      if (       (  first                <  1      ) &
-            .or. (  first                >  l-1    ) &
-            .or. (  qchar                ==  ' '    ) &
-            .or. (  string(first:first)  /=  qchar  )   ) then
+      none = first < 1  .or.  first > l-1  .or.  qchar == ' '
+      if ( .not. none ) none = string(first:first) /= qchar
+
+      if ( none ) then
 
          last  = first - 1
          nchar = 0

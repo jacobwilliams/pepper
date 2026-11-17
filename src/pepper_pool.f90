@@ -10963,7 +10963,8 @@ contains
 !
 !        Dates begin with @; anything else is presumed to be a number.
 !
-         do while ( type(nxttok) /= ev .and. nxttok <= count )
+         do while ( nxttok <= count )
+            if ( type(nxttok) == ev ) exit
 !
 !           Get the begin and end of this token.
 !
@@ -11928,7 +11929,8 @@ contains
 !
 !        Dates begin with @; anything else is presumed to be a number.
 !
-         do while ( type(nxttok) /= ev .and. nxttok <= count )
+         do while ( nxttok <= count )
+            if ( type(nxttok) == ev ) exit
 !
 !           Get the begin and end of this token.
 !

@@ -4,7 +4,8 @@
 !> arguments, which bounds checking cannot see, so the elements just past
 !> each full window (and past the array of [[lstcld]]) are signaling NaNs:
 !> reading and comparing one raises IEEE's invalid flag, which each case
-!> checks along with its result.
+!> checks along with its result. [[lxqstr]]'s substring past the string is
+!> caught by the debug profile's bounds checks.
 program test_window_bounds
 
    use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_signaling_nan, ieee_set_flag, &
@@ -12,6 +13,7 @@ program test_window_bounds
    use pepper_kinds, only: ip, wp
    use pepper_instance_module, only: pepper_instance, pepper_context
    use pepper_arrays, only: lstcld, lstcli
+   use pepper_strings, only: lxqstr
 
    implicit none
 
@@ -27,6 +29,7 @@ program test_window_bounds
    call test_wninsd()
    call test_wncomd()
    call test_lstcl()
+   call test_lxqstr()
 
    if (failures > 0) then
       print '(i0, a)', failures, ' check(s) failed'
@@ -113,6 +116,16 @@ contains
                  'wncomd ending in the last interval: [0,1] [2,3] [4,5]')
       call check(.not. ctx%failed(), 'wncomd: no error')
       call ctx%reset()
+
+      ! A window of size 0: its element 1 is past the cell.
+      call ctx%ssized(0_ip, w)
+      w(1) = snan
+      call ieee_set_flag(ieee_invalid, .false.)
+      call ctx%wncomd(1.0_wp, 2.0_wp, w, res)
+      call check(.not. read_past(), 'wncomd of an empty window of size 0: no read past it')
+      call check(ctx%cardd(res) == 2 .and. res(1) == 1.0_wp .and. res(2) == 2.0_wp, &
+                 'wncomd of an empty window of size 0: [1,2]')
+      call ctx%reset()
    end subroutine test_wncomd
 
    !> LSTCLD and LSTCLI: the closest value equal to the array's last
@@ -127,5 +140,16 @@ contains
       ia = [1, 2, 3, 3, -huge(1_ip)]
       call check(lstcli(4_ip, 4_ip, ia) == 4, 'lstcli: the last of the equal closest elements')
    end subroutine test_lstcl
+
+   !> LXQSTR: a start outside the string (no token, and no substring of it).
+   subroutine test_lxqstr()
+      integer(ip) :: last, nchar
+      call lxqstr('"ab"', '"', 0_ip, last, nchar)
+      call check(last == -1 .and. nchar == 0, 'lxqstr from 0: no token')
+      call lxqstr('"ab"', '"', 5_ip, last, nchar)
+      call check(last == 4 .and. nchar == 0, 'lxqstr past the end: no token')
+      call lxqstr('"ab"', '"', 1_ip, last, nchar)
+      call check(last == 4 .and. nchar == 4, 'lxqstr from 1: the quoted string')
+   end subroutine test_lxqstr
 
 end program test_window_bounds
