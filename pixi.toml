@@ -79,6 +79,6 @@ gen-capi = { cmd = "python tools/gen_capi.py", description = "Generate PEPPER's 
 py-build = { cmd = "pip install --no-build-isolation --no-deps -e . -Cbuild-dir=build/py-editable", description = "Build and install PepperyPy in the environment (editable: rebuilt on import after a change)" }
 py-test = { cmd = "pytest python/tests", depends-on = ["py-build"], description = "Run PepperyPy's tests (SpiceyPy as the reference; the kernels are downloaded once)" }
 test-capi = { cmd = "meson setup build/capi --reconfigure && meson test -C build/capi capi --print-errorlogs", description = "Build and run the C test of PEPPER's C interface (capi/test_capi.c)" }
-py-bench = { cmd = "python python/bench/bench_pepperypy.py", depends-on = ["py-build"], description = "Speed of PepperyPy against SpiceyPy (python/bench/bench_pepperypy.py)" }
-py-test-spiceypy = { cmd = "python python/tools/run_spiceypy_suite.py", depends-on = ["py-build"], description = "Run SpiceyPy's own test suite (test_wrapper.py, from the installed SpiceyPy) against PepperyPy, and summarize" }
+py-bench = { cmd = "python python/bench/bench_pepperypy.py", depends-on = ["py-build"], description = "Speed of PepperyPy against SpiceyPy and its cyice (python/bench/bench_pepperypy.py)" }
+py-test-spiceypy = { cmd = "python python/tools/run_spiceypy_suite.py", depends-on = ["py-build"], description = "Run SpiceyPy's own tests (test_wrapper.py, and the tests and benchmarks of cyice, from the installed SpiceyPy) against PepperyPy, and summarize" }
 py-coverage = { cmd = "python python/tools/coverage.py", depends-on = ["py-build"], description = "Write python/COVERAGE.md: SpiceyPy's functions PepperyPy has, and why not the others" }

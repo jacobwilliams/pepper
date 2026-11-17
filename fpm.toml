@@ -44,9 +44,12 @@ source-form = "default"
 # keeps the source's arithmetic. gfortran does not reassociate without
 # -ffast-math, but by default it fuses a multiplication and an addition
 # into one instruction (FMA) where the processor has one (arm64, recent
-# x86-64), which rounds once instead of twice: results then differ from
-# SPICELIB's (CSPICE's) in their last bits, which SpiceyPy's tests see (a GF
-# search time). -ffp-contract=off keeps the two roundings.
+# x86-64), anywhere in a procedure, which rounds once instead of twice: the
+# last bits of results then depend on the platform and the optimizer.
+# -ffp-contract=off keeps SPICELIB's arithmetic as written, the same on
+# every platform (that of NAIF's x86-64 builds). NAIF's CSPICE for arm64,
+# built by clang, fuses within an expression (-ffp-contract=on, which
+# gfortran cannot do), so it can differ from PEPPER in the last bits.
 #
 # The library needs no large stack (its largest frame is about 64 KB), nor
 # do the tests. NAIF's tspice test code does on Windows (tspice/fpm.toml).

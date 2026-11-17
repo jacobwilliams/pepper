@@ -101,6 +101,53 @@ cdef tuple _strblock(object strings):
     return b''.join([x.ljust(width, b'\0') for x in bs]), len(bs), width
 
 
+cdef Py_ssize_t _vlen(list sizes) except -1:
+    """The number of elements of a vectorized call: its arrays' (those of
+    one element are used for all)."""
+    cdef Py_ssize_t n = 1
+    for m in sizes:
+        if m != 1:
+            if n != 1 and m != n:
+                raise ValueError(f'arrays of different lengths: {sizes}')
+            n = m
+    if 0 in sizes:
+        return 0
+    return n
+
+
+cdef inline bint _isvec(object x, int d):
+    """Whether an argument of a vectorized routine is an array of its
+    elements (d: the dimensions of one element), for the dispatch of
+    `<name>` to `<name>_v`."""
+    if isinstance(x, cnp.ndarray):
+        return (<cnp.ndarray>x).ndim > d
+    cdef type t = type(x)
+    if t is float or t is int or t is str or t is bytes:
+        return False
+    if t is list or t is tuple:
+        if d == 0:
+            return True
+        if len(x) and (type(x[0]) is float or type(x[0]) is int):
+            return False
+    elif isinstance(x, (str, bytes)):
+        return False
+    return np.ndim(x) > d
+
+
+cdef inline object _sc(object x):
+    """A 0-d array as its element, bytes as a string: for the scalar form."""
+    if isinstance(x, cnp.ndarray) and (<cnp.ndarray>x).ndim == 0:
+        return x.item()
+    if type(x) is bytes:
+        return (<bytes>x).decode('latin-1')
+    return x
+
+
+cdef object _outer(object a, Py_ssize_t n1, Py_ssize_t n2):
+    """A result of an outer vectorized call as (n1, n2, ...)."""
+    return np.asarray(a).reshape((n1, n2) + np.shape(a)[1:])
+
+
 cdef list _strs(bytearray b, int n, int w):
     """An array of n strings out, each in w bytes (NUL-terminated)."""
     return [bytes(b[i * w:(i + 1) * w]).split(b'\0', 1)[0].decode('latin-1').rstrip() for i in range(n)]
@@ -249,6 +296,18 @@ cdef object _found(str name, tuple outs, bint found):
 def _found_public(name, outs, found):
     """SpiceyPy's found handling, for the hand-written functions."""
     return _found(name, tuple(outs), found)
+
+
+cdef object _found_v(str name, tuple outs, object found):
+    """SpiceyPy's found handling of a vectorized call (cyice's):
+    NotFoundError unless every element was found, then the results; the
+    flags returned last under no_found_check."""
+    if catch_false_founds():
+        if not np.all(found):
+            raise NotFoundError(f'Spice returns not found in a series of calls for function: {name}',
+                                found=found)
+        return outs[0] if len(outs) == 1 else outs
+    return outs + (found,)
 
 
 # ----------------------------------------------------------------------
@@ -979,6 +1038,35 @@ cdef class Context(_ContextRoutines):
         finally:
             self._leave()
         return RotationQuery._make(self, q)
+
+    # ---- vectorized forms faster still as prepared queries (the results of
+    # the C loops over spkezr, pxform and sxform, to the last bit)
+
+    def spkezr_v(self, targ, et, ref, abcorr, obs):
+        """`spkezr` at each element of `et` (an array): states (n, 6) and
+        light times (n,), from a prepared state query (faster than SpiceyPy's
+        cyice `spkezr_v`)."""
+        if not targ: _empty_string('spkezr', 'targ')
+        if not ref: _empty_string('spkezr', 'ref')
+        if not abcorr: _empty_string('spkezr', 'abcorr')
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is spkezr's)")
+        return self.prepare_state(targ, obs, ref, abcorr)(np.asarray(et, dtype=np.float64).reshape(-1))
+
+    def pxform_v(self, fromstr, tostr, et):
+        """`pxform` at each element of `et` (an array): rotations (n, 3, 3),
+        from a prepared query."""
+        if not fromstr: _empty_string('pxform', 'from')
+        if not tostr: _empty_string('pxform', 'to')
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is pxform's)")
+        return self.prepare_rotation(fromstr, tostr)(np.asarray(et, dtype=np.float64).reshape(-1))
+
+    def sxform_v(self, instring, tostring, et):
+        """`sxform` at each element of `et` (an array): state transformations
+        (n, 6, 6), from a prepared query."""
+        if not instring: _empty_string('sxform', 'from')
+        if not tostring: _empty_string('sxform', 'to')
+        if np.ndim(et) == 0: raise ValueError("expected an array (a scalar is sxform's)")
+        return self.prepare_rotation(instring, tostring).transform(np.asarray(et, dtype=np.float64).reshape(-1))
 
     # ---- GF searches with Python functions
 

@@ -1387,6 +1387,253 @@ def cython_method(p, spy, where):
     return '\n'.join(out), params, aligned, vec
 
 
+# The vectorized routines (SpiceyPy's cyice `_v` functions): the arguments
+# looped over together (numbers, rows of vectors, or strings), broadcast as
+# NumPy broadcasts (a single value is used for every element).
+VECTORIZED = {
+    'ckgp': ('sclkdp',), 'ckgpav': ('sclkdp',), 'convrt': ('x',), 'deltet': ('epoch',), 'et2lst': ('et',),
+    'et2utc': ('et',), 'etcal': ('et',), 'fovray': ('et',), 'fovtrg': ('et',), 'lspcn': ('et',),
+    'pxform': ('et',), 'scdecd': ('sclkdp',), 'scencd': ('sclkch',), 'sce2c': ('et',), 'sce2s': ('et',),
+    'scs2e': ('sclkch',), 'sct2e': ('sclkdp',), 'spkapo': ('et',), 'spkcpo': ('et',), 'spkcpt': ('et',),
+    'spkcvo': ('et',), 'spkcvt': ('et',), 'spkez': ('et',), 'spkezp': ('et',), 'spkezr': ('et',),
+    'spkgeo': ('et',), 'spkgps': ('et',), 'spkpos': ('et',), 'spkpvn': ('et',), 'spkssb': ('et',),
+    'str2et': ('timstr',), 'sincpt': ('et',), 'subpnt': ('et',), 'subslr': ('et',), 'sxform': ('et',),
+    'timout': ('et',), 'trgsep': ('et',), 'unitim': ('epoch',), 'utc2et': ('utcstr',),
+    'azlcpo': ('et', 'obspos'), 'occult': ('et',), 'phaseq': ('et',), 'tangpt': ('et',),
+    'conics': ('elts', 'et'), 'evsgp4': ('et', 'elems'), 'oscelt': ('state', 'et'),
+    'illumf': ('et', 'spoint'), 'illumg': ('et', 'spoint'), 'ilumin': ('et', 'spoint'),
+    'xfmsta': ('istate',), 'srfrec': ('lon', 'lat'),
+    'georec': ('lon', 'lat', 'alt'), 'pgrrec': ('lon', 'lat', 'alt'),
+    'azlrec': ('range', 'az', 'el'), 'radrec': ('range', 'ra', 'dec'),
+    'cyllat': ('r', 'clon', 'z'), 'cylrec': ('r', 'clon', 'z'), 'cylsph': ('r', 'clon', 'z'),
+    'latcyl': ('radius', 'lon', 'lat'), 'latrec': ('radius', 'lon', 'lat'), 'latsph': ('radius', 'lon', 'lat'),
+    'sphcyl': ('radius', 'colat', 'slon'), 'sphlat': ('r', 'colat', 'slon'), 'sphrec': ('r', 'colat', 'slon'),
+    'recazl': ('rectan',), 'reccyl': ('rectan',), 'recgeo': ('rectan',), 'reclat': ('rectan',),
+    'recpgr': ('rectan',), 'recrad': ('rectan',), 'recsph': ('rectan',),
+}
+# Routines evaluated at every pair (epoch, vector) of their two arrays, as
+# cyice does: results (n epochs, m vectors, ...).
+VEC_OUTER = {'azlcpo', 'illumf', 'illumg', 'ilumin'}
+# Coordinates returned as an (n, 3) array (as cyice does), not three arrays.
+VEC_STACKED = {'cyllat', 'cylsph', 'latcyl', 'latsph', 'recazl', 'reccyl', 'recgeo', 'reclat', 'recpgr',
+               'recrad', 'recsph', 'sphcyl', 'sphlat'}
+VEC_STR_SIZE = 256   # the buffer of each string result of a vectorized routine
+
+
+def cython_vec_method(p, spy):
+    """`<name>_v`: the routine at each element of arrays, in a C loop over
+    PEPPER's C interface with the GIL released. The other arguments are
+    those of the scalar function; the results are arrays whose first
+    dimension is the number of elements (a found flag is returned last, as
+    an array). (method code, module-level function), or None if the
+    routine's arguments do not allow it."""
+    vnames = VECTORIZED.get(p.name)
+    if not vnames or p.owner not in ('ctx', 'pure'):
+        return None
+    allargs = p.args + ([p.result] if p.result else [])
+    if any(a.kind not in ('str_in', 'num_in', 'arr_in', 'num_out', 'arr_out', 'str_out') for a in allargs):
+        return None
+    vecs = [next((a for a in p.args if a.name == v), None) for v in vnames]
+    if None in vecs or any(a.kind not in ('num_in', 'str_in', 'arr_in') or (a.kind == 'arr_in' and a.rank != 1)
+                           for a in vecs):
+        return None
+    params, aligned, _ = python_params(p, spy)
+    pymap = {id(a): pn for pn, a, d in params if a is not None}
+    if any(id(a) not in pymap for a in vecs):
+        return None
+    ctx = p.owner == 'ctx'
+    outer = p.name in VEC_OUTER and len(vecs) == 2
+
+    def index(a):
+        """The element of a looped argument at step _i of the loop."""
+        if not outer:
+            return '_i'
+        return '(_i // _n2)' if a is vecs[0] else '(_i % _n2)'
+
+    checks, decl, conv, cargs, results = [], [], [], (['self._ptr'] if ctx else []), []
+    sizes = []      # the number of elements of each looped argument
+    found = None
+    nout = []
+    have_n = False
+    stacked = None
+    for a in allargs:
+        n = a.name
+        pn = pymap.get(id(a), n)
+        k = a.kind
+        t = CTYPE.get(a.ftype)
+        ct = 'double' if a.ftype == 'real' else 'int'
+        npt = 'np.float64' if a.ftype == 'real' else 'np.int32'
+        if a in vecs and k == 'num_in':
+            conv.append(f'cdef cnp.ndarray _v_{n} = np.ascontiguousarray({pn}, dtype={npt}).reshape(-1)')
+            conv.append(f'cdef const {ct} *_pv_{n} = <const {ct}*>cnp.PyArray_DATA(_v_{n})')
+            conv.append(f'cdef Py_ssize_t _s_{n} = 0 if _v_{n}.shape[0] == 1 else 1')
+            sizes.append(f'_v_{n}.shape[0]')
+            cargs.append(f'_pv_{n}[{index(a)} * _s_{n}]' + (' + 1' if n in ZERO_BASED_IN.get(p.name, ()) else ''))
+        elif a in vecs and k == 'arr_in':
+            m = extent(a.dims[0])
+            conv.append(f'cdef cnp.ndarray _v_{n} = np.ascontiguousarray({pn}, dtype={npt})')
+            conv.append(f'if _v_{n}.ndim == 1: _v_{n} = _v_{n}.reshape(1, -1)')
+            conv.append(f'if _v_{n}.ndim != 2 or _v_{n}.shape[1] != {m}: '
+                        f'raise ValueError("{pn}: expected vectors of {m} values")')
+            conv.append(f'cdef const {ct} *_pv_{n} = <const {ct}*>cnp.PyArray_DATA(_v_{n})')
+            conv.append(f'cdef Py_ssize_t _s_{n} = 0 if _v_{n}.shape[0] == 1 else {m}')
+            sizes.append(f'_v_{n}.shape[0]')
+            cargs.append(f'_pv_{n} + {index(a)} * _s_{n}')
+        elif a in vecs:     # strings
+            checks.append(f'if np.ndim({pn}) != 1: raise ValueError("{pn}: expected a 1-D array of strings")')
+            conv.append(f'cdef bytes _bv_{n}')
+            conv.append(f'cdef int _nv_{n}, _wv_{n}')
+            conv.append(f'_bv_{n}, _nv_{n}, _wv_{n} = _strblock({pn})')
+            conv.append(f'cdef const char *_pv_{n} = _bv_{n}')
+            conv.append(f'cdef Py_ssize_t _s_{n} = 0 if _nv_{n} == 1 else _wv_{n}')
+            sizes.append(f'_nv_{n}')
+            cargs.append(f'_pv_{n} + _i * _s_{n}')
+        elif k == 'str_in':
+            if n in EMPTY_CHECKS.get(p.name, ()):
+                checks.append(f'if not {pn}: _empty_string({p.name!r}, {n!r})')
+            conv.append(f'cdef bytes _b_{n} = _b({pn})')
+            conv.append(f'cdef const char *_c_{n} = _b_{n}')
+            cargs.append(f'_c_{n}')
+        elif k == 'num_in':
+            if a.ftype == 'logical':
+                decl.append(f'cdef int _c_{n} = 1 if {pn} else 0')
+            elif n in ZERO_BASED_IN.get(p.name, ()):
+                decl.append(f'cdef {t} _c_{n} = {pn} + 1')
+            else:
+                decl.append(f'cdef {t} _c_{n} = {pn}')
+            cargs.append(f'_c_{n}')
+        elif k == 'arr_in':
+            conv.append(f'cdef cnp.ndarray _a_{n} = _input({pn}, {"NPY_DOUBLE" if a.ftype == "real" else "NPY_INT32"}, '
+                        f'{cdims(a.dims)}{"" if a.rank == 2 else ", -1"}, False)')
+            conv.append(f'cdef const {ct} *_p_{n} = <const {ct}*>cnp.PyArray_DATA(_a_{n})')
+            cargs.append(f'_p_{n}')
+        else:
+            if not sizes:
+                return None     # (outputs follow the inputs)
+            if not have_n:
+                if outer:
+                    conv.append(f'cdef Py_ssize_t _n1 = {sizes[0]}')
+                    conv.append(f'cdef Py_ssize_t _n2 = {sizes[1]}')
+                    conv.append('cdef Py_ssize_t _n = _n1 * _n2')
+                else:
+                    conv.append(f'cdef Py_ssize_t _n = _vlen([{", ".join(sizes)}])')
+                have_n = True
+            if k == 'num_out' and p.name in VEC_STACKED:
+                # the coordinates go straight into the columns of one (n, k) array
+                if stacked is None:
+                    stacked = [a2 for a2 in allargs if a2.kind == 'num_out']
+                    conv.append(f'cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), {len(stacked)}), dtype={npt})')
+                    conv.append(f'cdef {t} *_q_stack = <{t}*>cnp.PyArray_DATA(_o_stack)')
+                    results.append('_o_stack[:_n]')
+                cargs.append(f'_q_stack + _i * {len(stacked)} + {stacked.index(a)}')
+            elif k == 'num_out':
+                conv.append(f'cdef cnp.ndarray _o_{n} = np.empty(max(_n, 1), dtype={npt})')
+                conv.append(f'cdef {t} *_q_{n} = <{t}*>cnp.PyArray_DATA(_o_{n})')
+                cargs.append(f'_q_{n} + _i')
+                r = f'_o_{n}[:_n]'
+                if a.ftype == 'logical':
+                    r = f'({r} != 0)'
+                elif n in ZERO_BASED_OUT.get(p.name, ()):
+                    r = f'({r} - 1)'
+                if n in ('found', 'isname') and a.ftype == 'logical':
+                    found = r
+                else:
+                    results.append(r)
+                    nout.append(a)
+            elif k == 'arr_out':
+                ext = [extent(d) for d in a.dims]
+                if not all(x.isdigit() for x in ext):
+                    return None
+                size = math.prod(int(x) for x in ext)
+                conv.append(f'cdef cnp.ndarray _o_{n} = np.empty((max(_n, 1), {size}), dtype={npt})')
+                conv.append(f'cdef {ct} *_q_{n} = <{ct}*>cnp.PyArray_DATA(_o_{n})')
+                cargs.append(f'_q_{n} + _i * {size}')
+                if a.rank == 1:
+                    results.append(f'_o_{n}[:_n]')
+                else:   # Fortran's column-major matrices: (n, rows, columns)
+                    results.append(f'np.ascontiguousarray(_o_{n}[:_n].reshape(_n, {ext[1]}, {ext[0]})'
+                                   f'.transpose(0, 2, 1))')
+            elif k == 'str_out':
+                conv.append(f'cdef bytearray _ba_{n} = bytearray(max(_n, 1) * {VEC_STR_SIZE})')
+                conv.append(f'cdef char *_q_{n} = _ba_{n}')
+                cargs += [str(VEC_STR_SIZE), f'_q_{n} + _i * {VEC_STR_SIZE}']
+                results.append(f'np.array(_strs(_ba_{n}, _n, {VEC_STR_SIZE}), dtype=np.str_)')
+    if outer:   # (n epochs, m vectors, ...)
+        results = [f'_outer({r}, _n1, _n2)' for r in results]
+        found = f'_outer({found}, _n1, _n2)' if found else None
+    numeric = [pymap[id(a)] for a in vecs if a.kind == 'num_in']
+    if numeric and len(numeric) == len(vecs):
+        checks.append(f'if {" and ".join(f"np.ndim({x}) == 0" for x in numeric)}: '
+                      f'raise ValueError("expected an array (a scalar is {p.name}\'s)")')
+    lines = checks + decl + ['cdef Py_ssize_t _i', 'cdef int _st = 0'] + conv
+    call = f'{p.cname}({", ".join(cargs)})'
+    if ctx:
+        lines += ['self._enter()', 'try:', '    with nogil:', '        for _i in range(_n):',
+                  f'            _st = {call}', '            if _st:', '                break',
+                  '    if _st:', '        self._raise()', 'finally:', '    self._leave()']
+    else:
+        lines += ['with nogil:', '    for _i in range(_n):', f'        {call}']
+    if found:   # SpiceyPy's (cyice's) found handling
+        lines.append(f'return _found_v({p.name!r}, ({", ".join(results)},), {found})')
+    else:
+        lines.append(f'return {results[0]}' if len(results) == 1 else f'return {", ".join(results)}')
+    # the looped arguments and the dimensions of one element, for the dispatch
+    vinfo = [(pymap[id(a)], 1 if a.kind == 'arr_in' else 0) for a in vecs]
+    vlist = ', '.join(f'`{pymap[id(a)]}`' for a in vecs)
+    doc = (f'`{p.name}` at each element of {vlist} (arrays{", broadcast together" if len(vecs) > 1 else ""}), '
+           f'in a C loop with the GIL released (SpiceyPy\'s cyice `{p.name}_v`).\n\n'
+           f'The other arguments are those of `{p.name}`. The results are arrays whose first dimension is the '
+           f'number of elements. {"A found flag false at any element raises NotFoundError (the flags are returned last under `no_found_check`)." if found else ""}'.rstrip())
+    psig = ', '.join(f'{pn}={d}' if d is not None else pn for pn, a, d in params)
+    if ctx:
+        out = [f'    def {p.name}_v({", ".join(["self"] + ([psig] if psig else []))}):',
+               f'        """{doc}"""'.replace('\n', '\n        ')]
+        out += ['        ' + l for l in lines]
+        out.append('')
+        module = (f'def {p.name}_v({psig}):\n'
+                  f'    """{doc}"""\n'
+                  f'    return _context().{p.name}_v({", ".join(pn for pn, a, d in params)})\n')
+        return '\n'.join(out), module, vinfo
+    out = [f'def {p.name}_v({psig}):', f'    """{doc}"""'.replace('\n', '\n    ')]
+    out += ['    ' + l for l in lines]
+    out.append('')
+    return None, '\n'.join(out), vinfo
+
+
+def dispatcher(p, params, vinfo, scalar, doc):
+    """`<name>`: `<name>_v` when a looped argument is an array of elements,
+    else the scalar routine (`scalar`: the call expression's function), as
+    SpiceyPy's cyice dispatches."""
+    sig = ', '.join(f'{pn}={d}' if d is not None else pn for pn, a, d in params)
+    looped = {pn for pn, d in vinfo}
+    call = ', '.join(pn for pn, a, d in params)
+    scall = ', '.join(f'_sc({pn})' if pn in looped else pn for pn, a, d in params)
+    test = ' or '.join(f'_isvec({pn}, {d})' for pn, d in vinfo)
+    names = ', '.join(f'`{pn}`' for pn, d in vinfo)
+    doc = doc.rstrip() + (f'\n\n    With arrays for {names}: `{p.name}_v` (PepperyPy\'s, and SpiceyPy\'s cyice, '
+                          f'dispatch); `{p.name}_s` is always the scalar form.')
+    return (f'def {p.name}({sig}):\n'
+            f'    """{doc}"""\n'
+            f'    if {test}:\n'
+            f'        return {p.name}_v({call})\n'
+            f'    return {scalar}({scall})\n')
+
+
+def inline_dispatcher(p, params, vinfo, code):
+    """`dispatcher` for a routine without a context: the scalar function's
+    own body after the test (no second Python call)."""
+    a = code.index('"""') + 3
+    b = code.index('"""', a)
+    names = ', '.join(f'`{pn}`' for pn, d in vinfo)
+    extra = (f'\n\n    With arrays for {names}: `{p.name}_v` (PepperyPy\'s, and SpiceyPy\'s cyice, '
+             f'dispatch); `{p.name}_s` is always the scalar form.')
+    call = ', '.join(pn for pn, a_, d in params)
+    test = ' or '.join(f'_isvec({pn}, {d})' for pn, d in vinfo)
+    lines = [f'    if {test}:', f'        return {p.name}_v({call})']
+    lines += [f'    {pn} = _sc({pn})' for pn, d in vinfo]
+    return code[:b].rstrip() + extra + '"""\n' + '\n'.join(lines) + code[b + 3:]
+
+
 def module_function(p, params, where, doc):
     sig = []
     for pn, a, d in params:
@@ -1491,6 +1738,7 @@ def main():
                      '    """The kernel changes of an instance (generated)."""', '']
     functions = ['# Generated by tools/gen_capi.py; do not edit. The module-level functions.', '']
     info = {}
+    vectorized = []
     for p in wrapped.values():
         if p.name in NO_PYTHON:
             continue
@@ -1499,12 +1747,30 @@ def main():
         doc = py_doc(p, params, aligned, None, None)
         if p.owner == 'ctx':
             ctx_methods.append(code)
-            functions.append(module_function(p, params, 'ctx', code.split('"""')[1].replace('\n        ', '\n    ')))
+            fdoc = code.split('"""')[1].replace('\n        ', '\n    ')
+            v = cython_vec_method(p, spy)
+            if v:
+                ctx_methods.append(v[0])
+                functions.append(v[1])
+                # <name>_s, and <name> dispatching to <name>_s or <name>_v
+                functions.append(module_function(p, params, 'ctx', fdoc).replace(
+                    f'def {p.name}(', f'def {p.name}_s(', 1))
+                functions.append(dispatcher(p, params, v[2], f'_context().{p.name}', fdoc))
+                vectorized.append(p.name)
+            else:
+                functions.append(module_function(p, params, 'ctx', fdoc))
         elif p.owner == 'spice':
             spice_methods.append(code)
             functions.append(module_function(p, params, 'spice', code.split('"""')[1].replace('\n        ', '\n    ')))
         else:
-            functions.append(code)
+            v = cython_vec_method(p, spy)
+            if v:
+                functions.append(code.replace(f'def {p.name}(', f'def {p.name}_s(', 1))
+                functions.append(v[1])
+                functions.append(inline_dispatcher(p, params, v[2], code))
+                vectorized.append(p.name)
+            else:
+                functions.append(code)
     for name, (value, doc) in sorted(consts.items()):
         functions.append(f'def {name}():\n    """{doc or name} (a constant)."""\n    return {value!r}\n')
     (pkg / '_context_methods.pxi').write_text('\n'.join(ctx_methods))
@@ -1519,6 +1785,8 @@ def main():
         f'GENERATED = {names!r}\n'
         '#: Those whose Python signature follows SpiceyPy\'s.\n'
         f'ALIGNED = {sorted(n for n, (p, al, v) in info.items() if al)!r}\n'
+        '#: The routines with a vectorized form (<name>_v, a C loop).\n'
+        f'VECTORIZED = {sorted(vectorized)!r}\n'
         '#: Not generated, and why.\n'
         f'SKIPPED = {dict(sorted(skipped.items()))!r}\n')
     print(f'{len(wrapped)} wrapped ({sum(1 for p in wrapped.values() if p.owner == "ctx")} context, '

@@ -20,7 +20,13 @@ def appndi(item, cell=None):
     :return: The cell to which ITEM will be"""
     return _context().appndi(item, cell)
 
-def azlcpo(method, target, et, abcorr, azccw, elplsz, obspos, obsctr, obsref):
+def azlcpo_v(method, target, et, abcorr, azccw, elplsz, obspos, obsctr, obsref):
+    """`azlcpo` at each element of `et`, `obspos` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `azlcpo_v`).
+
+The other arguments are those of `azlcpo`. The results are arrays whose first dimension is the number of elements."""
+    return _context().azlcpo_v(method, target, et, abcorr, azccw, elplsz, obspos, obsctr, obsref)
+
+def azlcpo_s(method, target, et, abcorr, azccw, elplsz, obspos, obsctr, obsref):
     """Return the azimuth/elevation coordinates of a specified target relative to an 'observer,' where the observer has constant position in a specified reference frame. The observer's position is provided by the calling program rather than by loaded SPK files.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/azlcpo.html
@@ -36,6 +42,27 @@ def azlcpo(method, target, et, abcorr, azccw, elplsz, obspos, obsctr, obsref):
     :param obsref: Body-fixed, body-centered frame of observer's center.
     :return: State of target with respect to observer, in azimuth/elevation coordinates.; One way light time between target and observer."""
     return _context().azlcpo(method, target, et, abcorr, azccw, elplsz, obspos, obsctr, obsref)
+
+def azlcpo(method, target, et, abcorr, azccw, elplsz, obspos, obsctr, obsref):
+    """Return the azimuth/elevation coordinates of a specified target relative to an 'observer,' where the observer has constant position in a specified reference frame. The observer's position is provided by the calling program rather than by loaded SPK files.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/azlcpo.html
+    
+    :param method: Method to obtain the surface normal vector.
+    :param target: Name of target ephemeris object.
+    :param et: Observation epoch.
+    :param abcorr: Aberration correction.
+    :param azccw: Flag indicating how azimuth is measured.
+    :param elplsz: Flag indicating how elevation is measured.
+    :param obspos: Observer position relative to center of motion.
+    :param obsctr: Center of motion of observer.
+    :param obsref: Body-fixed, body-centered frame of observer's center.
+    :return: State of target with respect to observer, in azimuth/elevation coordinates.; One way light time between target and observer.
+
+    With arrays for `et`, `obspos`: `azlcpo_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `azlcpo_s` is always the scalar form."""
+    if _isvec(et, 0) or _isvec(obspos, 1):
+        return azlcpo_v(method, target, et, abcorr, azccw, elplsz, obspos, obsctr, obsref)
+    return _context().azlcpo(method, target, _sc(et), abcorr, azccw, elplsz, _sc(obspos), obsctr, obsref)
 
 def badkpv(caller, name, comp, insize, divby, intype):
     """Determine if a kernel pool variable is present and if so that it has the correct size and type.
@@ -373,7 +400,13 @@ def ckfxfm(inst, et):
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().ckfxfm(inst, et)
 
-def ckgp(inst, sclkdp, tol, ref):
+def ckgp_v(inst, sclkdp, tol, ref):
+    """`ckgp` at each element of `sclkdp` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `ckgp_v`).
+
+The other arguments are those of `ckgp`. The results are arrays whose first dimension is the number of elements. A found flag false at any element raises NotFoundError (the flags are returned last under `no_found_check`)."""
+    return _context().ckgp_v(inst, sclkdp, tol, ref)
+
+def ckgp_s(inst, sclkdp, tol, ref):
     """Get pointing (attitude) for a specified spacecraft clock time.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckgp.html
@@ -386,7 +419,30 @@ def ckgp(inst, sclkdp, tol, ref):
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().ckgp(inst, sclkdp, tol, ref)
 
-def ckgpav(inst, sclkdp, tol, ref):
+def ckgp(inst, sclkdp, tol, ref):
+    """Get pointing (attitude) for a specified spacecraft clock time.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckgp.html
+    
+    :param inst: NAIF ID of instrument, spacecraft, or structure.
+    :param sclkdp: Encoded spacecraft clock time.
+    :param tol: Time tolerance.
+    :param ref: Reference frame.
+    :return: C-matrix pointing data.; Output encoded spacecraft clock time.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)
+
+    With arrays for `sclkdp`: `ckgp_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `ckgp_s` is always the scalar form."""
+    if _isvec(sclkdp, 0):
+        return ckgp_v(inst, sclkdp, tol, ref)
+    return _context().ckgp(inst, _sc(sclkdp), tol, ref)
+
+def ckgpav_v(inst, sclkdp, tol, ref):
+    """`ckgpav` at each element of `sclkdp` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `ckgpav_v`).
+
+The other arguments are those of `ckgpav`. The results are arrays whose first dimension is the number of elements. A found flag false at any element raises NotFoundError (the flags are returned last under `no_found_check`)."""
+    return _context().ckgpav_v(inst, sclkdp, tol, ref)
+
+def ckgpav_s(inst, sclkdp, tol, ref):
     """Get pointing (attitude) and angular velocity for a specified spacecraft clock time.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckgpav.html
@@ -398,6 +454,23 @@ def ckgpav(inst, sclkdp, tol, ref):
     :return: C-matrix pointing data.; Angular velocity vector.; Output encoded spacecraft clock time.
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().ckgpav(inst, sclkdp, tol, ref)
+
+def ckgpav(inst, sclkdp, tol, ref):
+    """Get pointing (attitude) and angular velocity for a specified spacecraft clock time.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ckgpav.html
+    
+    :param inst: NAIF ID of instrument, spacecraft, or structure.
+    :param sclkdp: Encoded spacecraft clock time.
+    :param tol: Time tolerance.
+    :param ref: Reference frame.
+    :return: C-matrix pointing data.; Angular velocity vector.; Output encoded spacecraft clock time.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)
+
+    With arrays for `sclkdp`: `ckgpav_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `ckgpav_s` is always the scalar form."""
+    if _isvec(sclkdp, 0):
+        return ckgpav_v(inst, sclkdp, tol, ref)
+    return _context().ckgpav(inst, _sc(sclkdp), tol, ref)
 
 def ckgr02(handle, descr, recno):
     """Return a specified pointing instance from a CK type 02 segment. The segment is identified by a CK file handle and segment descriptor.
@@ -700,7 +773,13 @@ def cnmfrm(cname, lenout=None):
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().cnmfrm(cname, lenout)
 
-def conics(elts, et):
+def conics_v(elts, et):
+    """`conics` at each element of `elts`, `et` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `conics_v`).
+
+The other arguments are those of `conics`. The results are arrays whose first dimension is the number of elements."""
+    return _context().conics_v(elts, et)
+
+def conics_s(elts, et):
     """Determine the state (position, velocity) of an orbiting body from a set of elliptic, hyperbolic, or parabolic orbital elements.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/conics.html
@@ -710,7 +789,27 @@ def conics(elts, et):
     :return: State of orbiting body at ET."""
     return _context().conics(elts, et)
 
-def convrt(x, inunit, outunit):
+def conics(elts, et):
+    """Determine the state (position, velocity) of an orbiting body from a set of elliptic, hyperbolic, or parabolic orbital elements.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/conics.html
+    
+    :param elts: Conic elements.
+    :param et: Input time.
+    :return: State of orbiting body at ET.
+
+    With arrays for `elts`, `et`: `conics_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `conics_s` is always the scalar form."""
+    if _isvec(elts, 1) or _isvec(et, 0):
+        return conics_v(elts, et)
+    return _context().conics(_sc(elts), _sc(et))
+
+def convrt_v(x, inunit, outunit):
+    """`convrt` at each element of `x` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `convrt_v`).
+
+The other arguments are those of `convrt`. The results are arrays whose first dimension is the number of elements."""
+    return _context().convrt_v(x, inunit, outunit)
+
+def convrt_s(x, inunit, outunit):
     """Take a measurement X, the units associated with X, and units to which X should be converted; return Y --- the value of the measurement in the output units.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/convrt.html
@@ -720,6 +819,21 @@ def convrt(x, inunit, outunit):
     :param outunit: Desired units for the measurement.
     :return: The measurement in the desired units."""
     return _context().convrt(x, inunit, outunit)
+
+def convrt(x, inunit, outunit):
+    """Take a measurement X, the units associated with X, and units to which X should be converted; return Y --- the value of the measurement in the output units.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/convrt.html
+    
+    :param x: Number representing a measurement in some units.
+    :param inunit: The units in which X is measured.
+    :param outunit: Desired units for the measurement.
+    :return: The measurement in the desired units.
+
+    With arrays for `x`: `convrt_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `convrt_s` is always the scalar form."""
+    if _isvec(x, 0):
+        return convrt_v(x, inunit, outunit)
+    return _context().convrt(_sc(x), inunit, outunit)
 
 def copyd(cell, copy=None):
     """Copy the contents of a double precision cell to another cell.
@@ -1861,7 +1975,13 @@ def delfil(filnam):
     :param filnam: The name of a file to be deleted."""
     return _context().delfil(filnam)
 
-def deltet(epoch, eptype):
+def deltet_v(epoch, eptype):
+    """`deltet` at each element of `epoch` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `deltet_v`).
+
+The other arguments are those of `deltet`. The results are arrays whose first dimension is the number of elements."""
+    return _context().deltet_v(epoch, eptype)
+
+def deltet_s(epoch, eptype):
     """Return the value of Delta ET (ET-UTC) for an input epoch.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/deltet.html
@@ -1870,6 +1990,20 @@ def deltet(epoch, eptype):
     :param eptype: Type of input epoch ('UTC' or 'ET').
     :return: Delta ET (ET-UTC) at input epoch."""
     return _context().deltet(epoch, eptype)
+
+def deltet(epoch, eptype):
+    """Return the value of Delta ET (ET-UTC) for an input epoch.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/deltet.html
+    
+    :param epoch: Input epoch (seconds past J2000).
+    :param eptype: Type of input epoch ('UTC' or 'ET').
+    :return: Delta ET (ET-UTC) at input epoch.
+
+    With arrays for `epoch`: `deltet_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `deltet_s` is always the scalar form."""
+    if _isvec(epoch, 0):
+        return deltet_v(epoch, eptype)
+    return _context().deltet(_sc(epoch), eptype)
 
 def dgeodr(x, y, z, re, f):
     """Compute the Jacobian matrix of the transformation from rectangular to geodetic coordinates.
@@ -2976,7 +3110,13 @@ def eqncpv(et, epoch, eqel, rapol, decpol):
     :return: State of the object described by EQEL."""
     return _context().eqncpv(et, epoch, eqel, rapol, decpol)
 
-def et2lst(et, body, lon, typein, timlen=None, ampmlen=None):
+def et2lst_v(et, body, lon, typein, timlen=None, ampmlen=None):
+    """`et2lst` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `et2lst_v`).
+
+The other arguments are those of `et2lst`. The results are arrays whose first dimension is the number of elements."""
+    return _context().et2lst_v(et, body, lon, typein, timlen, ampmlen)
+
+def et2lst_s(et, body, lon, typein, timlen=None, ampmlen=None):
     """Compute the local solar time for a given ephemeris epoch ET for an object on the surface of a body at a specified longitude.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/et2lst.html
@@ -2990,7 +3130,31 @@ def et2lst(et, body, lon, typein, timlen=None, ampmlen=None):
     :return: Local hour on a '24 hour' clock; Minutes past the hour; Seconds past the minute; String giving local time on 24 hour clock; String giving time on A.M./ P.M. scale"""
     return _context().et2lst(et, body, lon, typein, timlen, ampmlen)
 
-def et2utc(et, format_str, prec, lenout=None):
+def et2lst(et, body, lon, typein, timlen=None, ampmlen=None):
+    """Compute the local solar time for a given ephemeris epoch ET for an object on the surface of a body at a specified longitude.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/et2lst.html
+    
+    :param et: Epoch in seconds past J2000 epoch
+    :param body: ID-code of the body of interest
+    :param lon: Longitude of surface point (RADIANS)
+    :param typein: Type of longitude 'PLANETOCENTRIC', etc.
+    :param timlen: (SpiceyPy compatibility; ignored)
+    :param ampmlen: (SpiceyPy compatibility; ignored)
+    :return: Local hour on a '24 hour' clock; Minutes past the hour; Seconds past the minute; String giving local time on 24 hour clock; String giving time on A.M./ P.M. scale
+
+    With arrays for `et`: `et2lst_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `et2lst_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return et2lst_v(et, body, lon, typein, timlen, ampmlen)
+    return _context().et2lst(_sc(et), body, lon, typein, timlen, ampmlen)
+
+def et2utc_v(et, format_str, prec, lenout=None):
+    """`et2utc` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `et2utc_v`).
+
+The other arguments are those of `et2utc`. The results are arrays whose first dimension is the number of elements."""
+    return _context().et2utc_v(et, format_str, prec, lenout)
+
+def et2utc_s(et, format_str, prec, lenout=None):
     """Convert an input time from ephemeris seconds past J2000 to Calendar, Day-of-Year, or Julian Date format, UTC.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/et2utc.html
@@ -3002,7 +3166,29 @@ def et2utc(et, format_str, prec, lenout=None):
     :return: Output time string, UTC."""
     return _context().et2utc(et, format_str, prec, lenout)
 
-def etcal(et, lenout=None):
+def et2utc(et, format_str, prec, lenout=None):
+    """Convert an input time from ephemeris seconds past J2000 to Calendar, Day-of-Year, or Julian Date format, UTC.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/et2utc.html
+    
+    :param et: Epoch, given in ephemeris seconds past J2000.
+    :param format_str: Format of output epoch.
+    :param prec: Digits of precision in fractional seconds or days.
+    :param lenout: (SpiceyPy compatibility; ignored)
+    :return: Output time string, UTC.
+
+    With arrays for `et`: `et2utc_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `et2utc_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return et2utc_v(et, format_str, prec, lenout)
+    return _context().et2utc(_sc(et), format_str, prec, lenout)
+
+def etcal_v(et, lenout=None):
+    """`etcal` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `etcal_v`).
+
+The other arguments are those of `etcal`. The results are arrays whose first dimension is the number of elements."""
+    return _context().etcal_v(et, lenout)
+
+def etcal_s(et, lenout=None):
     """Convert from an ephemeris epoch measured in seconds past the epoch of J2000 to a calendar string format using a formal calendar free of leapseconds.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/etcal.html
@@ -3011,6 +3197,20 @@ def etcal(et, lenout=None):
     :param lenout: (SpiceyPy compatibility; ignored)
     :return: A standard calendar representation of ET."""
     return _context().etcal(et, lenout)
+
+def etcal(et, lenout=None):
+    """Convert from an ephemeris epoch measured in seconds past the epoch of J2000 to a calendar string format using a formal calendar free of leapseconds.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/etcal.html
+    
+    :param et: Ephemeris time measured in seconds past J2000.
+    :param lenout: (SpiceyPy compatibility; ignored)
+    :return: A standard calendar representation of ET.
+
+    With arrays for `et`: `etcal_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `etcal_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return etcal_v(et, lenout)
+    return _context().etcal(_sc(et), lenout)
 
 def eul2m(angle3, angle2, angle1, axis3, axis2, axis1):
     """Construct a rotation matrix from a set of Euler angles.
@@ -3049,7 +3249,13 @@ def ev2lin(et, geophs, elems):
     :return: Evaluated state"""
     return _context().ev2lin(et, geophs, elems)
 
-def evsgp4(et, geophs, elems):
+def evsgp4_v(et, geophs, elems):
+    """`evsgp4` at each element of `et`, `elems` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `evsgp4_v`).
+
+The other arguments are those of `evsgp4`. The results are arrays whose first dimension is the number of elements."""
+    return _context().evsgp4_v(et, geophs, elems)
+
+def evsgp4_s(et, geophs, elems):
     """Evaluate NORAD two-line element data for earth orbiting spacecraft. This evaluator uses algorithms as described in Vallado 2006 [4].
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/evsgp4.html
@@ -3059,6 +3265,21 @@ def evsgp4(et, geophs, elems):
     :param elems: Two-line element data
     :return: Evaluated state"""
     return _context().evsgp4(et, geophs, elems)
+
+def evsgp4(et, geophs, elems):
+    """Evaluate NORAD two-line element data for earth orbiting spacecraft. This evaluator uses algorithms as described in Vallado 2006 [4].
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/evsgp4.html
+    
+    :param et: Epoch in seconds past ephemeris epoch J2000.
+    :param geophs: Geophysical constants
+    :param elems: Two-line element data
+    :return: Evaluated state
+
+    With arrays for `et`, `elems`: `evsgp4_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `evsgp4_s` is always the scalar form."""
+    if _isvec(et, 0) or _isvec(elems, 1):
+        return evsgp4_v(et, geophs, elems)
+    return _context().evsgp4(_sc(et), geophs, _sc(elems))
 
 def excess(number, struct_):
     """Set the long error message so as to indicate the number of excess elements encountered by a routine operating on cells or on data structures based on cells.
@@ -3130,7 +3351,13 @@ def fov_by_name(inst):
     :return: the FOV shape: CIRCLE, ELLIPSE, POLYGON or RECTANGLE; the frame of the vectors; the boresight vector; the boundary vectors, shape (3, n) (n = 0 after an error)"""
     return _context().fov_by_name(inst)
 
-def fovray(inst, raydir, rframe, abcorr, observer, et):
+def fovray_v(inst, raydir, rframe, abcorr, observer, et):
+    """`fovray` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `fovray_v`).
+
+The other arguments are those of `fovray`. The results are arrays whose first dimension is the number of elements."""
+    return _context().fovray_v(inst, raydir, rframe, abcorr, observer, et)
+
+def fovray_s(inst, raydir, rframe, abcorr, observer, et):
     """Determine if a specified ray is within the field-of-view (FOV) of a specified instrument at a given time.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/fovray.html
@@ -3144,7 +3371,31 @@ def fovray(inst, raydir, rframe, abcorr, observer, et):
     :return: Visibility flag (.TRUE./.FALSE.)."""
     return _context().fovray(inst, raydir, rframe, abcorr, observer, et)
 
-def fovtrg(inst, target, tshape, tframe, abcorr, observer, et):
+def fovray(inst, raydir, rframe, abcorr, observer, et):
+    """Determine if a specified ray is within the field-of-view (FOV) of a specified instrument at a given time.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/fovray.html
+    
+    :param inst: Name or ID code string of the instrument.
+    :param raydir: Ray's direction vector.
+    :param rframe: Reference frame of ray's direction vector.
+    :param abcorr: Aberration correction flag.
+    :param observer: Name or ID code string of the observer.
+    :param et: Time of the observation (seconds past J2000).
+    :return: Visibility flag (.TRUE./.FALSE.).
+
+    With arrays for `et`: `fovray_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `fovray_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return fovray_v(inst, raydir, rframe, abcorr, observer, et)
+    return _context().fovray(inst, raydir, rframe, abcorr, observer, _sc(et))
+
+def fovtrg_v(inst, target, tshape, tframe, abcorr, observer, et):
+    """`fovtrg` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `fovtrg_v`).
+
+The other arguments are those of `fovtrg`. The results are arrays whose first dimension is the number of elements."""
+    return _context().fovtrg_v(inst, target, tshape, tframe, abcorr, observer, et)
+
+def fovtrg_s(inst, target, tshape, tframe, abcorr, observer, et):
     """Determine if a specified ephemeris object is within the field-of-view (FOV) of a specified instrument at a given time.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/fovtrg.html
@@ -3158,6 +3409,25 @@ def fovtrg(inst, target, tshape, tframe, abcorr, observer, et):
     :param et: Time of the observation (seconds past J2000).
     :return: Visibility flag (.TRUE./.FALSE.)."""
     return _context().fovtrg(inst, target, tshape, tframe, abcorr, observer, et)
+
+def fovtrg(inst, target, tshape, tframe, abcorr, observer, et):
+    """Determine if a specified ephemeris object is within the field-of-view (FOV) of a specified instrument at a given time.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/fovtrg.html
+    
+    :param inst: Name or ID code string of the instrument.
+    :param target: Name or ID code string of the target.
+    :param tshape: Type of shape model used for the target.
+    :param tframe: Body-fixed, body-centered frame for target body.
+    :param abcorr: Aberration correction flag.
+    :param observer: Name or ID code string of the observer.
+    :param et: Time of the observation (seconds past J2000).
+    :return: Visibility flag (.TRUE./.FALSE.).
+
+    With arrays for `et`: `fovtrg_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `fovtrg_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return fovtrg_v(inst, target, tshape, tframe, abcorr, observer, et)
+    return _context().fovtrg(inst, target, tshape, tframe, abcorr, observer, _sc(et))
 
 def frame_name(frcode):
     """The name of a frame from its ID code, of any length (PEPPER; the body of `frmnam`, which truncates to its argument's length).
@@ -3209,7 +3479,13 @@ def frmnam(frcode, lenout=None):
     :return: the name associated with the reference frame."""
     return _context().frmnam(frcode, lenout)
 
-def georec(lon, lat, alt, re, f):
+def georec_v(lon, lat, alt, re, f):
+    """`georec` at each element of `lon`, `lat`, `alt` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `georec_v`).
+
+The other arguments are those of `georec`. The results are arrays whose first dimension is the number of elements."""
+    return _context().georec_v(lon, lat, alt, re, f)
+
+def georec_s(lon, lat, alt, re, f):
     """Convert geodetic coordinates to rectangular coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/georec.html
@@ -3221,6 +3497,23 @@ def georec(lon, lat, alt, re, f):
     :param f: Flattening coefficient.
     :return: Rectangular coordinates of point."""
     return _context().georec(lon, lat, alt, re, f)
+
+def georec(lon, lat, alt, re, f):
+    """Convert geodetic coordinates to rectangular coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/georec.html
+    
+    :param lon: Geodetic longitude of point (radians).
+    :param lat: Geodetic latitude  of point (radians).
+    :param alt: Altitude of point above the reference spheroid.
+    :param re: Equatorial radius of the reference spheroid.
+    :param f: Flattening coefficient.
+    :return: Rectangular coordinates of point.
+
+    With arrays for `lon`, `lat`, `alt`: `georec_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `georec_s` is always the scalar form."""
+    if _isvec(lon, 0) or _isvec(lat, 0) or _isvec(alt, 0):
+        return georec_v(lon, lat, alt, re, f)
+    return _context().georec(_sc(lon), _sc(lat), _sc(alt), re, f)
 
 def getelm(frstyr, lines):
     """Parse the 'lines' of a two-line element set, returning the elements in units suitable for use in SPICE software.
@@ -3723,7 +4016,13 @@ def illum(target, et, abcorr, obsrvr, spoint):
     :return: Phase angle at the surface point.; Solar incidence angle at the surface point.; Emission angle at the surface point."""
     return _context().illum(target, et, abcorr, obsrvr, spoint)
 
-def illumf(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint):
+def illumf_v(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint):
+    """`illumf` at each element of `et`, `spoint` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `illumf_v`).
+
+The other arguments are those of `illumf`. The results are arrays whose first dimension is the number of elements."""
+    return _context().illumf_v(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint)
+
+def illumf_s(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint):
     """Compute the illumination angles---phase, incidence, and emission---at a specified point on a target body. Return logical flags indicating whether the surface point is visible from the observer's position and whether the surface point is illuminated.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/illumf.html
@@ -3739,7 +4038,33 @@ def illumf(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint):
     :return: Target surface point epoch.; Vector from observer to target surface point.; Phase angle at the surface point.; Source incidence angle at the surface point.; Emission angle at the surface point.; Visibility flag (.TRUE. = visible).; Illumination flag (.TRUE. = illuminated)."""
     return _context().illumf(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint)
 
-def illumg(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint):
+def illumf(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint):
+    """Compute the illumination angles---phase, incidence, and emission---at a specified point on a target body. Return logical flags indicating whether the surface point is visible from the observer's position and whether the surface point is illuminated.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/illumf.html
+    
+    :param method: Computation method.
+    :param target: Name of target body.
+    :param ilusrc: Name of illumination source.
+    :param et: Epoch in ephemeris seconds past J2000 TDB.
+    :param fixref: Body-fixed, body-centered target body frame.
+    :param abcorr: Desired aberration correction.
+    :param obsrvr: Name of observing body.
+    :param spoint: Body-fixed coordinates of a target surface point.
+    :return: Target surface point epoch.; Vector from observer to target surface point.; Phase angle at the surface point.; Source incidence angle at the surface point.; Emission angle at the surface point.; Visibility flag (.TRUE. = visible).; Illumination flag (.TRUE. = illuminated).
+
+    With arrays for `et`, `spoint`: `illumf_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `illumf_s` is always the scalar form."""
+    if _isvec(et, 0) or _isvec(spoint, 1):
+        return illumf_v(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint)
+    return _context().illumf(method, target, ilusrc, _sc(et), fixref, abcorr, obsrvr, _sc(spoint))
+
+def illumg_v(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint):
+    """`illumg` at each element of `et`, `spoint` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `illumg_v`).
+
+The other arguments are those of `illumg`. The results are arrays whose first dimension is the number of elements."""
+    return _context().illumg_v(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint)
+
+def illumg_s(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint):
     """Find the illumination angles (phase, incidence, and emission) at a specified surface point of a target body.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/illumg.html
@@ -3755,7 +4080,33 @@ def illumg(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint):
     :return: Target surface point epoch.; Vector from observer to target surface point.; Phase angle at the surface point.; Source incidence angle at the surface point.; Emission angle at the surface point."""
     return _context().illumg(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint)
 
-def ilumin(method, target, et, fixref, abcorr, obsrvr, spoint):
+def illumg(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint):
+    """Find the illumination angles (phase, incidence, and emission) at a specified surface point of a target body.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/illumg.html
+    
+    :param method: Computation method.
+    :param target: Name of target body.
+    :param ilusrc: Name of illumination source.
+    :param et: Epoch in ephemeris seconds past J2000 TDB.
+    :param fixref: Body-fixed, body-centered target body frame.
+    :param abcorr: Desired aberration correction.
+    :param obsrvr: Name of observing body.
+    :param spoint: Body-fixed coordinates of a target surface point.
+    :return: Target surface point epoch.; Vector from observer to target surface point.; Phase angle at the surface point.; Source incidence angle at the surface point.; Emission angle at the surface point.
+
+    With arrays for `et`, `spoint`: `illumg_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `illumg_s` is always the scalar form."""
+    if _isvec(et, 0) or _isvec(spoint, 1):
+        return illumg_v(method, target, ilusrc, et, fixref, abcorr, obsrvr, spoint)
+    return _context().illumg(method, target, ilusrc, _sc(et), fixref, abcorr, obsrvr, _sc(spoint))
+
+def ilumin_v(method, target, et, fixref, abcorr, obsrvr, spoint):
+    """`ilumin` at each element of `et`, `spoint` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `ilumin_v`).
+
+The other arguments are those of `ilumin`. The results are arrays whose first dimension is the number of elements."""
+    return _context().ilumin_v(method, target, et, fixref, abcorr, obsrvr, spoint)
+
+def ilumin_s(method, target, et, fixref, abcorr, obsrvr, spoint):
     """Find the illumination angles (phase, solar incidence, and emission) at a specified surface point of a target body.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ilumin.html
@@ -3769,6 +4120,25 @@ def ilumin(method, target, et, fixref, abcorr, obsrvr, spoint):
     :param spoint: Body-fixed coordinates of a target surface point.
     :return: Target surface point epoch.; Vector from observer to target surface point.; Phase angle at the surface point.; Solar incidence angle at the surface point.; Emission angle at the surface point."""
     return _context().ilumin(method, target, et, fixref, abcorr, obsrvr, spoint)
+
+def ilumin(method, target, et, fixref, abcorr, obsrvr, spoint):
+    """Find the illumination angles (phase, solar incidence, and emission) at a specified surface point of a target body.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/ilumin.html
+    
+    :param method: Computation method.
+    :param target: Name of target body.
+    :param et: Epoch in ephemeris seconds past J2000 TDB.
+    :param fixref: Body-fixed, body-centered target body frame.
+    :param abcorr: Desired aberration correction.
+    :param obsrvr: Name of observing body.
+    :param spoint: Body-fixed coordinates of a target surface point.
+    :return: Target surface point epoch.; Vector from observer to target surface point.; Phase angle at the surface point.; Solar incidence angle at the surface point.; Emission angle at the surface point.
+
+    With arrays for `et`, `spoint`: `ilumin_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `ilumin_s` is always the scalar form."""
+    if _isvec(et, 0) or _isvec(spoint, 1):
+        return ilumin_v(method, target, et, fixref, abcorr, obsrvr, spoint)
+    return _context().ilumin(method, target, _sc(et), fixref, abcorr, obsrvr, _sc(spoint))
 
 def incnsg(apex, axis, angle, endpt1, endpt2):
     """Compute the points of intersection of a specified nappe of a cone and a line segment.
@@ -4211,7 +4581,13 @@ def locln(unit, bmark, emark, line):
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().locln(unit, bmark, emark, line)
 
-def lspcn(body, et, abcorr):
+def lspcn_v(body, et, abcorr):
+    """`lspcn` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `lspcn_v`).
+
+The other arguments are those of `lspcn`. The results are arrays whose first dimension is the number of elements."""
+    return _context().lspcn_v(body, et, abcorr)
+
+def lspcn_s(body, et, abcorr):
     """Compute L_s, the planetocentric longitude of the sun, as seen from a specified body.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/lspcn.html
@@ -4221,6 +4597,21 @@ def lspcn(body, et, abcorr):
     :param abcorr: Aberration correction.
     :return: the result"""
     return _context().lspcn(body, et, abcorr)
+
+def lspcn(body, et, abcorr):
+    """Compute L_s, the planetocentric longitude of the sun, as seen from a specified body.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/lspcn.html
+    
+    :param body: Name of central body.
+    :param et: Epoch in seconds past J2000 TDB.
+    :param abcorr: Aberration correction.
+    :return: the result
+
+    With arrays for `et`: `lspcn_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `lspcn_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return lspcn_v(body, et, abcorr)
+    return _context().lspcn(body, _sc(et), abcorr)
 
 def ltime(etobs, obs, direct, targ):
     """Compute the transmission (or reception) time of a signal at a specified target, given the reception (or transmission) time at a specified observer. Also return the elapsed time between transmission and reception.
@@ -4411,7 +4802,13 @@ def nvp2pl(normal, point):
     :return: An array representing the plane."""
     return _context().nvp2pl(normal, point)
 
-def occult(target1, shape1, frame1, target2, shape2, frame2, abcorr, observer, et):
+def occult_v(target1, shape1, frame1, target2, shape2, frame2, abcorr, observer, et):
+    """`occult` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `occult_v`).
+
+The other arguments are those of `occult`. The results are arrays whose first dimension is the number of elements."""
+    return _context().occult_v(target1, shape1, frame1, target2, shape2, frame2, abcorr, observer, et)
+
+def occult_s(target1, shape1, frame1, target2, shape2, frame2, abcorr, observer, et):
     """Determine the occultation condition (not occulted, partially occulted, etc.) of one target relative to another target as seen by an observer at a given time.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/occult.html
@@ -4427,6 +4824,27 @@ def occult(target1, shape1, frame1, target2, shape2, frame2, abcorr, observer, e
     :param et: Time of the observation (seconds past J2000).
     :return: Occultation identification code."""
     return _context().occult(target1, shape1, frame1, target2, shape2, frame2, abcorr, observer, et)
+
+def occult(target1, shape1, frame1, target2, shape2, frame2, abcorr, observer, et):
+    """Determine the occultation condition (not occulted, partially occulted, etc.) of one target relative to another target as seen by an observer at a given time.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/occult.html
+    
+    :param target1: Name or ID of first target.
+    :param shape1: Type of shape model used for first target.
+    :param frame1: Body-fixed, body-centered frame for first body.
+    :param target2: Name or ID of second target.
+    :param shape2: Type of shape model used for second target.
+    :param frame2: Body-fixed, body-centered frame for second body.
+    :param abcorr: Aberration correction flag.
+    :param observer: Name or ID of the observer.
+    :param et: Time of the observation (seconds past J2000).
+    :return: Occultation identification code.
+
+    With arrays for `et`: `occult_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `occult_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return occult_v(target1, shape1, frame1, target2, shape2, frame2, abcorr, observer, et)
+    return _context().occult(target1, shape1, frame1, target2, shape2, frame2, abcorr, observer, _sc(et))
 
 def ordd(item, inset):
     """Return the ordinal position of a given item in a set. If the item does not appear in the set, return zero.
@@ -4448,7 +4866,13 @@ def ordi(item, inset):
     :return: the result"""
     return _context().ordi(item, inset)
 
-def oscelt(state, et, mu):
+def oscelt_v(state, et, mu):
+    """`oscelt` at each element of `state`, `et` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `oscelt_v`).
+
+The other arguments are those of `oscelt`. The results are arrays whose first dimension is the number of elements."""
+    return _context().oscelt_v(state, et, mu)
+
+def oscelt_s(state, et, mu):
     """Determine the set of osculating conic orbital elements that corresponds to the state (position, velocity) of a body at some epoch.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/oscelt.html
@@ -4458,6 +4882,21 @@ def oscelt(state, et, mu):
     :param mu: Gravitational parameter (GM) of primary body.
     :return: Equivalent conic elements."""
     return _context().oscelt(state, et, mu)
+
+def oscelt(state, et, mu):
+    """Determine the set of osculating conic orbital elements that corresponds to the state (position, velocity) of a body at some epoch.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/oscelt.html
+    
+    :param state: State of body at epoch of elements.
+    :param et: Epoch of elements.
+    :param mu: Gravitational parameter (GM) of primary body.
+    :return: Equivalent conic elements.
+
+    With arrays for `state`, `et`: `oscelt_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `oscelt_s` is always the scalar form."""
+    if _isvec(state, 1) or _isvec(et, 0):
+        return oscelt_v(state, et, mu)
+    return _context().oscelt(_sc(state), _sc(et), mu)
 
 def oscltx(state, et, mu):
     """Determine the set of osculating conic orbital elements that corresponds to the state (position, velocity) of a body at some epoch. In additional to the classical elements, return the true anomaly, semi-major axis, and period, if applicable.
@@ -4667,7 +5106,13 @@ def pckw20(handle, clssid, frame, first, last, segid, intlen, n, polydg, cdata, 
     :param initfr: Fractional part of begin time (TDB Julian date) of first record."""
     return _context().pckw20(handle, clssid, frame, first, last, segid, intlen, n, polydg, cdata, ascale, tscale, initjd, initfr)
 
-def pgrrec(body, lon, lat, alt, re, f):
+def pgrrec_v(body, lon, lat, alt, re, f):
+    """`pgrrec` at each element of `lon`, `lat`, `alt` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `pgrrec_v`).
+
+The other arguments are those of `pgrrec`. The results are arrays whose first dimension is the number of elements."""
+    return _context().pgrrec_v(body, lon, lat, alt, re, f)
+
+def pgrrec_s(body, lon, lat, alt, re, f):
     """Convert planetographic coordinates to rectangular coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/pgrrec.html
@@ -4681,7 +5126,31 @@ def pgrrec(body, lon, lat, alt, re, f):
     :return: Rectangular coordinates of the point."""
     return _context().pgrrec(body, lon, lat, alt, re, f)
 
-def phaseq(et, target, illmn, obsrvr, abcorr):
+def pgrrec(body, lon, lat, alt, re, f):
+    """Convert planetographic coordinates to rectangular coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/pgrrec.html
+    
+    :param body: Body with which coordinate system is associated.
+    :param lon: Planetographic longitude of a point (radians).
+    :param lat: Planetographic latitude of a point (radians).
+    :param alt: Altitude of a point above reference spheroid.
+    :param re: Equatorial radius of the reference spheroid.
+    :param f: Flattening coefficient.
+    :return: Rectangular coordinates of the point.
+
+    With arrays for `lon`, `lat`, `alt`: `pgrrec_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `pgrrec_s` is always the scalar form."""
+    if _isvec(lon, 0) or _isvec(lat, 0) or _isvec(alt, 0):
+        return pgrrec_v(body, lon, lat, alt, re, f)
+    return _context().pgrrec(body, _sc(lon), _sc(lat), _sc(alt), re, f)
+
+def phaseq_v(et, target, illmn, obsrvr, abcorr):
+    """`phaseq` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `phaseq_v`).
+
+The other arguments are those of `phaseq`. The results are arrays whose first dimension is the number of elements."""
+    return _context().phaseq_v(et, target, illmn, obsrvr, abcorr)
+
+def phaseq_s(et, target, illmn, obsrvr, abcorr):
     """Compute the apparent phase angle for a target, observer, illuminator set of ephemeris objects.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/phaseq.html
@@ -4693,6 +5162,23 @@ def phaseq(et, target, illmn, obsrvr, abcorr):
     :param abcorr: Aberration correction flag.
     :return: the result"""
     return _context().phaseq(et, target, illmn, obsrvr, abcorr)
+
+def phaseq(et, target, illmn, obsrvr, abcorr):
+    """Compute the apparent phase angle for a target, observer, illuminator set of ephemeris objects.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/phaseq.html
+    
+    :param et: Ephemeris seconds past J2000 TDB.
+    :param target: Target body name.
+    :param illmn: Illuminating body name.
+    :param obsrvr: Observer body.
+    :param abcorr: Aberration correction flag.
+    :return: the result
+
+    With arrays for `et`: `phaseq_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `phaseq_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return phaseq_v(et, target, illmn, obsrvr, abcorr)
+    return _context().phaseq(_sc(et), target, illmn, obsrvr, abcorr)
 
 def pjelpl(elin, plane):
     """Project an ellipse onto a plane, orthogonally.
@@ -4873,7 +5359,13 @@ def psv2pl(point, span1, span2):
     :return: An array representing the plane."""
     return _context().psv2pl(point, span1, span2)
 
-def pxform(fromstr, tostr, et):
+def pxform_v(fromstr, tostr, et):
+    """`pxform` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `pxform_v`).
+
+The other arguments are those of `pxform`. The results are arrays whose first dimension is the number of elements."""
+    return _context().pxform_v(fromstr, tostr, et)
+
+def pxform_s(fromstr, tostr, et):
     """Return the matrix that transforms position vectors from one specified frame to another at a specified epoch.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/pxform.html
@@ -4883,6 +5375,21 @@ def pxform(fromstr, tostr, et):
     :param et: Epoch of the rotation matrix.
     :return: A rotation matrix."""
     return _context().pxform(fromstr, tostr, et)
+
+def pxform(fromstr, tostr, et):
+    """Return the matrix that transforms position vectors from one specified frame to another at a specified epoch.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/pxform.html
+    
+    :param fromstr: Name of the frame to transform from.
+    :param tostr: Name of the frame to transform to.
+    :param et: Epoch of the rotation matrix.
+    :return: A rotation matrix.
+
+    With arrays for `et`: `pxform_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `pxform_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return pxform_v(fromstr, tostr, et)
+    return _context().pxform(fromstr, tostr, _sc(et))
 
 def pxfrm2(frame_from, frame_to, etfrom, etto):
     """Return the 3x3 matrix that transforms position vectors from one specified frame at a specified epoch to another specified frame at another specified epoch.
@@ -4968,7 +5475,13 @@ def readln(unit):
     :return: The line read from the file.; A logical flag indicating the end of file."""
     return _context().readln(unit)
 
-def recgeo(rectan, re, f):
+def recgeo_v(rectan, re, f):
+    """`recgeo` at each element of `rectan` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `recgeo_v`).
+
+The other arguments are those of `recgeo`. The results are arrays whose first dimension is the number of elements."""
+    return _context().recgeo_v(rectan, re, f)
+
+def recgeo_s(rectan, re, f):
     """Convert from rectangular coordinates to geodetic coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/recgeo.html
@@ -4979,7 +5492,28 @@ def recgeo(rectan, re, f):
     :return: Geodetic longitude of the point (radians).; Geodetic latitude  of the point (radians).; Altitude of the point above reference spheroid."""
     return _context().recgeo(rectan, re, f)
 
-def recpgr(body, rectan, re, f):
+def recgeo(rectan, re, f):
+    """Convert from rectangular coordinates to geodetic coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/recgeo.html
+    
+    :param rectan: Rectangular coordinates of a point.
+    :param re: Equatorial radius of the reference spheroid.
+    :param f: Flattening coefficient.
+    :return: Geodetic longitude of the point (radians).; Geodetic latitude  of the point (radians).; Altitude of the point above reference spheroid.
+
+    With arrays for `rectan`: `recgeo_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `recgeo_s` is always the scalar form."""
+    if _isvec(rectan, 1):
+        return recgeo_v(rectan, re, f)
+    return _context().recgeo(_sc(rectan), re, f)
+
+def recpgr_v(body, rectan, re, f):
+    """`recpgr` at each element of `rectan` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `recpgr_v`).
+
+The other arguments are those of `recpgr`. The results are arrays whose first dimension is the number of elements."""
+    return _context().recpgr_v(body, rectan, re, f)
+
+def recpgr_s(body, rectan, re, f):
     """Convert rectangular coordinates to planetographic coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/recpgr.html
@@ -4990,6 +5524,22 @@ def recpgr(body, rectan, re, f):
     :param f: Flattening coefficient.
     :return: Planetographic longitude of the point (radians).; Planetographic latitude of the point (radians).; Altitude of the point above reference spheroid."""
     return _context().recpgr(body, rectan, re, f)
+
+def recpgr(body, rectan, re, f):
+    """Convert rectangular coordinates to planetographic coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/recpgr.html
+    
+    :param body: Body with which coordinate system is associated.
+    :param rectan: Rectangular coordinates of a point.
+    :param re: Equatorial radius of the reference spheroid.
+    :param f: Flattening coefficient.
+    :return: Planetographic longitude of the point (radians).; Planetographic latitude of the point (radians).; Altitude of the point above reference spheroid.
+
+    With arrays for `rectan`: `recpgr_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `recpgr_s` is always the scalar form."""
+    if _isvec(rectan, 1):
+        return recpgr_v(body, rectan, re, f)
+    return _context().recpgr(body, _sc(rectan), re, f)
 
 def refchg(frame1, frame2, et):
     """Return the transformation matrix from one frame to another.
@@ -5249,7 +5799,13 @@ def scardi(card, cell=None):
     :return: The cell."""
     return _context().scardi(card, cell)
 
-def scdecd(sc, sclkdp, lenout=None, mxpart=None):
+def scdecd_v(sc, sclkdp, lenout=None, mxpart=None):
+    """`scdecd` at each element of `sclkdp` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `scdecd_v`).
+
+The other arguments are those of `scdecd`. The results are arrays whose first dimension is the number of elements."""
+    return _context().scdecd_v(sc, sclkdp, lenout, mxpart)
+
+def scdecd_s(sc, sclkdp, lenout=None, mxpart=None):
     """Convert a double precision encoding of spacecraft clock time into a character representation.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/scdecd.html
@@ -5261,7 +5817,29 @@ def scdecd(sc, sclkdp, lenout=None, mxpart=None):
     :return: Character representation of a clock count."""
     return _context().scdecd(sc, sclkdp, lenout, mxpart)
 
-def sce2c(sc, et):
+def scdecd(sc, sclkdp, lenout=None, mxpart=None):
+    """Convert a double precision encoding of spacecraft clock time into a character representation.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/scdecd.html
+    
+    :param sc: NAIF spacecraft identification code.
+    :param sclkdp: Encoded representation of a spacecraft clock count.
+    :param lenout: (SpiceyPy compatibility; ignored)
+    :param mxpart: (SpiceyPy compatibility; ignored)
+    :return: Character representation of a clock count.
+
+    With arrays for `sclkdp`: `scdecd_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `scdecd_s` is always the scalar form."""
+    if _isvec(sclkdp, 0):
+        return scdecd_v(sc, sclkdp, lenout, mxpart)
+    return _context().scdecd(sc, _sc(sclkdp), lenout, mxpart)
+
+def sce2c_v(sc, et):
+    """`sce2c` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `sce2c_v`).
+
+The other arguments are those of `sce2c`. The results are arrays whose first dimension is the number of elements."""
+    return _context().sce2c_v(sc, et)
+
+def sce2c_s(sc, et):
     """Convert ephemeris seconds past J2000 (ET) to continuous encoded spacecraft clock (`ticks').  Non-integral tick values may be returned.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sce2c.html
@@ -5271,7 +5849,27 @@ def sce2c(sc, et):
     :return: SCLK, encoded as ticks since spacecraft clock start. SCLKDP need not be integral."""
     return _context().sce2c(sc, et)
 
-def sce2s(sc, et, lenout=None):
+def sce2c(sc, et):
+    """Convert ephemeris seconds past J2000 (ET) to continuous encoded spacecraft clock (`ticks').  Non-integral tick values may be returned.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sce2c.html
+    
+    :param sc: NAIF spacecraft ID code.
+    :param et: Ephemeris time, seconds past J2000.
+    :return: SCLK, encoded as ticks since spacecraft clock start. SCLKDP need not be integral.
+
+    With arrays for `et`: `sce2c_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `sce2c_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return sce2c_v(sc, et)
+    return _context().sce2c(sc, _sc(et))
+
+def sce2s_v(sc, et, lenout=None):
+    """`sce2s` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `sce2s_v`).
+
+The other arguments are those of `sce2s`. The results are arrays whose first dimension is the number of elements."""
+    return _context().sce2s_v(sc, et, lenout)
+
+def sce2s_s(sc, et, lenout=None):
     """Convert an epoch specified as ephemeris seconds past J2000 (ET) to a character string representation of a spacecraft clock value (SCLK).
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sce2s.html
@@ -5281,6 +5879,21 @@ def sce2s(sc, et, lenout=None):
     :param lenout: (SpiceyPy compatibility; ignored)
     :return: An SCLK string."""
     return _context().sce2s(sc, et, lenout)
+
+def sce2s(sc, et, lenout=None):
+    """Convert an epoch specified as ephemeris seconds past J2000 (ET) to a character string representation of a spacecraft clock value (SCLK).
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sce2s.html
+    
+    :param sc: NAIF spacecraft clock ID code.
+    :param et: Ephemeris time, specified as seconds past J2000.
+    :param lenout: (SpiceyPy compatibility; ignored)
+    :return: An SCLK string.
+
+    With arrays for `et`: `sce2s_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `sce2s_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return sce2s_v(sc, et, lenout)
+    return _context().sce2s(sc, _sc(et), lenout)
 
 def sce2t(sc, et):
     """Convert ephemeris seconds past J2000 (ET) to integral encoded spacecraft clock (`ticks'). For conversion to fractional ticks, (required for C-kernel production), see the routine `sce2c`.
@@ -5302,7 +5915,13 @@ def scec01(sc, et):
     :return: Type 1 SCLK, encoded as continuous ticks since clock start."""
     return _context().scec01(sc, et)
 
-def scencd(sc, sclkch, mxpart=None):
+def scencd_v(sc, sclkch, mxpart=None):
+    """`scencd` at each element of `sclkch` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `scencd_v`).
+
+The other arguments are those of `scencd`. The results are arrays whose first dimension is the number of elements."""
+    return _context().scencd_v(sc, sclkch, mxpart)
+
+def scencd_s(sc, sclkch, mxpart=None):
     """Encode a character representation of spacecraft clock time into a double precision number.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/scencd.html
@@ -5312,6 +5931,21 @@ def scencd(sc, sclkch, mxpart=None):
     :param mxpart: (SpiceyPy compatibility; ignored)
     :return: Encoded representation of the clock count."""
     return _context().scencd(sc, sclkch, mxpart)
+
+def scencd(sc, sclkch, mxpart=None):
+    """Encode a character representation of spacecraft clock time into a double precision number.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/scencd.html
+    
+    :param sc: NAIF spacecraft identification code.
+    :param sclkch: Character representation of a spacecraft clock.
+    :param mxpart: (SpiceyPy compatibility; ignored)
+    :return: Encoded representation of the clock count.
+
+    With arrays for `sclkch`: `scencd_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `scencd_s` is always the scalar form."""
+    if _isvec(sclkch, 0):
+        return scencd_v(sc, sclkch, mxpart)
+    return _context().scencd(sc, _sc(sclkch), mxpart)
 
 def scet01(sc, et):
     """Convert ephemeris seconds past J2000 (ET) to discrete encoded type 1 spacecraft clock (`ticks').
@@ -5393,7 +6027,13 @@ def scps01(sc, clkstr):
     :return: Parsing error flag.; Output message for parsing error.; Number of ticks represented by the clock count."""
     return _context().scps01(sc, clkstr)
 
-def scs2e(sc, sclkch):
+def scs2e_v(sc, sclkch):
+    """`scs2e` at each element of `sclkch` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `scs2e_v`).
+
+The other arguments are those of `scs2e`. The results are arrays whose first dimension is the number of elements."""
+    return _context().scs2e_v(sc, sclkch)
+
+def scs2e_s(sc, sclkch):
     """Convert a spacecraft clock string to ephemeris seconds past J2000 (ET).
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/scs2e.html
@@ -5403,7 +6043,27 @@ def scs2e(sc, sclkch):
     :return: Ephemeris time, seconds past J2000."""
     return _context().scs2e(sc, sclkch)
 
-def sct2e(sc, sclkdp):
+def scs2e(sc, sclkch):
+    """Convert a spacecraft clock string to ephemeris seconds past J2000 (ET).
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/scs2e.html
+    
+    :param sc: NAIF integer code for a spacecraft.
+    :param sclkch: An SCLK string.
+    :return: Ephemeris time, seconds past J2000.
+
+    With arrays for `sclkch`: `scs2e_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `scs2e_s` is always the scalar form."""
+    if _isvec(sclkch, 0):
+        return scs2e_v(sc, sclkch)
+    return _context().scs2e(sc, _sc(sclkch))
+
+def sct2e_v(sc, sclkdp):
+    """`sct2e` at each element of `sclkdp` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `sct2e_v`).
+
+The other arguments are those of `sct2e`. The results are arrays whose first dimension is the number of elements."""
+    return _context().sct2e_v(sc, sclkdp)
+
+def sct2e_s(sc, sclkdp):
     """Convert encoded spacecraft clock (`ticks') to ephemeris seconds past J2000 (ET).
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sct2e.html
@@ -5412,6 +6072,20 @@ def sct2e(sc, sclkdp):
     :param sclkdp: SCLK, encoded as ticks since spacecraft clock start.
     :return: Ephemeris time, seconds past J2000."""
     return _context().sct2e(sc, sclkdp)
+
+def sct2e(sc, sclkdp):
+    """Convert encoded spacecraft clock (`ticks') to ephemeris seconds past J2000 (ET).
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sct2e.html
+    
+    :param sc: NAIF spacecraft ID code.
+    :param sclkdp: SCLK, encoded as ticks since spacecraft clock start.
+    :return: Ephemeris time, seconds past J2000.
+
+    With arrays for `sclkdp`: `sct2e_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `sct2e_s` is always the scalar form."""
+    if _isvec(sclkdp, 0):
+        return sct2e_v(sc, sclkdp)
+    return _context().sct2e(sc, _sc(sclkdp))
 
 def scte01(sc, sclkdp):
     """Convert encoded type 1 spacecraft clock (`ticks') to ephemeris seconds past J2000 (ET).
@@ -5612,7 +6286,13 @@ def shiftc(in_, dir, nshift, fillc):
     :return: Shifted string."""
     return _context().shiftc(in_, dir, nshift, fillc)
 
-def sincpt(method, target, et, fixref, abcorr, obsrvr, dref, dvec):
+def sincpt_v(method, target, et, fixref, abcorr, obsrvr, dref, dvec):
+    """`sincpt` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `sincpt_v`).
+
+The other arguments are those of `sincpt`. The results are arrays whose first dimension is the number of elements. A found flag false at any element raises NotFoundError (the flags are returned last under `no_found_check`)."""
+    return _context().sincpt_v(method, target, et, fixref, abcorr, obsrvr, dref, dvec)
+
+def sincpt_s(method, target, et, fixref, abcorr, obsrvr, dref, dvec):
     """Compute, for a given observer and a ray emanating from the observer, the surface intercept of the ray on a target body at a specified epoch, optionally corrected for light time and stellar aberration.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sincpt.html
@@ -5628,6 +6308,27 @@ def sincpt(method, target, et, fixref, abcorr, obsrvr, dref, dvec):
     :return: Surface intercept point on the target body.; Intercept epoch.; Vector from observer to intercept point.
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().sincpt(method, target, et, fixref, abcorr, obsrvr, dref, dvec)
+
+def sincpt(method, target, et, fixref, abcorr, obsrvr, dref, dvec):
+    """Compute, for a given observer and a ray emanating from the observer, the surface intercept of the ray on a target body at a specified epoch, optionally corrected for light time and stellar aberration.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sincpt.html
+    
+    :param method: Computation method.
+    :param target: Name of target body.
+    :param et: Epoch in ephemeris seconds past J2000 TDB.
+    :param fixref: Body-fixed, body-centered target body frame.
+    :param abcorr: Aberration correction.
+    :param obsrvr: Name of observing body.
+    :param dref: Reference frame of ray's direction vector.
+    :param dvec: Ray's direction vector.
+    :return: Surface intercept point on the target body.; Intercept epoch.; Vector from observer to intercept point.
+        (found: NotFoundError if not found, or the flag returned last with no_found_check)
+
+    With arrays for `et`: `sincpt_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `sincpt_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return sincpt_v(method, target, et, fixref, abcorr, obsrvr, dref, dvec)
+    return _context().sincpt(method, target, _sc(et), fixref, abcorr, obsrvr, dref, dvec)
 
 def sized(cell):
     """Return the size (maximum cardinality) of a double precision cell.
@@ -5813,7 +6514,13 @@ def spkacs(targ, et, ref, abcorr, obs):
     :return: State of target.; One way light time between observer and target.; Derivative of light time with respect to time."""
     return _context().spkacs(targ, et, ref, abcorr, obs)
 
-def spkapo(targ, et, ref, sobs, abcorr):
+def spkapo_v(targ, et, ref, sobs, abcorr):
+    """`spkapo` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkapo_v`).
+
+The other arguments are those of `spkapo`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkapo_v(targ, et, ref, sobs, abcorr)
+
+def spkapo_s(targ, et, ref, sobs, abcorr):
     """Return the position of a target body relative to an observer, optionally corrected for light time and stellar aberration.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkapo.html
@@ -5825,6 +6532,23 @@ def spkapo(targ, et, ref, sobs, abcorr):
     :param abcorr: Aberration correction flag.
     :return: Position of target.; One way light time between observer and target."""
     return _context().spkapo(targ, et, ref, sobs, abcorr)
+
+def spkapo(targ, et, ref, sobs, abcorr):
+    """Return the position of a target body relative to an observer, optionally corrected for light time and stellar aberration.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkapo.html
+    
+    :param targ: Target body.
+    :param et: Observer epoch.
+    :param ref: Inertial reference frame of observer's state.
+    :param sobs: State of observer wrt. solar system barycenter.
+    :param abcorr: Aberration correction flag.
+    :return: Position of target.; One way light time between observer and target.
+
+    With arrays for `et`: `spkapo_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkapo_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkapo_v(targ, et, ref, sobs, abcorr)
+    return _context().spkapo(targ, _sc(et), ref, sobs, abcorr)
 
 def spkapp(targ, et, ref, sobs, abcorr):
     """**Deprecated:** This routine has been superseded by the SPICELIB routine `spkaps`. This routine is supported for purposes of backward compatibility only.
@@ -5872,7 +6596,13 @@ def spkcov(spk, idcode, cover=None):
     :return: Window giving coverage in SPKFNM for IDCODE."""
     return _context().spkcov(spk, idcode, cover)
 
-def spkcpo(target, et, outref, refloc, abcorr, obspos, obsctr, obsref):
+def spkcpo_v(target, et, outref, refloc, abcorr, obspos, obsctr, obsref):
+    """`spkcpo` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkcpo_v`).
+
+The other arguments are those of `spkcpo`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkcpo_v(target, et, outref, refloc, abcorr, obspos, obsctr, obsref)
+
+def spkcpo_s(target, et, outref, refloc, abcorr, obspos, obsctr, obsref):
     """Return the state of a specified target relative to an 'observer,' where the observer has constant position in a specified reference frame. The observer's position is provided by the calling program rather than by loaded SPK files.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkcpo.html
@@ -5888,7 +6618,33 @@ def spkcpo(target, et, outref, refloc, abcorr, obspos, obsctr, obsref):
     :return: State of target with respect to observer.; One way light time between target and observer."""
     return _context().spkcpo(target, et, outref, refloc, abcorr, obspos, obsctr, obsref)
 
-def spkcpt(trgpos, trgctr, trgref, et, outref, refloc, abcorr, obsrvr):
+def spkcpo(target, et, outref, refloc, abcorr, obspos, obsctr, obsref):
+    """Return the state of a specified target relative to an 'observer,' where the observer has constant position in a specified reference frame. The observer's position is provided by the calling program rather than by loaded SPK files.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkcpo.html
+    
+    :param target: Name of target ephemeris object.
+    :param et: Observation epoch.
+    :param outref: Reference frame of output state.
+    :param refloc: Output reference frame evaluation locus.
+    :param abcorr: Aberration correction.
+    :param obspos: Observer position relative to center of motion.
+    :param obsctr: Center of motion of observer.
+    :param obsref: Frame of observer position.
+    :return: State of target with respect to observer.; One way light time between target and observer.
+
+    With arrays for `et`: `spkcpo_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkcpo_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkcpo_v(target, et, outref, refloc, abcorr, obspos, obsctr, obsref)
+    return _context().spkcpo(target, _sc(et), outref, refloc, abcorr, obspos, obsctr, obsref)
+
+def spkcpt_v(trgpos, trgctr, trgref, et, outref, refloc, abcorr, obsrvr):
+    """`spkcpt` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkcpt_v`).
+
+The other arguments are those of `spkcpt`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkcpt_v(trgpos, trgctr, trgref, et, outref, refloc, abcorr, obsrvr)
+
+def spkcpt_s(trgpos, trgctr, trgref, et, outref, refloc, abcorr, obsrvr):
     """Return the state, relative to a specified observer, of a target having constant position in a specified reference frame. The target's position is provided by the calling program rather than by loaded SPK files.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkcpt.html
@@ -5904,7 +6660,33 @@ def spkcpt(trgpos, trgctr, trgref, et, outref, refloc, abcorr, obsrvr):
     :return: State of target with respect to observer.; One way light time between target and observer."""
     return _context().spkcpt(trgpos, trgctr, trgref, et, outref, refloc, abcorr, obsrvr)
 
-def spkcvo(target, et, outref, refloc, abcorr, obssta, obsepc, obsctr, obsref):
+def spkcpt(trgpos, trgctr, trgref, et, outref, refloc, abcorr, obsrvr):
+    """Return the state, relative to a specified observer, of a target having constant position in a specified reference frame. The target's position is provided by the calling program rather than by loaded SPK files.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkcpt.html
+    
+    :param trgpos: Target position relative to center of motion.
+    :param trgctr: Center of motion of target.
+    :param trgref: Frame of target position.
+    :param et: Observation epoch.
+    :param outref: Reference frame of output state.
+    :param refloc: Output reference frame evaluation locus.
+    :param abcorr: Aberration correction.
+    :param obsrvr: Name of observing ephemeris object.
+    :return: State of target with respect to observer.; One way light time between target and observer.
+
+    With arrays for `et`: `spkcpt_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkcpt_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkcpt_v(trgpos, trgctr, trgref, et, outref, refloc, abcorr, obsrvr)
+    return _context().spkcpt(trgpos, trgctr, trgref, _sc(et), outref, refloc, abcorr, obsrvr)
+
+def spkcvo_v(target, et, outref, refloc, abcorr, obssta, obsepc, obsctr, obsref):
+    """`spkcvo` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkcvo_v`).
+
+The other arguments are those of `spkcvo`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkcvo_v(target, et, outref, refloc, abcorr, obssta, obsepc, obsctr, obsref)
+
+def spkcvo_s(target, et, outref, refloc, abcorr, obssta, obsepc, obsctr, obsref):
     """Return the state of a specified target relative to an 'observer,' where the observer has constant velocity in a specified reference frame. The observer's state is provided by the calling program rather than by loaded SPK files.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkcvo.html
@@ -5921,7 +6703,34 @@ def spkcvo(target, et, outref, refloc, abcorr, obssta, obsepc, obsctr, obsref):
     :return: State of target with respect to observer.; One way light time between target and observer."""
     return _context().spkcvo(target, et, outref, refloc, abcorr, obssta, obsepc, obsctr, obsref)
 
-def spkcvt(trgsta, trgepc, trgctr, trgref, et, outref, refloc, abcorr, obsrvr):
+def spkcvo(target, et, outref, refloc, abcorr, obssta, obsepc, obsctr, obsref):
+    """Return the state of a specified target relative to an 'observer,' where the observer has constant velocity in a specified reference frame. The observer's state is provided by the calling program rather than by loaded SPK files.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkcvo.html
+    
+    :param target: Name of target ephemeris object.
+    :param et: Observation epoch.
+    :param outref: Reference frame of output state.
+    :param refloc: Output reference frame evaluation locus.
+    :param abcorr: Aberration correction.
+    :param obssta: Observer state relative to center of motion.
+    :param obsepc: Epoch of observer state.
+    :param obsctr: Center of motion of observer.
+    :param obsref: Frame of observer state.
+    :return: State of target with respect to observer.; One way light time between target and observer.
+
+    With arrays for `et`: `spkcvo_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkcvo_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkcvo_v(target, et, outref, refloc, abcorr, obssta, obsepc, obsctr, obsref)
+    return _context().spkcvo(target, _sc(et), outref, refloc, abcorr, obssta, obsepc, obsctr, obsref)
+
+def spkcvt_v(trgsta, trgepc, trgctr, trgref, et, outref, refloc, abcorr, obsrvr):
+    """`spkcvt` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkcvt_v`).
+
+The other arguments are those of `spkcvt`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkcvt_v(trgsta, trgepc, trgctr, trgref, et, outref, refloc, abcorr, obsrvr)
+
+def spkcvt_s(trgsta, trgepc, trgctr, trgref, et, outref, refloc, abcorr, obsrvr):
     """Return the state, relative to a specified observer, of a target having constant velocity in a specified reference frame. The target's state is provided by the calling program rather than by loaded SPK files.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkcvt.html
@@ -5937,6 +6746,27 @@ def spkcvt(trgsta, trgepc, trgctr, trgref, et, outref, refloc, abcorr, obsrvr):
     :param obsrvr: Name of observing ephemeris object.
     :return: State of target with respect to observer.; One way light time between target and observer."""
     return _context().spkcvt(trgsta, trgepc, trgctr, trgref, et, outref, refloc, abcorr, obsrvr)
+
+def spkcvt(trgsta, trgepc, trgctr, trgref, et, outref, refloc, abcorr, obsrvr):
+    """Return the state, relative to a specified observer, of a target having constant velocity in a specified reference frame. The target's state is provided by the calling program rather than by loaded SPK files.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkcvt.html
+    
+    :param trgsta: Target state relative to center of motion.
+    :param trgepc: Epoch of target state.
+    :param trgctr: Center of motion of target.
+    :param trgref: Frame of target state.
+    :param et: Observation epoch.
+    :param outref: Reference frame of output state.
+    :param refloc: Output reference frame evaluation locus.
+    :param abcorr: Aberration correction.
+    :param obsrvr: Name of observing ephemeris object.
+    :return: State of target with respect to observer.; One way light time between target and observer.
+
+    With arrays for `et`: `spkcvt_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkcvt_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkcvt_v(trgsta, trgepc, trgctr, trgref, et, outref, refloc, abcorr, obsrvr)
+    return _context().spkcvt(trgsta, trgepc, trgctr, trgref, _sc(et), outref, refloc, abcorr, obsrvr)
 
 def spke01(et, record):
     """Evaluate a single SPK data record from a segment of type 1 (Difference Lines).
@@ -6098,7 +6928,13 @@ def spke21(et, record):
     :return: State (position and velocity)."""
     return _context().spke21(et, record)
 
-def spkez(targ, et, ref, abcorr, obs):
+def spkez_v(targ, et, ref, abcorr, obs):
+    """`spkez` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkez_v`).
+
+The other arguments are those of `spkez`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkez_v(targ, et, ref, abcorr, obs)
+
+def spkez_s(targ, et, ref, abcorr, obs):
     """Return the state (position and velocity) of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkez.html
@@ -6111,7 +6947,30 @@ def spkez(targ, et, ref, abcorr, obs):
     :return: State of target.; One way light time between observer and target."""
     return _context().spkez(targ, et, ref, abcorr, obs)
 
-def spkezp(targ, et, ref, abcorr, obs):
+def spkez(targ, et, ref, abcorr, obs):
+    """Return the state (position and velocity) of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkez.html
+    
+    :param targ: Target body.
+    :param et: Observer epoch.
+    :param ref: Reference frame of output state vector.
+    :param abcorr: Aberration correction flag.
+    :param obs: Observing body.
+    :return: State of target.; One way light time between observer and target.
+
+    With arrays for `et`: `spkez_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkez_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkez_v(targ, et, ref, abcorr, obs)
+    return _context().spkez(targ, _sc(et), ref, abcorr, obs)
+
+def spkezp_v(targ, et, ref, abcorr, obs):
+    """`spkezp` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkezp_v`).
+
+The other arguments are those of `spkezp`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkezp_v(targ, et, ref, abcorr, obs)
+
+def spkezp_s(targ, et, ref, abcorr, obs):
     """Return the position of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkezp.html
@@ -6124,7 +6983,30 @@ def spkezp(targ, et, ref, abcorr, obs):
     :return: Position of target.; One way light time between observer and target."""
     return _context().spkezp(targ, et, ref, abcorr, obs)
 
-def spkezr(targ, et, ref, abcorr, obs):
+def spkezp(targ, et, ref, abcorr, obs):
+    """Return the position of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkezp.html
+    
+    :param targ: Target body NAIF ID code.
+    :param et: Observer epoch.
+    :param ref: Reference frame of output position vector.
+    :param abcorr: Aberration correction flag.
+    :param obs: Observing body NAIF ID code.
+    :return: Position of target.; One way light time between observer and target.
+
+    With arrays for `et`: `spkezp_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkezp_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkezp_v(targ, et, ref, abcorr, obs)
+    return _context().spkezp(targ, _sc(et), ref, abcorr, obs)
+
+def spkezr_v(targ, et, ref, abcorr, obs):
+    """`spkezr` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkezr_v`).
+
+The other arguments are those of `spkezr`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkezr_v(targ, et, ref, abcorr, obs)
+
+def spkezr_s(targ, et, ref, abcorr, obs):
     """Return the state (position and velocity) of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkezr.html
@@ -6137,7 +7019,30 @@ def spkezr(targ, et, ref, abcorr, obs):
     :return: State of target.; One way light time between observer and target."""
     return _context().spkezr(targ, et, ref, abcorr, obs)
 
-def spkgeo(targ, et, ref, obs):
+def spkezr(targ, et, ref, abcorr, obs):
+    """Return the state (position and velocity) of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkezr.html
+    
+    :param targ: Target body name.
+    :param et: Observer epoch.
+    :param ref: Reference frame of output state vector.
+    :param abcorr: Aberration correction flag.
+    :param obs: Observing body name.
+    :return: State of target.; One way light time between observer and target.
+
+    With arrays for `et`: `spkezr_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkezr_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkezr_v(targ, et, ref, abcorr, obs)
+    return _context().spkezr(targ, _sc(et), ref, abcorr, obs)
+
+def spkgeo_v(targ, et, ref, obs):
+    """`spkgeo` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkgeo_v`).
+
+The other arguments are those of `spkgeo`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkgeo_v(targ, et, ref, obs)
+
+def spkgeo_s(targ, et, ref, obs):
     """Compute the geometric state (position and velocity) of a target body relative to an observing body.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkgeo.html
@@ -6149,7 +7054,29 @@ def spkgeo(targ, et, ref, obs):
     :return: State of target.; Light time."""
     return _context().spkgeo(targ, et, ref, obs)
 
-def spkgps(targ, et, ref, obs):
+def spkgeo(targ, et, ref, obs):
+    """Compute the geometric state (position and velocity) of a target body relative to an observing body.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkgeo.html
+    
+    :param targ: Target body.
+    :param et: Target epoch.
+    :param ref: Target reference frame.
+    :param obs: Observing body.
+    :return: State of target.; Light time.
+
+    With arrays for `et`: `spkgeo_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkgeo_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkgeo_v(targ, et, ref, obs)
+    return _context().spkgeo(targ, _sc(et), ref, obs)
+
+def spkgps_v(targ, et, ref, obs):
+    """`spkgps` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkgps_v`).
+
+The other arguments are those of `spkgps`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkgps_v(targ, et, ref, obs)
+
+def spkgps_s(targ, et, ref, obs):
     """Compute the geometric position of a target body relative to an observing body.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkgps.html
@@ -6160,6 +7087,22 @@ def spkgps(targ, et, ref, obs):
     :param obs: Observing body.
     :return: Position of target.; Light time."""
     return _context().spkgps(targ, et, ref, obs)
+
+def spkgps(targ, et, ref, obs):
+    """Compute the geometric position of a target body relative to an observing body.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkgps.html
+    
+    :param targ: Target body.
+    :param et: Target epoch.
+    :param ref: Target reference frame.
+    :param obs: Observing body.
+    :return: Position of target.; Light time.
+
+    With arrays for `et`: `spkgps_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkgps_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkgps_v(targ, et, ref, obs)
+    return _context().spkgps(targ, _sc(et), ref, obs)
 
 def spkltc(targ, et, ref, abcorr, stobs):
     """Return the state (position and velocity) of a target body relative to an observer, optionally corrected for light time, expressed relative to an inertial reference frame.
@@ -6218,7 +7161,13 @@ def spkpds(body, center, framestr, typenum, first, last):
     :return: An SPK segment descriptor."""
     return _context().spkpds(body, center, framestr, typenum, first, last)
 
-def spkpos(targ, et, ref, abcorr, obs):
+def spkpos_v(targ, et, ref, abcorr, obs):
+    """`spkpos` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkpos_v`).
+
+The other arguments are those of `spkpos`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkpos_v(targ, et, ref, abcorr, obs)
+
+def spkpos_s(targ, et, ref, abcorr, obs):
     """Return the position of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkpos.html
@@ -6230,6 +7179,23 @@ def spkpos(targ, et, ref, abcorr, obs):
     :param obs: Observing body name.
     :return: Position of target.; One way light time between observer and target."""
     return _context().spkpos(targ, et, ref, abcorr, obs)
+
+def spkpos(targ, et, ref, abcorr, obs):
+    """Return the position of a target body relative to an observing body, optionally corrected for light time (planetary aberration) and stellar aberration.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkpos.html
+    
+    :param targ: Target body name.
+    :param et: Observer epoch.
+    :param ref: Reference frame of output position vector.
+    :param abcorr: Aberration correction flag.
+    :param obs: Observing body name.
+    :return: Position of target.; One way light time between observer and target.
+
+    With arrays for `et`: `spkpos_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkpos_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkpos_v(targ, et, ref, abcorr, obs)
+    return _context().spkpos(targ, _sc(et), ref, abcorr, obs)
 
 def spkpv(handle, descr, et, ref):
     """Return the state (position and velocity) of a target body relative to some center of motion in a specified frame.
@@ -6243,7 +7209,13 @@ def spkpv(handle, descr, et, ref):
     :return: Position, velocity.; Center of state."""
     return _context().spkpv(handle, descr, et, ref)
 
-def spkpvn(handle, descr, et):
+def spkpvn_v(handle, descr, et):
+    """`spkpvn` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkpvn_v`).
+
+The other arguments are those of `spkpvn`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkpvn_v(handle, descr, et)
+
+def spkpvn_s(handle, descr, et):
     """Return, for a specified SPK segment and time, the state (position and velocity) of the segment's target body relative to its center of motion.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkpvn.html
@@ -6253,6 +7225,21 @@ def spkpvn(handle, descr, et):
     :param et: Target epoch.
     :return: Target reference frame.; Position, velocity.; Center of state."""
     return _context().spkpvn(handle, descr, et)
+
+def spkpvn(handle, descr, et):
+    """Return, for a specified SPK segment and time, the state (position and velocity) of the segment's target body relative to its center of motion.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkpvn.html
+    
+    :param handle: File handle.
+    :param descr: Segment descriptor.
+    :param et: Target epoch.
+    :return: Target reference frame.; Position, velocity.; Center of state.
+
+    With arrays for `et`: `spkpvn_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkpvn_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkpvn_v(handle, descr, et)
+    return _context().spkpvn(handle, descr, _sc(et))
 
 def spks01(handle, baddr, eaddr, begin, end):
     """Extract a subset of the data in a SPK segment of type 1 into a new segment.
@@ -6458,7 +7445,13 @@ def spksfs(body, et, idlen=None):
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().spksfs(body, et, idlen)
 
-def spkssb(targ, et, ref):
+def spkssb_v(targ, et, ref):
+    """`spkssb` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `spkssb_v`).
+
+The other arguments are those of `spkssb`. The results are arrays whose first dimension is the number of elements."""
+    return _context().spkssb_v(targ, et, ref)
+
+def spkssb_s(targ, et, ref):
     """Return the state (position and velocity) of a target body relative to the solar system barycenter.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkssb.html
@@ -6468,6 +7461,21 @@ def spkssb(targ, et, ref):
     :param ref: Target reference frame.
     :return: State of target."""
     return _context().spkssb(targ, et, ref)
+
+def spkssb(targ, et, ref):
+    """Return the state (position and velocity) of a target body relative to the solar system barycenter.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/spkssb.html
+    
+    :param targ: Target body.
+    :param et: Target epoch.
+    :param ref: Target reference frame.
+    :return: State of target.
+
+    With arrays for `et`: `spkssb_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `spkssb_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return spkssb_v(targ, et, ref)
+    return _context().spkssb(targ, _sc(et), ref)
 
 def spksub(handle, descr, identin, begin, end, newh):
     """Extract a subset of the data in an SPK segment into a separate segment.
@@ -6798,7 +7806,13 @@ def srfnrm(method, target, et, fixref, srfpts):
     :return: Array of outward, unit length normal vectors."""
     return _context().srfnrm(method, target, et, fixref, srfpts)
 
-def srfrec(body, longitude, latitude):
+def srfrec_v(body, longitude, latitude):
+    """`srfrec` at each element of `longitude`, `latitude` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `srfrec_v`).
+
+The other arguments are those of `srfrec`. The results are arrays whose first dimension is the number of elements."""
+    return _context().srfrec_v(body, longitude, latitude)
+
+def srfrec_s(body, longitude, latitude):
     """Convert planetocentric latitude and longitude of a surface point on a specified body to rectangular coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/srfrec.html
@@ -6808,6 +7822,21 @@ def srfrec(body, longitude, latitude):
     :param latitude: Latitude of point in radians.
     :return: Rectangular coordinates of the point."""
     return _context().srfrec(body, longitude, latitude)
+
+def srfrec(body, longitude, latitude):
+    """Convert planetocentric latitude and longitude of a surface point on a specified body to rectangular coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/srfrec.html
+    
+    :param body: NAIF integer code of an extended body.
+    :param longitude: Longitude of point in radians.
+    :param latitude: Latitude of point in radians.
+    :return: Rectangular coordinates of the point.
+
+    With arrays for `longitude`, `latitude`: `srfrec_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `srfrec_s` is always the scalar form."""
+    if _isvec(longitude, 0) or _isvec(latitude, 0):
+        return srfrec_v(body, longitude, latitude)
+    return _context().srfrec(body, _sc(longitude), _sc(latitude))
 
 def srfs2c(srfstr, bodstr):
     """Translate a surface string, together with a body string, to the corresponding surface ID code. The input strings may contain names or integer ID codes.
@@ -6949,7 +7978,13 @@ def stpool(item, nth, contin, lenout=None):
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().stpool(item, nth, contin, lenout)
 
-def str2et(time):
+def str2et_v(time):
+    """`str2et` at each element of `time` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `str2et_v`).
+
+The other arguments are those of `str2et`. The results are arrays whose first dimension is the number of elements."""
+    return _context().str2et_v(time)
+
+def str2et_s(time):
     """Convert a string representing an epoch to a double precision value representing the number of TDB seconds past the J2000 epoch corresponding to the input epoch.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/str2et.html
@@ -6958,7 +7993,26 @@ def str2et(time):
     :return: The equivalent value in seconds past J2000, TDB."""
     return _context().str2et(time)
 
-def subpnt(method, target, et, fixref, abcorr, obsrvr):
+def str2et(time):
+    """Convert a string representing an epoch to a double precision value representing the number of TDB seconds past the J2000 epoch corresponding to the input epoch.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/str2et.html
+    
+    :param time: A string representing an epoch.
+    :return: The equivalent value in seconds past J2000, TDB.
+
+    With arrays for `time`: `str2et_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `str2et_s` is always the scalar form."""
+    if _isvec(time, 0):
+        return str2et_v(time)
+    return _context().str2et(_sc(time))
+
+def subpnt_v(method, target, et, fixref, abcorr, obsrvr):
+    """`subpnt` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `subpnt_v`).
+
+The other arguments are those of `subpnt`. The results are arrays whose first dimension is the number of elements."""
+    return _context().subpnt_v(method, target, et, fixref, abcorr, obsrvr)
+
+def subpnt_s(method, target, et, fixref, abcorr, obsrvr):
     """Compute the rectangular coordinates of the sub-observer point on a target body at a specified epoch, optionally corrected for light time and stellar aberration.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/subpnt.html
@@ -6971,6 +8025,24 @@ def subpnt(method, target, et, fixref, abcorr, obsrvr):
     :param obsrvr: Name of observing body.
     :return: Sub-observer point on the target body.; Sub-observer point epoch.; Vector from observer to sub-observer point."""
     return _context().subpnt(method, target, et, fixref, abcorr, obsrvr)
+
+def subpnt(method, target, et, fixref, abcorr, obsrvr):
+    """Compute the rectangular coordinates of the sub-observer point on a target body at a specified epoch, optionally corrected for light time and stellar aberration.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/subpnt.html
+    
+    :param method: Computation method.
+    :param target: Name of target body.
+    :param et: Epoch in ephemeris seconds past J2000 TDB.
+    :param fixref: Body-fixed, body-centered target body frame.
+    :param abcorr: Aberration correction.
+    :param obsrvr: Name of observing body.
+    :return: Sub-observer point on the target body.; Sub-observer point epoch.; Vector from observer to sub-observer point.
+
+    With arrays for `et`: `subpnt_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `subpnt_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return subpnt_v(method, target, et, fixref, abcorr, obsrvr)
+    return _context().subpnt(method, target, _sc(et), fixref, abcorr, obsrvr)
 
 def subpt(method, target, et, abcorr, obsrvr):
     """**Deprecated:** This routine has been superseded by the SPICELIB routine `subpnt`. This routine is supported for purposes of backward compatibility only.
@@ -6985,7 +8057,13 @@ def subpt(method, target, et, abcorr, obsrvr):
     :return: Sub-observer point on the target body.; Altitude of the observer above the target body."""
     return _context().subpt(method, target, et, abcorr, obsrvr)
 
-def subslr(method, target, et, fixref, abcorr, obsrvr):
+def subslr_v(method, target, et, fixref, abcorr, obsrvr):
+    """`subslr` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `subslr_v`).
+
+The other arguments are those of `subslr`. The results are arrays whose first dimension is the number of elements."""
+    return _context().subslr_v(method, target, et, fixref, abcorr, obsrvr)
+
+def subslr_s(method, target, et, fixref, abcorr, obsrvr):
     """Compute the rectangular coordinates of the sub-solar point on a target body at a specified epoch, optionally corrected for light time and stellar aberration.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/subslr.html
@@ -6998,6 +8076,24 @@ def subslr(method, target, et, fixref, abcorr, obsrvr):
     :param obsrvr: Name of observing body.
     :return: Sub-solar point on the target body.; Sub-solar point epoch.; Vector from observer to sub-solar point."""
     return _context().subslr(method, target, et, fixref, abcorr, obsrvr)
+
+def subslr(method, target, et, fixref, abcorr, obsrvr):
+    """Compute the rectangular coordinates of the sub-solar point on a target body at a specified epoch, optionally corrected for light time and stellar aberration.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/subslr.html
+    
+    :param method: Computation method.
+    :param target: Name of target body.
+    :param et: Epoch in ephemeris seconds past J2000 TDB.
+    :param fixref: Body-fixed, body-centered target body frame.
+    :param abcorr: Aberration correction.
+    :param obsrvr: Name of observing body.
+    :return: Sub-solar point on the target body.; Sub-solar point epoch.; Vector from observer to sub-solar point.
+
+    With arrays for `et`: `subslr_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `subslr_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return subslr_v(method, target, et, fixref, abcorr, obsrvr)
+    return _context().subslr(method, target, _sc(et), fixref, abcorr, obsrvr)
 
 def subsol(method, target, et, abcorr, obsrvr):
     """**Deprecated:** This routine has been superseded by the SPICELIB routine `subslr`. This routine is supported for purposes of backward compatibility only.
@@ -7098,7 +8194,13 @@ def swpool(agent, nnames, lenvals=None, names=None):
     :param names: Variable names whose update causes the"""
     return _context().swpool(agent, nnames, lenvals, names)
 
-def sxform(instring, tostring, et):
+def sxform_v(instring, tostring, et):
+    """`sxform` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `sxform_v`).
+
+The other arguments are those of `sxform`. The results are arrays whose first dimension is the number of elements."""
+    return _context().sxform_v(instring, tostring, et)
+
+def sxform_s(instring, tostring, et):
     """Return the state transformation matrix from one frame to another at a specified epoch.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sxform.html
@@ -7108,6 +8210,21 @@ def sxform(instring, tostring, et):
     :param et: Epoch of the state transformation matrix.
     :return: A state transformation matrix."""
     return _context().sxform(instring, tostring, et)
+
+def sxform(instring, tostring, et):
+    """Return the state transformation matrix from one frame to another at a specified epoch.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sxform.html
+    
+    :param instring: Name of the frame to transform from.
+    :param tostring: Name of the frame to transform to.
+    :param et: Epoch of the state transformation matrix.
+    :return: A state transformation matrix.
+
+    With arrays for `et`: `sxform_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `sxform_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return sxform_v(instring, tostring, et)
+    return _context().sxform(instring, tostring, _sc(et))
 
 def szpool(name):
     """Return the kernel pool size limitations.
@@ -7119,7 +8236,13 @@ def szpool(name):
         (found: NotFoundError if not found, or the flag returned last with no_found_check)"""
     return _context().szpool(name)
 
-def tangpt(method, target, et, fixref, abcorr, corloc, obsrvr, dref, dvec):
+def tangpt_v(method, target, et, fixref, abcorr, corloc, obsrvr, dref, dvec):
+    """`tangpt` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `tangpt_v`).
+
+The other arguments are those of `tangpt`. The results are arrays whose first dimension is the number of elements."""
+    return _context().tangpt_v(method, target, et, fixref, abcorr, corloc, obsrvr, dref, dvec)
+
+def tangpt_s(method, target, et, fixref, abcorr, corloc, obsrvr, dref, dvec):
     """Compute, for a given observer, ray emanating from the observer, and target, the 'tangent point': the point on the ray nearest to the target's surface. Also compute the point on the target's surface nearest to the tangent point.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/tangpt.html
@@ -7135,6 +8258,27 @@ def tangpt(method, target, et, fixref, abcorr, corloc, obsrvr, dref, dvec):
     :param dvec: Ray direction vector.
     :return: 'Tangent point': point on ray nearest to surface.; Altitude of tangent point above surface.; Distance of tangent point from observer.; Point on surface nearest to tangent point.; Epoch associated with correction locus.; Vector from observer to surface point SRFPT."""
     return _context().tangpt(method, target, et, fixref, abcorr, corloc, obsrvr, dref, dvec)
+
+def tangpt(method, target, et, fixref, abcorr, corloc, obsrvr, dref, dvec):
+    """Compute, for a given observer, ray emanating from the observer, and target, the 'tangent point': the point on the ray nearest to the target's surface. Also compute the point on the target's surface nearest to the tangent point.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/tangpt.html
+    
+    :param method: Computation method.
+    :param target: Name of target body.
+    :param et: Epoch in ephemeris seconds past J2000 TDB.
+    :param fixref: Body-fixed, body-centered target body frame.
+    :param abcorr: Aberration correction.
+    :param corloc: Aberration correction locus: 'TANGENT POINT' or 'SURFACE POINT'.
+    :param obsrvr: Name of observing body.
+    :param dref: Reference frame of ray direction vector.
+    :param dvec: Ray direction vector.
+    :return: 'Tangent point': point on ray nearest to surface.; Altitude of tangent point above surface.; Distance of tangent point from observer.; Point on surface nearest to tangent point.; Epoch associated with correction locus.; Vector from observer to surface point SRFPT.
+
+    With arrays for `et`: `tangpt_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `tangpt_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return tangpt_v(method, target, et, fixref, abcorr, corloc, obsrvr, dref, dvec)
+    return _context().tangpt(method, target, _sc(et), fixref, abcorr, corloc, obsrvr, dref, dvec)
 
 def tchckd():
     """Determine whether component checking is enabled for time strings.
@@ -7196,7 +8340,13 @@ def timdef(action, item, lenout=None, value=None):
     :return: Value associated with the default item."""
     return _context().timdef(action, item, lenout, value)
 
-def timout(et, pictur, lenout=None):
+def timout_v(et, pictur, lenout=None):
+    """`timout` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `timout_v`).
+
+The other arguments are those of `timout`. The results are arrays whose first dimension is the number of elements."""
+    return _context().timout_v(et, pictur, lenout)
+
+def timout_s(et, pictur, lenout=None):
     """Convert an input epoch represented in TDB seconds past the TDB epoch of J2000 to a character string formatted to the specifications of a user's format picture.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/timout.html
@@ -7206,6 +8356,21 @@ def timout(et, pictur, lenout=None):
     :param lenout: (SpiceyPy compatibility; ignored)
     :return: A string representation of the input epoch."""
     return _context().timout(et, pictur, lenout)
+
+def timout(et, pictur, lenout=None):
+    """Convert an input epoch represented in TDB seconds past the TDB epoch of J2000 to a character string formatted to the specifications of a user's format picture.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/timout.html
+    
+    :param et: Epoch in seconds past the ephemeris epoch J2000.
+    :param pictur: A format specification for the output string.
+    :param lenout: (SpiceyPy compatibility; ignored)
+    :return: A string representation of the input epoch.
+
+    With arrays for `et`: `timout_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `timout_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return timout_v(et, pictur, lenout)
+    return _context().timout(_sc(et), pictur, lenout)
 
 def tipbod(ref, body, et):
     """Return a 3x3 matrix that transforms positions in inertial coordinates to positions in body-equator-and-prime-meridian coordinates.
@@ -7285,7 +8450,13 @@ def tpictr(sample, lenout=None, lenerr=None):
     :return: is a format picture that describes SAMPLE; indicates success or failure to parse SAMPLE; a diagnostic returned if SAMPLE cannot be parsed"""
     return _context().tpictr(sample, lenout, lenerr)
 
-def trgsep(et, targ1, shape1, frame1, targ2, shape2, frame2, obsrvr, abcorr):
+def trgsep_v(et, targ1, shape1, frame1, targ2, shape2, frame2, obsrvr, abcorr):
+    """`trgsep` at each element of `et` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `trgsep_v`).
+
+The other arguments are those of `trgsep`. The results are arrays whose first dimension is the number of elements."""
+    return _context().trgsep_v(et, targ1, shape1, frame1, targ2, shape2, frame2, obsrvr, abcorr)
+
+def trgsep_s(et, targ1, shape1, frame1, targ2, shape2, frame2, obsrvr, abcorr):
     """Compute the angular separation in radians between two spherical or point objects.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/trgsep.html
@@ -7301,6 +8472,27 @@ def trgsep(et, targ1, shape1, frame1, targ2, shape2, frame2, obsrvr, abcorr):
     :param abcorr: Aberration corrections flag.
     :return: the result"""
     return _context().trgsep(et, targ1, shape1, frame1, targ2, shape2, frame2, obsrvr, abcorr)
+
+def trgsep(et, targ1, shape1, frame1, targ2, shape2, frame2, obsrvr, abcorr):
+    """Compute the angular separation in radians between two spherical or point objects.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/trgsep.html
+    
+    :param et: Ephemeris seconds past J2000 TDB.
+    :param targ1: First target body name.
+    :param shape1: First target body shape.
+    :param frame1: Reference frame of first target.
+    :param targ2: Second target body name.
+    :param shape2: First target body shape.
+    :param frame2: Reference frame of second target.
+    :param obsrvr: Observing body name.
+    :param abcorr: Aberration corrections flag.
+    :return: the result
+
+    With arrays for `et`: `trgsep_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `trgsep_s` is always the scalar form."""
+    if _isvec(et, 0):
+        return trgsep_v(et, targ1, shape1, frame1, targ2, shape2, frame2, obsrvr, abcorr)
+    return _context().trgsep(_sc(et), targ1, shape1, frame1, targ2, shape2, frame2, obsrvr, abcorr)
 
 def tsetyr(year):
     """Set the lower bound on the 100 year range.
@@ -7383,7 +8575,13 @@ def unioni(a, b, c=None):
     :return: Union of A and B."""
     return _context().unioni(a, b, c)
 
-def unitim(epoch, insys, outsys):
+def unitim_v(epoch, insys, outsys):
+    """`unitim` at each element of `epoch` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `unitim_v`).
+
+The other arguments are those of `unitim`. The results are arrays whose first dimension is the number of elements."""
+    return _context().unitim_v(epoch, insys, outsys)
+
+def unitim_s(epoch, insys, outsys):
     """Transform time from one uniform scale to another. The uniform time scales are TAI, GPS, TT, TDT, TDB, ET, JED, JDTDB, JDTDT.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/unitim.html
@@ -7394,7 +8592,28 @@ def unitim(epoch, insys, outsys):
     :return: the result"""
     return _context().unitim(epoch, insys, outsys)
 
-def utc2et(utcstr):
+def unitim(epoch, insys, outsys):
+    """Transform time from one uniform scale to another. The uniform time scales are TAI, GPS, TT, TDT, TDB, ET, JED, JDTDB, JDTDT.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/unitim.html
+    
+    :param epoch: An epoch.
+    :param insys: The time scale associated with the input EPOCH.
+    :param outsys: The time scale associated with the function value.
+    :return: the result
+
+    With arrays for `epoch`: `unitim_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `unitim_s` is always the scalar form."""
+    if _isvec(epoch, 0):
+        return unitim_v(epoch, insys, outsys)
+    return _context().unitim(_sc(epoch), insys, outsys)
+
+def utc2et_v(utcstr):
+    """`utc2et` at each element of `utcstr` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `utc2et_v`).
+
+The other arguments are those of `utc2et`. The results are arrays whose first dimension is the number of elements."""
+    return _context().utc2et_v(utcstr)
+
+def utc2et_s(utcstr):
     """Convert an input time from Calendar or Julian Date format, UTC, to ephemeris seconds past J2000.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/utc2et.html
@@ -7402,6 +8621,19 @@ def utc2et(utcstr):
     :param utcstr: Input time string, UTC.
     :return: Output epoch, ephemeris seconds past J2000."""
     return _context().utc2et(utcstr)
+
+def utc2et(utcstr):
+    """Convert an input time from Calendar or Julian Date format, UTC, to ephemeris seconds past J2000.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/utc2et.html
+    
+    :param utcstr: Input time string, UTC.
+    :return: Output epoch, ephemeris seconds past J2000.
+
+    With arrays for `utcstr`: `utc2et_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `utc2et_s` is always the scalar form."""
+    if _isvec(utcstr, 0):
+        return utc2et_v(utcstr)
+    return _context().utc2et(_sc(utcstr))
 
 def validd(size, n, a=None):
     """Create a valid set from a double precision set array.
@@ -7695,7 +8927,13 @@ def xf2eul(xform, axisa, axisb, axisc):
     :return: An array of Euler angles and their derivatives.; Indicates if EULANG is a unique representation."""
     return _context().xf2eul(xform, axisa, axisb, axisc)
 
-def xfmsta(input_state, input_coord_sys, output_coord_sys, body):
+def xfmsta_v(input_state, input_coord_sys, output_coord_sys, body):
+    """`xfmsta` at each element of `input_state` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `xfmsta_v`).
+
+The other arguments are those of `xfmsta`. The results are arrays whose first dimension is the number of elements."""
+    return _context().xfmsta_v(input_state, input_coord_sys, output_coord_sys, body)
+
+def xfmsta_s(input_state, input_coord_sys, output_coord_sys, body):
     """Transform a state between coordinate systems.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/xfmsta.html
@@ -7706,6 +8944,22 @@ def xfmsta(input_state, input_coord_sys, output_coord_sys, body):
     :param body: Name or NAIF ID of body with which coordinates are associated (if applicable).
     :return: Converted output state."""
     return _context().xfmsta(input_state, input_coord_sys, output_coord_sys, body)
+
+def xfmsta(input_state, input_coord_sys, output_coord_sys, body):
+    """Transform a state between coordinate systems.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/xfmsta.html
+    
+    :param input_state: Input state.
+    :param input_coord_sys: Current (input) coordinate system.
+    :param output_coord_sys: Desired (output) coordinate system.
+    :param body: Name or NAIF ID of body with which coordinates are associated (if applicable).
+    :return: Converted output state.
+
+    With arrays for `input_state`: `xfmsta_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `xfmsta_s` is always the scalar form."""
+    if _isvec(input_state, 1):
+        return xfmsta_v(input_state, input_coord_sys, output_coord_sys, body)
+    return _context().xfmsta(_sc(input_state), input_coord_sys, output_coord_sys, body)
 
 def xposbl(bmat, nrow, ncol, bsize):
     """Transpose the square blocks within a matrix.
@@ -7931,7 +9185,7 @@ def axisar(axis, angle):
     pepper_axisar(<double*>cnp.PyArray_DATA(_a_axis), _c_angle, <double*>cnp.PyArray_DATA(_a_r))
     return _a_r
 
-def azlrec(inrange, az, el, azccw, elplsz):
+def azlrec_s(inrange, az, el, azccw, elplsz):
     """Convert from range, azimuth and elevation of a point to rectangular coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/azlrec.html
@@ -7942,6 +9196,60 @@ def azlrec(inrange, az, el, azccw, elplsz):
     :param azccw: Flag indicating how azimuth is measured.
     :param elplsz: Flag indicating how elevation is measured.
     :return: Rectangular coordinates of a point."""
+    cdef double _c_range = inrange
+    cdef double _c_az = az
+    cdef double _c_el = el
+    cdef int _c_azccw = 1 if azccw else 0
+    cdef int _c_elplsz = 1 if elplsz else 0
+    cdef int _st = 0
+    cdef cnp.ndarray _a_rectan = _empty(NPY_DOUBLE, 3, -1)
+    pepper_azlrec(_c_range, _c_az, _c_el, _c_azccw, _c_elplsz, <double*>cnp.PyArray_DATA(_a_rectan))
+    return _a_rectan
+
+def azlrec_v(inrange, az, el, azccw, elplsz):
+    """`azlrec` at each element of `inrange`, `az`, `el` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `azlrec_v`).
+    
+    The other arguments are those of `azlrec`. The results are arrays whose first dimension is the number of elements."""
+    if np.ndim(inrange) == 0 and np.ndim(az) == 0 and np.ndim(el) == 0: raise ValueError("expected an array (a scalar is azlrec's)")
+    cdef int _c_azccw = 1 if azccw else 0
+    cdef int _c_elplsz = 1 if elplsz else 0
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_range = np.ascontiguousarray(inrange, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_range = <const double*>cnp.PyArray_DATA(_v_range)
+    cdef Py_ssize_t _s_range = 0 if _v_range.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_az = np.ascontiguousarray(az, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_az = <const double*>cnp.PyArray_DATA(_v_az)
+    cdef Py_ssize_t _s_az = 0 if _v_az.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_el = np.ascontiguousarray(el, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_el = <const double*>cnp.PyArray_DATA(_v_el)
+    cdef Py_ssize_t _s_el = 0 if _v_el.shape[0] == 1 else 1
+    cdef Py_ssize_t _n = _vlen([_v_range.shape[0], _v_az.shape[0], _v_el.shape[0]])
+    cdef cnp.ndarray _o_rectan = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_rectan = <double*>cnp.PyArray_DATA(_o_rectan)
+    with nogil:
+        for _i in range(_n):
+            pepper_azlrec(_pv_range[_i * _s_range], _pv_az[_i * _s_az], _pv_el[_i * _s_el], _c_azccw, _c_elplsz, _q_rectan + _i * 3)
+    return _o_rectan[:_n]
+
+def azlrec(inrange, az, el, azccw, elplsz):
+    """Convert from range, azimuth and elevation of a point to rectangular coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/azlrec.html
+    
+    :param inrange: Distance of the point from the origin.
+    :param az: Azimuth in radians.
+    :param el: Elevation in radians.
+    :param azccw: Flag indicating how azimuth is measured.
+    :param elplsz: Flag indicating how elevation is measured.
+    :return: Rectangular coordinates of a point.
+
+    With arrays for `inrange`, `az`, `el`: `azlrec_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `azlrec_s` is always the scalar form."""
+    if _isvec(inrange, 0) or _isvec(az, 0) or _isvec(el, 0):
+        return azlrec_v(inrange, az, el, azccw, elplsz)
+    inrange = _sc(inrange)
+    az = _sc(az)
+    el = _sc(el)
     cdef double _c_range = inrange
     cdef double _c_az = az
     cdef double _c_el = el
@@ -8279,7 +9587,7 @@ def cposr(string, chars, start):
     pepper_cposr(_c_str, _c_chars, _c_start, &_c_fresult)
     return (_c_fresult - 1)
 
-def cyllat(r, clon, z):
+def cyllat_s(r, clon, z):
     """Convert from cylindrical to latitudinal coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cyllat.html
@@ -8298,7 +9606,57 @@ def cyllat(r, clon, z):
     pepper_cyllat(_c_r, _c_clon, _c_z, &_c_radius, &_c_lon, &_c_lat)
     return _c_radius, _c_lon, _c_lat
 
-def cylrec(r, lon, z):
+def cyllat_v(r, clon, z):
+    """`cyllat` at each element of `r`, `clon`, `z` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `cyllat_v`).
+    
+    The other arguments are those of `cyllat`. The results are arrays whose first dimension is the number of elements."""
+    if np.ndim(r) == 0 and np.ndim(clon) == 0 and np.ndim(z) == 0: raise ValueError("expected an array (a scalar is cyllat's)")
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_r = np.ascontiguousarray(r, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_r = <const double*>cnp.PyArray_DATA(_v_r)
+    cdef Py_ssize_t _s_r = 0 if _v_r.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_clon = np.ascontiguousarray(clon, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_clon = <const double*>cnp.PyArray_DATA(_v_clon)
+    cdef Py_ssize_t _s_clon = 0 if _v_clon.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_z = np.ascontiguousarray(z, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_z = <const double*>cnp.PyArray_DATA(_v_z)
+    cdef Py_ssize_t _s_z = 0 if _v_z.shape[0] == 1 else 1
+    cdef Py_ssize_t _n = _vlen([_v_r.shape[0], _v_clon.shape[0], _v_z.shape[0]])
+    cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_stack = <double*>cnp.PyArray_DATA(_o_stack)
+    with nogil:
+        for _i in range(_n):
+            pepper_cyllat(_pv_r[_i * _s_r], _pv_clon[_i * _s_clon], _pv_z[_i * _s_z], _q_stack + _i * 3 + 0, _q_stack + _i * 3 + 1, _q_stack + _i * 3 + 2)
+    return _o_stack[:_n]
+
+def cyllat(r, clon, z):
+    """Convert from cylindrical to latitudinal coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cyllat.html
+    
+    :param r: Distance of point from Z axis.
+    :param clon: Cylindrical angle of point from XZ plane(radians).
+    :param z: Height of point above XY plane.
+    :return: Distance of point from origin.; Longitude of point (radians).; Latitude of point (radians).
+
+    With arrays for `r`, `clon`, `z`: `cyllat_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `cyllat_s` is always the scalar form."""
+    if _isvec(r, 0) or _isvec(clon, 0) or _isvec(z, 0):
+        return cyllat_v(r, clon, z)
+    r = _sc(r)
+    clon = _sc(clon)
+    z = _sc(z)
+    cdef double _c_r = r
+    cdef double _c_clon = clon
+    cdef double _c_z = z
+    cdef double _c_radius = 0
+    cdef double _c_lon = 0
+    cdef double _c_lat = 0
+    cdef int _st = 0
+    pepper_cyllat(_c_r, _c_clon, _c_z, &_c_radius, &_c_lon, &_c_lat)
+    return _c_radius, _c_lon, _c_lat
+
+def cylrec_s(r, lon, z):
     """Convert from cylindrical to rectangular coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cylrec.html
@@ -8315,7 +9673,55 @@ def cylrec(r, lon, z):
     pepper_cylrec(_c_r, _c_clon, _c_z, <double*>cnp.PyArray_DATA(_a_rectan))
     return _a_rectan
 
-def cylsph(r, clon, z):
+def cylrec_v(r, lon, z):
+    """`cylrec` at each element of `r`, `lon`, `z` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `cylrec_v`).
+    
+    The other arguments are those of `cylrec`. The results are arrays whose first dimension is the number of elements."""
+    if np.ndim(r) == 0 and np.ndim(lon) == 0 and np.ndim(z) == 0: raise ValueError("expected an array (a scalar is cylrec's)")
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_r = np.ascontiguousarray(r, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_r = <const double*>cnp.PyArray_DATA(_v_r)
+    cdef Py_ssize_t _s_r = 0 if _v_r.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_clon = np.ascontiguousarray(lon, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_clon = <const double*>cnp.PyArray_DATA(_v_clon)
+    cdef Py_ssize_t _s_clon = 0 if _v_clon.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_z = np.ascontiguousarray(z, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_z = <const double*>cnp.PyArray_DATA(_v_z)
+    cdef Py_ssize_t _s_z = 0 if _v_z.shape[0] == 1 else 1
+    cdef Py_ssize_t _n = _vlen([_v_r.shape[0], _v_clon.shape[0], _v_z.shape[0]])
+    cdef cnp.ndarray _o_rectan = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_rectan = <double*>cnp.PyArray_DATA(_o_rectan)
+    with nogil:
+        for _i in range(_n):
+            pepper_cylrec(_pv_r[_i * _s_r], _pv_clon[_i * _s_clon], _pv_z[_i * _s_z], _q_rectan + _i * 3)
+    return _o_rectan[:_n]
+
+def cylrec(r, lon, z):
+    """Convert from cylindrical to rectangular coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cylrec.html
+    
+    :param r: Distance of a point from Z axis.
+    :param lon: Angle (radians) of a point from XZ plane
+    :param z: Height of a point above XY plane.
+    :return: Rectangular coordinates of the point.
+
+    With arrays for `r`, `lon`, `z`: `cylrec_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `cylrec_s` is always the scalar form."""
+    if _isvec(r, 0) or _isvec(lon, 0) or _isvec(z, 0):
+        return cylrec_v(r, lon, z)
+    r = _sc(r)
+    lon = _sc(lon)
+    z = _sc(z)
+    cdef double _c_r = r
+    cdef double _c_clon = lon
+    cdef double _c_z = z
+    cdef int _st = 0
+    cdef cnp.ndarray _a_rectan = _empty(NPY_DOUBLE, 3, -1)
+    pepper_cylrec(_c_r, _c_clon, _c_z, <double*>cnp.PyArray_DATA(_a_rectan))
+    return _a_rectan
+
+def cylsph_s(r, clon, z):
     """Convert from cylindrical to spherical coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cylsph.html
@@ -8324,6 +9730,56 @@ def cylsph(r, clon, z):
     :param clon: Angle (radians) of point from XZ plane.
     :param z: Height of point above XY plane.
     :return: Distance of point from origin.; Polar angle (co-latitude in radians) of point.; Azimuthal angle (longitude) of point (radians)."""
+    cdef double _c_r = r
+    cdef double _c_clon = clon
+    cdef double _c_z = z
+    cdef double _c_radius = 0
+    cdef double _c_colat = 0
+    cdef double _c_slon = 0
+    cdef int _st = 0
+    pepper_cylsph(_c_r, _c_clon, _c_z, &_c_radius, &_c_colat, &_c_slon)
+    return _c_radius, _c_colat, _c_slon
+
+def cylsph_v(r, clon, z):
+    """`cylsph` at each element of `r`, `clon`, `z` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `cylsph_v`).
+    
+    The other arguments are those of `cylsph`. The results are arrays whose first dimension is the number of elements."""
+    if np.ndim(r) == 0 and np.ndim(clon) == 0 and np.ndim(z) == 0: raise ValueError("expected an array (a scalar is cylsph's)")
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_r = np.ascontiguousarray(r, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_r = <const double*>cnp.PyArray_DATA(_v_r)
+    cdef Py_ssize_t _s_r = 0 if _v_r.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_clon = np.ascontiguousarray(clon, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_clon = <const double*>cnp.PyArray_DATA(_v_clon)
+    cdef Py_ssize_t _s_clon = 0 if _v_clon.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_z = np.ascontiguousarray(z, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_z = <const double*>cnp.PyArray_DATA(_v_z)
+    cdef Py_ssize_t _s_z = 0 if _v_z.shape[0] == 1 else 1
+    cdef Py_ssize_t _n = _vlen([_v_r.shape[0], _v_clon.shape[0], _v_z.shape[0]])
+    cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_stack = <double*>cnp.PyArray_DATA(_o_stack)
+    with nogil:
+        for _i in range(_n):
+            pepper_cylsph(_pv_r[_i * _s_r], _pv_clon[_i * _s_clon], _pv_z[_i * _s_z], _q_stack + _i * 3 + 0, _q_stack + _i * 3 + 1, _q_stack + _i * 3 + 2)
+    return _o_stack[:_n]
+
+def cylsph(r, clon, z):
+    """Convert from cylindrical to spherical coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/cylsph.html
+    
+    :param r: Distance of point from Z axis.
+    :param clon: Angle (radians) of point from XZ plane.
+    :param z: Height of point above XY plane.
+    :return: Distance of point from origin.; Polar angle (co-latitude in radians) of point.; Azimuthal angle (longitude) of point (radians).
+
+    With arrays for `r`, `clon`, `z`: `cylsph_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `cylsph_s` is always the scalar form."""
+    if _isvec(r, 0) or _isvec(clon, 0) or _isvec(z, 0):
+        return cylsph_v(r, clon, z)
+    r = _sc(r)
+    clon = _sc(clon)
+    z = _sc(z)
     cdef double _c_r = r
     cdef double _c_clon = clon
     cdef double _c_z = z
@@ -8875,7 +10331,7 @@ def lastpc(string):
     pepper_lastpc(_c_string, &_c_fresult)
     return _c_fresult
 
-def latcyl(radius, lon, lat):
+def latcyl_s(radius, lon, lat):
     """Convert from latitudinal coordinates to cylindrical coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/latcyl.html
@@ -8894,7 +10350,57 @@ def latcyl(radius, lon, lat):
     pepper_latcyl(_c_radius, _c_lon, _c_lat, &_c_r, &_c_clon, &_c_z)
     return _c_r, _c_clon, _c_z
 
-def latrec(radius, longitude, latitude):
+def latcyl_v(radius, lon, lat):
+    """`latcyl` at each element of `radius`, `lon`, `lat` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `latcyl_v`).
+    
+    The other arguments are those of `latcyl`. The results are arrays whose first dimension is the number of elements."""
+    if np.ndim(radius) == 0 and np.ndim(lon) == 0 and np.ndim(lat) == 0: raise ValueError("expected an array (a scalar is latcyl's)")
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_radius = np.ascontiguousarray(radius, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_radius = <const double*>cnp.PyArray_DATA(_v_radius)
+    cdef Py_ssize_t _s_radius = 0 if _v_radius.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_lon = np.ascontiguousarray(lon, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_lon = <const double*>cnp.PyArray_DATA(_v_lon)
+    cdef Py_ssize_t _s_lon = 0 if _v_lon.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_lat = np.ascontiguousarray(lat, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_lat = <const double*>cnp.PyArray_DATA(_v_lat)
+    cdef Py_ssize_t _s_lat = 0 if _v_lat.shape[0] == 1 else 1
+    cdef Py_ssize_t _n = _vlen([_v_radius.shape[0], _v_lon.shape[0], _v_lat.shape[0]])
+    cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_stack = <double*>cnp.PyArray_DATA(_o_stack)
+    with nogil:
+        for _i in range(_n):
+            pepper_latcyl(_pv_radius[_i * _s_radius], _pv_lon[_i * _s_lon], _pv_lat[_i * _s_lat], _q_stack + _i * 3 + 0, _q_stack + _i * 3 + 1, _q_stack + _i * 3 + 2)
+    return _o_stack[:_n]
+
+def latcyl(radius, lon, lat):
+    """Convert from latitudinal coordinates to cylindrical coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/latcyl.html
+    
+    :param radius: Distance of a point from the origin.
+    :param lon: Angle of the point from the XZ plane in radians.
+    :param lat: Angle of the point from the XY plane in radians.
+    :return: Distance of the point from the Z axis.; Angle of the point from the XZ plane in radians.; Height of the point above the XY plane.
+
+    With arrays for `radius`, `lon`, `lat`: `latcyl_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `latcyl_s` is always the scalar form."""
+    if _isvec(radius, 0) or _isvec(lon, 0) or _isvec(lat, 0):
+        return latcyl_v(radius, lon, lat)
+    radius = _sc(radius)
+    lon = _sc(lon)
+    lat = _sc(lat)
+    cdef double _c_radius = radius
+    cdef double _c_lon = lon
+    cdef double _c_lat = lat
+    cdef double _c_r = 0
+    cdef double _c_clon = 0
+    cdef double _c_z = 0
+    cdef int _st = 0
+    pepper_latcyl(_c_radius, _c_lon, _c_lat, &_c_r, &_c_clon, &_c_z)
+    return _c_r, _c_clon, _c_z
+
+def latrec_s(radius, longitude, latitude):
     """Convert from latitudinal coordinates to rectangular coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/latrec.html
@@ -8911,7 +10417,55 @@ def latrec(radius, longitude, latitude):
     pepper_latrec(_c_radius, _c_lon, _c_lat, <double*>cnp.PyArray_DATA(_a_rectan))
     return _a_rectan
 
-def latsph(radius, lon, lat):
+def latrec_v(radius, longitude, latitude):
+    """`latrec` at each element of `radius`, `longitude`, `latitude` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `latrec_v`).
+    
+    The other arguments are those of `latrec`. The results are arrays whose first dimension is the number of elements."""
+    if np.ndim(radius) == 0 and np.ndim(longitude) == 0 and np.ndim(latitude) == 0: raise ValueError("expected an array (a scalar is latrec's)")
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_radius = np.ascontiguousarray(radius, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_radius = <const double*>cnp.PyArray_DATA(_v_radius)
+    cdef Py_ssize_t _s_radius = 0 if _v_radius.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_lon = np.ascontiguousarray(longitude, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_lon = <const double*>cnp.PyArray_DATA(_v_lon)
+    cdef Py_ssize_t _s_lon = 0 if _v_lon.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_lat = np.ascontiguousarray(latitude, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_lat = <const double*>cnp.PyArray_DATA(_v_lat)
+    cdef Py_ssize_t _s_lat = 0 if _v_lat.shape[0] == 1 else 1
+    cdef Py_ssize_t _n = _vlen([_v_radius.shape[0], _v_lon.shape[0], _v_lat.shape[0]])
+    cdef cnp.ndarray _o_rectan = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_rectan = <double*>cnp.PyArray_DATA(_o_rectan)
+    with nogil:
+        for _i in range(_n):
+            pepper_latrec(_pv_radius[_i * _s_radius], _pv_lon[_i * _s_lon], _pv_lat[_i * _s_lat], _q_rectan + _i * 3)
+    return _o_rectan[:_n]
+
+def latrec(radius, longitude, latitude):
+    """Convert from latitudinal coordinates to rectangular coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/latrec.html
+    
+    :param radius: Distance of a point from the origin.
+    :param longitude: Longitude of point in radians.
+    :param latitude: Latitude of point in radians.
+    :return: Rectangular coordinates of the point.
+
+    With arrays for `radius`, `longitude`, `latitude`: `latrec_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `latrec_s` is always the scalar form."""
+    if _isvec(radius, 0) or _isvec(longitude, 0) or _isvec(latitude, 0):
+        return latrec_v(radius, longitude, latitude)
+    radius = _sc(radius)
+    longitude = _sc(longitude)
+    latitude = _sc(latitude)
+    cdef double _c_radius = radius
+    cdef double _c_lon = longitude
+    cdef double _c_lat = latitude
+    cdef int _st = 0
+    cdef cnp.ndarray _a_rectan = _empty(NPY_DOUBLE, 3, -1)
+    pepper_latrec(_c_radius, _c_lon, _c_lat, <double*>cnp.PyArray_DATA(_a_rectan))
+    return _a_rectan
+
+def latsph_s(radius, lon, lat):
     """Convert from latitudinal coordinates to spherical coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/latsph.html
@@ -8920,6 +10474,56 @@ def latsph(radius, lon, lat):
     :param lon: Angle of the point from the XZ plane in radians.
     :param lat: Angle of the point from the XY plane in radians.
     :return: Distance of the point from the origin.; Angle of the point from positive Z axis (radians).; Angle of the point from the XZ plane (radians)."""
+    cdef double _c_radius = radius
+    cdef double _c_lon = lon
+    cdef double _c_lat = lat
+    cdef double _c_rho = 0
+    cdef double _c_colat = 0
+    cdef double _c_slon = 0
+    cdef int _st = 0
+    pepper_latsph(_c_radius, _c_lon, _c_lat, &_c_rho, &_c_colat, &_c_slon)
+    return _c_rho, _c_colat, _c_slon
+
+def latsph_v(radius, lon, lat):
+    """`latsph` at each element of `radius`, `lon`, `lat` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `latsph_v`).
+    
+    The other arguments are those of `latsph`. The results are arrays whose first dimension is the number of elements."""
+    if np.ndim(radius) == 0 and np.ndim(lon) == 0 and np.ndim(lat) == 0: raise ValueError("expected an array (a scalar is latsph's)")
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_radius = np.ascontiguousarray(radius, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_radius = <const double*>cnp.PyArray_DATA(_v_radius)
+    cdef Py_ssize_t _s_radius = 0 if _v_radius.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_lon = np.ascontiguousarray(lon, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_lon = <const double*>cnp.PyArray_DATA(_v_lon)
+    cdef Py_ssize_t _s_lon = 0 if _v_lon.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_lat = np.ascontiguousarray(lat, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_lat = <const double*>cnp.PyArray_DATA(_v_lat)
+    cdef Py_ssize_t _s_lat = 0 if _v_lat.shape[0] == 1 else 1
+    cdef Py_ssize_t _n = _vlen([_v_radius.shape[0], _v_lon.shape[0], _v_lat.shape[0]])
+    cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_stack = <double*>cnp.PyArray_DATA(_o_stack)
+    with nogil:
+        for _i in range(_n):
+            pepper_latsph(_pv_radius[_i * _s_radius], _pv_lon[_i * _s_lon], _pv_lat[_i * _s_lat], _q_stack + _i * 3 + 0, _q_stack + _i * 3 + 1, _q_stack + _i * 3 + 2)
+    return _o_stack[:_n]
+
+def latsph(radius, lon, lat):
+    """Convert from latitudinal coordinates to spherical coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/latsph.html
+    
+    :param radius: Distance of a point from the origin.
+    :param lon: Angle of the point from the XZ plane in radians.
+    :param lat: Angle of the point from the XY plane in radians.
+    :return: Distance of the point from the origin.; Angle of the point from positive Z axis (radians).; Angle of the point from the XZ plane (radians).
+
+    With arrays for `radius`, `lon`, `lat`: `latsph_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `latsph_s` is always the scalar form."""
+    if _isvec(radius, 0) or _isvec(lon, 0) or _isvec(lat, 0):
+        return latsph_v(radius, lon, lat)
+    radius = _sc(radius)
+    lon = _sc(lon)
+    lat = _sc(lat)
     cdef double _c_radius = radius
     cdef double _c_lon = lon
     cdef double _c_lat = lat
@@ -10074,7 +11678,7 @@ def qxq(q1, q2):
     pepper_qxq(<double*>cnp.PyArray_DATA(_a_q1), <double*>cnp.PyArray_DATA(_a_q2), <double*>cnp.PyArray_DATA(_a_qout))
     return _a_qout
 
-def radrec(inrange, ra, dec):
+def radrec_s(inrange, ra, dec):
     """Convert from range, right ascension, and declination to rectangular coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/radrec.html
@@ -10083,6 +11687,54 @@ def radrec(inrange, ra, dec):
     :param ra: Right ascension of point in radians.
     :param dec: Declination of point in radians.
     :return: Rectangular coordinates of the point."""
+    cdef double _c_range = inrange
+    cdef double _c_ra = ra
+    cdef double _c_dec = dec
+    cdef int _st = 0
+    cdef cnp.ndarray _a_rectan = _empty(NPY_DOUBLE, 3, -1)
+    pepper_radrec(_c_range, _c_ra, _c_dec, <double*>cnp.PyArray_DATA(_a_rectan))
+    return _a_rectan
+
+def radrec_v(inrange, ra, dec):
+    """`radrec` at each element of `inrange`, `ra`, `dec` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `radrec_v`).
+    
+    The other arguments are those of `radrec`. The results are arrays whose first dimension is the number of elements."""
+    if np.ndim(inrange) == 0 and np.ndim(ra) == 0 and np.ndim(dec) == 0: raise ValueError("expected an array (a scalar is radrec's)")
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_range = np.ascontiguousarray(inrange, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_range = <const double*>cnp.PyArray_DATA(_v_range)
+    cdef Py_ssize_t _s_range = 0 if _v_range.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_ra = np.ascontiguousarray(ra, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_ra = <const double*>cnp.PyArray_DATA(_v_ra)
+    cdef Py_ssize_t _s_ra = 0 if _v_ra.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_dec = np.ascontiguousarray(dec, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_dec = <const double*>cnp.PyArray_DATA(_v_dec)
+    cdef Py_ssize_t _s_dec = 0 if _v_dec.shape[0] == 1 else 1
+    cdef Py_ssize_t _n = _vlen([_v_range.shape[0], _v_ra.shape[0], _v_dec.shape[0]])
+    cdef cnp.ndarray _o_rectan = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_rectan = <double*>cnp.PyArray_DATA(_o_rectan)
+    with nogil:
+        for _i in range(_n):
+            pepper_radrec(_pv_range[_i * _s_range], _pv_ra[_i * _s_ra], _pv_dec[_i * _s_dec], _q_rectan + _i * 3)
+    return _o_rectan[:_n]
+
+def radrec(inrange, ra, dec):
+    """Convert from range, right ascension, and declination to rectangular coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/radrec.html
+    
+    :param inrange: Distance of a point from the origin.
+    :param ra: Right ascension of point in radians.
+    :param dec: Declination of point in radians.
+    :return: Rectangular coordinates of the point.
+
+    With arrays for `inrange`, `ra`, `dec`: `radrec_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `radrec_s` is always the scalar form."""
+    if _isvec(inrange, 0) or _isvec(ra, 0) or _isvec(dec, 0):
+        return radrec_v(inrange, ra, dec)
+    inrange = _sc(inrange)
+    ra = _sc(ra)
+    dec = _sc(dec)
     cdef double _c_range = inrange
     cdef double _c_ra = ra
     cdef double _c_dec = dec
@@ -10106,7 +11758,7 @@ def rav2xf(rot, av):
     pepper_rav2xf(<double*>cnp.PyArray_DATA(_a_rot), <double*>cnp.PyArray_DATA(_a_av), <double*>cnp.PyArray_DATA(_a_xform))
     return _a_xform
 
-def recazl(rectan, azccw, elplsz):
+def recazl_s(rectan, azccw, elplsz):
     """Convert rectangular coordinates of a point to range, azimuth and elevation.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/recazl.html
@@ -10125,7 +11777,52 @@ def recazl(rectan, azccw, elplsz):
     pepper_recazl(<double*>cnp.PyArray_DATA(_a_rectan), _c_azccw, _c_elplsz, &_c_range, &_c_az, &_c_el)
     return _c_range, _c_az, _c_el
 
-def reccyl(rectan):
+def recazl_v(rectan, azccw, elplsz):
+    """`recazl` at each element of `rectan` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `recazl_v`).
+    
+    The other arguments are those of `recazl`. The results are arrays whose first dimension is the number of elements."""
+    cdef int _c_azccw = 1 if azccw else 0
+    cdef int _c_elplsz = 1 if elplsz else 0
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_rectan = np.ascontiguousarray(rectan, dtype=np.float64)
+    if _v_rectan.ndim == 1: _v_rectan = _v_rectan.reshape(1, -1)
+    if _v_rectan.ndim != 2 or _v_rectan.shape[1] != 3: raise ValueError("rectan: expected vectors of 3 values")
+    cdef const double *_pv_rectan = <const double*>cnp.PyArray_DATA(_v_rectan)
+    cdef Py_ssize_t _s_rectan = 0 if _v_rectan.shape[0] == 1 else 3
+    cdef Py_ssize_t _n = _vlen([_v_rectan.shape[0]])
+    cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_stack = <double*>cnp.PyArray_DATA(_o_stack)
+    with nogil:
+        for _i in range(_n):
+            pepper_recazl(_pv_rectan + _i * _s_rectan, _c_azccw, _c_elplsz, _q_stack + _i * 3 + 0, _q_stack + _i * 3 + 1, _q_stack + _i * 3 + 2)
+    return _o_stack[:_n]
+
+def recazl(rectan, azccw, elplsz):
+    """Convert rectangular coordinates of a point to range, azimuth and elevation.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/recazl.html
+    
+    :param rectan: Rectangular coordinates of a point.
+    :param azccw: Flag indicating how Azimuth is measured.
+    :param elplsz: Flag indicating how Elevation is measured.
+    :return: Distance of the point from the origin.; Azimuth in radians.; Elevation in radians.
+
+    With arrays for `rectan`: `recazl_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `recazl_s` is always the scalar form."""
+    if _isvec(rectan, 1):
+        return recazl_v(rectan, azccw, elplsz)
+    rectan = _sc(rectan)
+    cdef int _c_azccw = 1 if azccw else 0
+    cdef int _c_elplsz = 1 if elplsz else 0
+    cdef double _c_range = 0
+    cdef double _c_az = 0
+    cdef double _c_el = 0
+    cdef int _st = 0
+    cdef cnp.ndarray _a_rectan = _input(rectan, NPY_DOUBLE, 3, -1, False)
+    pepper_recazl(<double*>cnp.PyArray_DATA(_a_rectan), _c_azccw, _c_elplsz, &_c_range, &_c_az, &_c_el)
+    return _c_range, _c_az, _c_el
+
+def reccyl_s(rectan):
     """Convert from rectangular to cylindrical coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/reccyl.html
@@ -10140,7 +11837,46 @@ def reccyl(rectan):
     pepper_reccyl(<double*>cnp.PyArray_DATA(_a_rectan), &_c_r, &_c_clon, &_c_z)
     return _c_r, _c_clon, _c_z
 
-def reclat(rectan):
+def reccyl_v(rectan):
+    """`reccyl` at each element of `rectan` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `reccyl_v`).
+    
+    The other arguments are those of `reccyl`. The results are arrays whose first dimension is the number of elements."""
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_rectan = np.ascontiguousarray(rectan, dtype=np.float64)
+    if _v_rectan.ndim == 1: _v_rectan = _v_rectan.reshape(1, -1)
+    if _v_rectan.ndim != 2 or _v_rectan.shape[1] != 3: raise ValueError("rectan: expected vectors of 3 values")
+    cdef const double *_pv_rectan = <const double*>cnp.PyArray_DATA(_v_rectan)
+    cdef Py_ssize_t _s_rectan = 0 if _v_rectan.shape[0] == 1 else 3
+    cdef Py_ssize_t _n = _vlen([_v_rectan.shape[0]])
+    cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_stack = <double*>cnp.PyArray_DATA(_o_stack)
+    with nogil:
+        for _i in range(_n):
+            pepper_reccyl(_pv_rectan + _i * _s_rectan, _q_stack + _i * 3 + 0, _q_stack + _i * 3 + 1, _q_stack + _i * 3 + 2)
+    return _o_stack[:_n]
+
+def reccyl(rectan):
+    """Convert from rectangular to cylindrical coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/reccyl.html
+    
+    :param rectan: Rectangular coordinates of a point.
+    :return: Distance of the point from Z axis.; Angle (radians) of the point from XZ plane; Height of the point above XY plane.
+
+    With arrays for `rectan`: `reccyl_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `reccyl_s` is always the scalar form."""
+    if _isvec(rectan, 1):
+        return reccyl_v(rectan)
+    rectan = _sc(rectan)
+    cdef double _c_r = 0
+    cdef double _c_clon = 0
+    cdef double _c_z = 0
+    cdef int _st = 0
+    cdef cnp.ndarray _a_rectan = _input(rectan, NPY_DOUBLE, 3, -1, False)
+    pepper_reccyl(<double*>cnp.PyArray_DATA(_a_rectan), &_c_r, &_c_clon, &_c_z)
+    return _c_r, _c_clon, _c_z
+
+def reclat_s(rectan):
     """Convert from rectangular coordinates to latitudinal coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/reclat.html
@@ -10155,7 +11891,46 @@ def reclat(rectan):
     pepper_reclat(<double*>cnp.PyArray_DATA(_a_rectan), &_c_radius, &_c_lon, &_c_lat)
     return _c_radius, _c_lon, _c_lat
 
-def recrad(rectan):
+def reclat_v(rectan):
+    """`reclat` at each element of `rectan` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `reclat_v`).
+    
+    The other arguments are those of `reclat`. The results are arrays whose first dimension is the number of elements."""
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_rectan = np.ascontiguousarray(rectan, dtype=np.float64)
+    if _v_rectan.ndim == 1: _v_rectan = _v_rectan.reshape(1, -1)
+    if _v_rectan.ndim != 2 or _v_rectan.shape[1] != 3: raise ValueError("rectan: expected vectors of 3 values")
+    cdef const double *_pv_rectan = <const double*>cnp.PyArray_DATA(_v_rectan)
+    cdef Py_ssize_t _s_rectan = 0 if _v_rectan.shape[0] == 1 else 3
+    cdef Py_ssize_t _n = _vlen([_v_rectan.shape[0]])
+    cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_stack = <double*>cnp.PyArray_DATA(_o_stack)
+    with nogil:
+        for _i in range(_n):
+            pepper_reclat(_pv_rectan + _i * _s_rectan, _q_stack + _i * 3 + 0, _q_stack + _i * 3 + 1, _q_stack + _i * 3 + 2)
+    return _o_stack[:_n]
+
+def reclat(rectan):
+    """Convert from rectangular coordinates to latitudinal coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/reclat.html
+    
+    :param rectan: Rectangular coordinates of the point.
+    :return: Distance of a point from the origin.; Longitude of point in radians.; Latitude of point in radians.
+
+    With arrays for `rectan`: `reclat_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `reclat_s` is always the scalar form."""
+    if _isvec(rectan, 1):
+        return reclat_v(rectan)
+    rectan = _sc(rectan)
+    cdef double _c_radius = 0
+    cdef double _c_lon = 0
+    cdef double _c_lat = 0
+    cdef int _st = 0
+    cdef cnp.ndarray _a_rectan = _input(rectan, NPY_DOUBLE, 3, -1, False)
+    pepper_reclat(<double*>cnp.PyArray_DATA(_a_rectan), &_c_radius, &_c_lon, &_c_lat)
+    return _c_radius, _c_lon, _c_lat
+
+def recrad_s(rectan):
     """Convert rectangular coordinates to range, right ascension, and declination.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/recrad.html
@@ -10170,13 +11945,91 @@ def recrad(rectan):
     pepper_recrad(<double*>cnp.PyArray_DATA(_a_rectan), &_c_range, &_c_ra, &_c_dec)
     return _c_range, _c_ra, _c_dec
 
-def recsph(rectan):
+def recrad_v(rectan):
+    """`recrad` at each element of `rectan` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `recrad_v`).
+    
+    The other arguments are those of `recrad`. The results are arrays whose first dimension is the number of elements."""
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_rectan = np.ascontiguousarray(rectan, dtype=np.float64)
+    if _v_rectan.ndim == 1: _v_rectan = _v_rectan.reshape(1, -1)
+    if _v_rectan.ndim != 2 or _v_rectan.shape[1] != 3: raise ValueError("rectan: expected vectors of 3 values")
+    cdef const double *_pv_rectan = <const double*>cnp.PyArray_DATA(_v_rectan)
+    cdef Py_ssize_t _s_rectan = 0 if _v_rectan.shape[0] == 1 else 3
+    cdef Py_ssize_t _n = _vlen([_v_rectan.shape[0]])
+    cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_stack = <double*>cnp.PyArray_DATA(_o_stack)
+    with nogil:
+        for _i in range(_n):
+            pepper_recrad(_pv_rectan + _i * _s_rectan, _q_stack + _i * 3 + 0, _q_stack + _i * 3 + 1, _q_stack + _i * 3 + 2)
+    return _o_stack[:_n]
+
+def recrad(rectan):
+    """Convert rectangular coordinates to range, right ascension, and declination.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/recrad.html
+    
+    :param rectan: Rectangular coordinates of a point.
+    :return: Distance of the point from the origin.; Right ascension in radians.; Declination in radians.
+
+    With arrays for `rectan`: `recrad_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `recrad_s` is always the scalar form."""
+    if _isvec(rectan, 1):
+        return recrad_v(rectan)
+    rectan = _sc(rectan)
+    cdef double _c_range = 0
+    cdef double _c_ra = 0
+    cdef double _c_dec = 0
+    cdef int _st = 0
+    cdef cnp.ndarray _a_rectan = _input(rectan, NPY_DOUBLE, 3, -1, False)
+    pepper_recrad(<double*>cnp.PyArray_DATA(_a_rectan), &_c_range, &_c_ra, &_c_dec)
+    return _c_range, _c_ra, _c_dec
+
+def recsph_s(rectan):
     """Convert from rectangular coordinates to spherical coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/recsph.html
     
     :param rectan: Rectangular coordinates of a point.
     :return: Distance of the point from the origin.; Angle of the point from the Z-axis (radians); Longitude of the point (radians)."""
+    cdef double _c_r = 0
+    cdef double _c_colat = 0
+    cdef double _c_slon = 0
+    cdef int _st = 0
+    cdef cnp.ndarray _a_rectan = _input(rectan, NPY_DOUBLE, 3, -1, False)
+    pepper_recsph(<double*>cnp.PyArray_DATA(_a_rectan), &_c_r, &_c_colat, &_c_slon)
+    return _c_r, _c_colat, _c_slon
+
+def recsph_v(rectan):
+    """`recsph` at each element of `rectan` (arrays), in a C loop with the GIL released (SpiceyPy's cyice `recsph_v`).
+    
+    The other arguments are those of `recsph`. The results are arrays whose first dimension is the number of elements."""
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_rectan = np.ascontiguousarray(rectan, dtype=np.float64)
+    if _v_rectan.ndim == 1: _v_rectan = _v_rectan.reshape(1, -1)
+    if _v_rectan.ndim != 2 or _v_rectan.shape[1] != 3: raise ValueError("rectan: expected vectors of 3 values")
+    cdef const double *_pv_rectan = <const double*>cnp.PyArray_DATA(_v_rectan)
+    cdef Py_ssize_t _s_rectan = 0 if _v_rectan.shape[0] == 1 else 3
+    cdef Py_ssize_t _n = _vlen([_v_rectan.shape[0]])
+    cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_stack = <double*>cnp.PyArray_DATA(_o_stack)
+    with nogil:
+        for _i in range(_n):
+            pepper_recsph(_pv_rectan + _i * _s_rectan, _q_stack + _i * 3 + 0, _q_stack + _i * 3 + 1, _q_stack + _i * 3 + 2)
+    return _o_stack[:_n]
+
+def recsph(rectan):
+    """Convert from rectangular coordinates to spherical coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/recsph.html
+    
+    :param rectan: Rectangular coordinates of a point.
+    :return: Distance of the point from the origin.; Angle of the point from the Z-axis (radians); Longitude of the point (radians).
+
+    With arrays for `rectan`: `recsph_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `recsph_s` is always the scalar form."""
+    if _isvec(rectan, 1):
+        return recsph_v(rectan)
+    rectan = _sc(rectan)
     cdef double _c_r = 0
     cdef double _c_colat = 0
     cdef double _c_slon = 0
@@ -10691,7 +12544,7 @@ def somtru(logcls, n):
     pepper_somtru(<int>cnp.PyArray_DIM(_a_logcls, 0), <const int*>cnp.PyArray_DATA(_a_logcls), _c_n, &_c_fresult)
     return (_c_fresult != 0)
 
-def sphcyl(radius, colat, slon):
+def sphcyl_s(radius, colat, slon):
     """Convert from spherical coordinates to cylindrical coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sphcyl.html
@@ -10710,7 +12563,57 @@ def sphcyl(radius, colat, slon):
     pepper_sphcyl(_c_radius, _c_colat, _c_slon, &_c_r, &_c_clon, &_c_z)
     return _c_r, _c_clon, _c_z
 
-def sphlat(r, colat, lons):
+def sphcyl_v(radius, colat, slon):
+    """`sphcyl` at each element of `radius`, `colat`, `slon` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `sphcyl_v`).
+    
+    The other arguments are those of `sphcyl`. The results are arrays whose first dimension is the number of elements."""
+    if np.ndim(radius) == 0 and np.ndim(colat) == 0 and np.ndim(slon) == 0: raise ValueError("expected an array (a scalar is sphcyl's)")
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_radius = np.ascontiguousarray(radius, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_radius = <const double*>cnp.PyArray_DATA(_v_radius)
+    cdef Py_ssize_t _s_radius = 0 if _v_radius.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_colat = np.ascontiguousarray(colat, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_colat = <const double*>cnp.PyArray_DATA(_v_colat)
+    cdef Py_ssize_t _s_colat = 0 if _v_colat.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_slon = np.ascontiguousarray(slon, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_slon = <const double*>cnp.PyArray_DATA(_v_slon)
+    cdef Py_ssize_t _s_slon = 0 if _v_slon.shape[0] == 1 else 1
+    cdef Py_ssize_t _n = _vlen([_v_radius.shape[0], _v_colat.shape[0], _v_slon.shape[0]])
+    cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_stack = <double*>cnp.PyArray_DATA(_o_stack)
+    with nogil:
+        for _i in range(_n):
+            pepper_sphcyl(_pv_radius[_i * _s_radius], _pv_colat[_i * _s_colat], _pv_slon[_i * _s_slon], _q_stack + _i * 3 + 0, _q_stack + _i * 3 + 1, _q_stack + _i * 3 + 2)
+    return _o_stack[:_n]
+
+def sphcyl(radius, colat, slon):
+    """Convert from spherical coordinates to cylindrical coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sphcyl.html
+    
+    :param radius: Distance of point from origin.
+    :param colat: Polar angle (co-latitude in radians) of point.
+    :param slon: Azimuthal angle (longitude) of point (radians).
+    :return: Distance of point from Z axis.; Angle (radians) of point from XZ plane.; Height of point above XY plane.
+
+    With arrays for `radius`, `colat`, `slon`: `sphcyl_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `sphcyl_s` is always the scalar form."""
+    if _isvec(radius, 0) or _isvec(colat, 0) or _isvec(slon, 0):
+        return sphcyl_v(radius, colat, slon)
+    radius = _sc(radius)
+    colat = _sc(colat)
+    slon = _sc(slon)
+    cdef double _c_radius = radius
+    cdef double _c_colat = colat
+    cdef double _c_slon = slon
+    cdef double _c_r = 0
+    cdef double _c_clon = 0
+    cdef double _c_z = 0
+    cdef int _st = 0
+    pepper_sphcyl(_c_radius, _c_colat, _c_slon, &_c_r, &_c_clon, &_c_z)
+    return _c_r, _c_clon, _c_z
+
+def sphlat_s(r, colat, lons):
     """Convert from spherical coordinates to latitudinal coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sphlat.html
@@ -10729,7 +12632,57 @@ def sphlat(r, colat, lons):
     pepper_sphlat(_c_r, _c_colat, _c_slon, &_c_radius, &_c_lon, &_c_lat)
     return _c_radius, _c_lon, _c_lat
 
-def sphrec(r, colat, lon):
+def sphlat_v(r, colat, lons):
+    """`sphlat` at each element of `r`, `colat`, `lons` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `sphlat_v`).
+    
+    The other arguments are those of `sphlat`. The results are arrays whose first dimension is the number of elements."""
+    if np.ndim(r) == 0 and np.ndim(colat) == 0 and np.ndim(lons) == 0: raise ValueError("expected an array (a scalar is sphlat's)")
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_r = np.ascontiguousarray(r, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_r = <const double*>cnp.PyArray_DATA(_v_r)
+    cdef Py_ssize_t _s_r = 0 if _v_r.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_colat = np.ascontiguousarray(colat, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_colat = <const double*>cnp.PyArray_DATA(_v_colat)
+    cdef Py_ssize_t _s_colat = 0 if _v_colat.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_slon = np.ascontiguousarray(lons, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_slon = <const double*>cnp.PyArray_DATA(_v_slon)
+    cdef Py_ssize_t _s_slon = 0 if _v_slon.shape[0] == 1 else 1
+    cdef Py_ssize_t _n = _vlen([_v_r.shape[0], _v_colat.shape[0], _v_slon.shape[0]])
+    cdef cnp.ndarray _o_stack = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_stack = <double*>cnp.PyArray_DATA(_o_stack)
+    with nogil:
+        for _i in range(_n):
+            pepper_sphlat(_pv_r[_i * _s_r], _pv_colat[_i * _s_colat], _pv_slon[_i * _s_slon], _q_stack + _i * 3 + 0, _q_stack + _i * 3 + 1, _q_stack + _i * 3 + 2)
+    return _o_stack[:_n]
+
+def sphlat(r, colat, lons):
+    """Convert from spherical coordinates to latitudinal coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sphlat.html
+    
+    :param r: Distance of the point from the origin.
+    :param colat: Angle of the point from positive Z axis (radians).
+    :param lons: Angle of the point from the XZ plane (radians).
+    :return: Distance of a point from the origin; Angle of the point from the XZ plane in radians; Angle of the point from the XY plane in radians
+
+    With arrays for `r`, `colat`, `lons`: `sphlat_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `sphlat_s` is always the scalar form."""
+    if _isvec(r, 0) or _isvec(colat, 0) or _isvec(lons, 0):
+        return sphlat_v(r, colat, lons)
+    r = _sc(r)
+    colat = _sc(colat)
+    lons = _sc(lons)
+    cdef double _c_r = r
+    cdef double _c_colat = colat
+    cdef double _c_slon = lons
+    cdef double _c_radius = 0
+    cdef double _c_lon = 0
+    cdef double _c_lat = 0
+    cdef int _st = 0
+    pepper_sphlat(_c_r, _c_colat, _c_slon, &_c_radius, &_c_lon, &_c_lat)
+    return _c_radius, _c_lon, _c_lat
+
+def sphrec_s(r, colat, lon):
     """Convert from spherical coordinates to rectangular coordinates.
     
     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sphrec.html
@@ -10738,6 +12691,54 @@ def sphrec(r, colat, lon):
     :param colat: Angle of the point from the Z-axis in radians.
     :param lon: Angle of the point from the XZ plane in radians.
     :return: Rectangular coordinates of the point."""
+    cdef double _c_r = r
+    cdef double _c_colat = colat
+    cdef double _c_slon = lon
+    cdef int _st = 0
+    cdef cnp.ndarray _a_rectan = _empty(NPY_DOUBLE, 3, -1)
+    pepper_sphrec(_c_r, _c_colat, _c_slon, <double*>cnp.PyArray_DATA(_a_rectan))
+    return _a_rectan
+
+def sphrec_v(r, colat, lon):
+    """`sphrec` at each element of `r`, `colat`, `lon` (arrays, broadcast together), in a C loop with the GIL released (SpiceyPy's cyice `sphrec_v`).
+    
+    The other arguments are those of `sphrec`. The results are arrays whose first dimension is the number of elements."""
+    if np.ndim(r) == 0 and np.ndim(colat) == 0 and np.ndim(lon) == 0: raise ValueError("expected an array (a scalar is sphrec's)")
+    cdef Py_ssize_t _i
+    cdef int _st = 0
+    cdef cnp.ndarray _v_r = np.ascontiguousarray(r, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_r = <const double*>cnp.PyArray_DATA(_v_r)
+    cdef Py_ssize_t _s_r = 0 if _v_r.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_colat = np.ascontiguousarray(colat, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_colat = <const double*>cnp.PyArray_DATA(_v_colat)
+    cdef Py_ssize_t _s_colat = 0 if _v_colat.shape[0] == 1 else 1
+    cdef cnp.ndarray _v_slon = np.ascontiguousarray(lon, dtype=np.float64).reshape(-1)
+    cdef const double *_pv_slon = <const double*>cnp.PyArray_DATA(_v_slon)
+    cdef Py_ssize_t _s_slon = 0 if _v_slon.shape[0] == 1 else 1
+    cdef Py_ssize_t _n = _vlen([_v_r.shape[0], _v_colat.shape[0], _v_slon.shape[0]])
+    cdef cnp.ndarray _o_rectan = np.empty((max(_n, 1), 3), dtype=np.float64)
+    cdef double *_q_rectan = <double*>cnp.PyArray_DATA(_o_rectan)
+    with nogil:
+        for _i in range(_n):
+            pepper_sphrec(_pv_r[_i * _s_r], _pv_colat[_i * _s_colat], _pv_slon[_i * _s_slon], _q_rectan + _i * 3)
+    return _o_rectan[:_n]
+
+def sphrec(r, colat, lon):
+    """Convert from spherical coordinates to rectangular coordinates.
+    
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/FORTRAN/spicelib/sphrec.html
+    
+    :param r: Distance of a point from the origin.
+    :param colat: Angle of the point from the Z-axis in radians.
+    :param lon: Angle of the point from the XZ plane in radians.
+    :return: Rectangular coordinates of the point.
+
+    With arrays for `r`, `colat`, `lon`: `sphrec_v` (PepperyPy's, and SpiceyPy's cyice, dispatch); `sphrec_s` is always the scalar form."""
+    if _isvec(r, 0) or _isvec(colat, 0) or _isvec(lon, 0):
+        return sphrec_v(r, colat, lon)
+    r = _sc(r)
+    colat = _sc(colat)
+    lon = _sc(lon)
     cdef double _c_r = r
     cdef double _c_colat = colat
     cdef double _c_slon = lon

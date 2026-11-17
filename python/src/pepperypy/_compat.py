@@ -1223,3 +1223,94 @@ for _name, _cargs in _EMPTY_CHECKS.items():
     if _f is not None:
         globals()[_name] = _with_checks(_f, _name, _cargs)
 del _name, _cargs, _f
+
+
+# ---- the vectorized forms whose results have a size per element (SpiceyPy's
+# cyice limbpt_v, termpt_v, getelm_v): loops in Python over the scalar forms
+
+
+def _padded(rows, width):
+    """Per-element arrays as one array (n, width, ...), zeros past each one's
+    own elements."""
+    first = np.asarray(rows[0]) if rows else np.zeros(0)
+    out = np.zeros((len(rows), width) + first.shape[1:], dtype=first.dtype)
+    for i, r in enumerate(rows):
+        r = np.asarray(r)
+        out[i, :r.shape[0]] = r
+    return out
+
+
+limbpt_s = limbpt
+termpt_s = termpt
+getelm_s = _core.getelm
+
+
+def limbpt_v(method, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol,
+             maxn=None):
+    """`limbpt` at each epoch of `et` (an array): arrays (n, ncuts) of the
+    points' counts and (n, m, ...) of the points, epochs and tangents, where m
+    is the most points found at an epoch (cyice: maxn); zeros past an epoch's
+    points. `maxn` is ignored."""
+    res = [limbpt_s(method, target, t, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol)
+           for t in np.atleast_1d(et)]
+    m = max([len(r[1]) for r in res] + [ncuts])
+    return tuple(_padded([r[k] for r in res], m if k else ncuts) for k in range(4))
+
+
+def termpt_v(method, ilusrc, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol,
+             maxn=None):
+    """`termpt` at each epoch of `et` (an array): arrays (n, ncuts) of the
+    points' counts and (n, m, ...) of the points, epochs and tangents, where m
+    is the most points found at an epoch (cyice: maxn); zeros past an epoch's
+    points. `maxn` is ignored."""
+    res = [termpt_s(method, ilusrc, target, t, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp,
+                    soltol) for t in np.atleast_1d(et)]
+    m = max([len(r[1]) for r in res] + [ncuts])
+    return tuple(_padded([r[k] for r in res], m if k else ncuts) for k in range(4))
+
+
+def getelm_v(frstyr, lines):
+    """`getelm` for each pair of lines of `lines` ((n, 2)): epochs (n,) and
+    elements (n, 10). `frstyr`: one year, or one per pair."""
+    lines = np.asarray(lines).reshape(-1, 2)
+    years = np.broadcast_to(np.asarray(frstyr), (lines.shape[0],))
+    res = [getelm_s(int(y), [str(x) for x in pair]) for y, pair in zip(years, lines)]
+    return np.array([r[0] for r in res]), np.array([r[1] for r in res]).reshape(-1, 10)
+
+
+def limbpt(method, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol,
+           maxn=None):
+    """Find limb points on a target body. PepperyPy: the points found (not
+    arrays of maxn); `maxn` is ignored. With an array for `et`: `limbpt_v`.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/limbpt_c.html"""
+    if np.ndim(et):
+        return limbpt_v(method, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp, soltol)
+    return limbpt_s(method, target, float(et), fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp,
+                    soltol)
+
+
+def termpt(method, ilusrc, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts, schstp,
+           soltol, maxn=None):
+    """Find terminator points on a target body. PepperyPy: the points found
+    (not arrays of maxn); `maxn` is ignored. With an array for `et`:
+    `termpt_v`.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/termpt_c.html"""
+    if np.ndim(et):
+        return termpt_v(method, ilusrc, target, et, fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts,
+                        schstp, soltol)
+    return termpt_s(method, ilusrc, target, float(et), fixref, abcorr, corloc, obsrvr, refvec, rolstp, ncuts,
+                    schstp, soltol)
+
+
+def getelm(frstyr, lines):
+    """Parse the two lines of a NORAD two-line element set. With pairs of
+    lines ((n, 2)): `getelm_v`.
+
+    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/getelm_c.html"""
+    if np.ndim(lines) > 1:
+        return getelm_v(frstyr, lines)
+    if isinstance(frstyr, np.ndarray):
+        frstyr = frstyr.item()
+    return getelm_s(int(frstyr), lines)

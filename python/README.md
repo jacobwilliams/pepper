@@ -143,6 +143,16 @@ The results are SPKEZR's, PXFORM's and SXFORM's to the last bit. Where
 SpiceyPy accepts a list of epochs (`spkezr`, `spkpos`, `et2utc`, `str2et`,
 ...), so does PepperyPy, with the same result shapes.
 
+For 71 routines (the SPK and CK queries, time and SCLK conversions,
+geometry, coordinate conversions) there are also `<name>_v` functions, as
+in SpiceyPy's cyice: the routine at each element of arrays, in a C loop
+with the GIL released (`spice.subpnt_v(method, target, ets, ...)`,
+`ctx.reclat_v(points)`). For each, `<name>_s` is the scalar function and
+`<name>` dispatches to either by its arguments, as cyice does: code
+written for cyice runs with `import pepperypy as cyice` (see the
+[porting guide](../guides/spiceypy_porting.md#cyice-import-pepperypy-as-cyice),
+and its [speed comparisons](../guides/spiceypy_porting.md#speed)).
+
 ## Results of any size
 
 PEPPER's procedures that return results of any size are methods and
