@@ -5,6 +5,7 @@ module pepper_legacy_pck_api
 
    use pepper_instance_module, only: pepper_context
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbcell
 
    implicit none
 
@@ -20,7 +21,6 @@ contains
       subroutine pckcov ( pckfnm, idcode, cover )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: pckfnm  !! Name of PCK file.
       integer(ip) :: idcode  !! Class ID code of PCK reference frame.
       real(wp) :: cover  ( lbcell : * )  !! Window giving coverage in PCKFNM for IDCODE.
@@ -53,7 +53,6 @@ contains
       subroutine pckfrm ( pckfnm, ids )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: pckfnm  !! Name of PCK file.
       integer(ip) :: ids    ( lbcell : * )  !! Set of frame class ID codes of frames in PCK file.
       type(pepper_context), pointer :: ctx

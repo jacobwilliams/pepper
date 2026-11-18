@@ -37,6 +37,7 @@ module pepper_legacy_geometry
       pepper_zztanini => zztanini, pepper_zztansta => zztansta, pepper_zztangnt => zztangnt
    use pepper_legacy_context, only: legacy_context, legacy_spice
    use pepper_legacy_callbacks
+   use pepper_bounds, only: lbcell, ubpl, ubel
 
    implicit none
 
@@ -160,7 +161,6 @@ contains
       use pepper_inc_ninert
       use pepper_inc_nninrt
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: frmcls  !! Frame class.
       integer(ip) :: idset  ( lbcell : * )  !! Set of ID codes of frames of the specified class.
       type(pepper_context), pointer :: ctx
@@ -339,7 +339,6 @@ contains
       integer(ip) function fetchc ( nth, set )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: nth  !! Index of a particular element.
       character(*) :: set      ( lbcell:* )  !! Input set.
       type(pepper_context), pointer :: ctx
@@ -354,7 +353,6 @@ contains
       integer(ip) function fetchd ( nth, set )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: nth  !! Index of a particular element.
       real(wp) :: set      ( lbcell:* )  !! Input set.
       type(pepper_context), pointer :: ctx
@@ -369,7 +367,6 @@ contains
       integer(ip) function fetchi ( nth, set )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: nth  !! Index of a particular element.
       integer(ip) :: set      ( lbcell:* )  !! Input set.
       type(pepper_context), pointer :: ctx
@@ -526,7 +523,6 @@ contains
       use pepper_inc_ninert
       use pepper_inc_nninrt
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: frmcls  !! Frame class.
       integer(ip) :: idset  ( lbcell : * )  !! Set of ID codes of frames of the specified class.
       type(pepper_context), pointer :: ctx
@@ -541,7 +537,6 @@ contains
       subroutine lparss ( list, delims, set )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: list  !! List of items delimited by DELIMS on input.
       character(*) :: delims  !! Single characters which delimit items.
       character(*) :: set  ( lbcell:* )  !! Items in the list, validated, left justified.
@@ -623,7 +618,6 @@ contains
       subroutine lxidnt ( idspec, string, first, last, nchar )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: string  !! String to be scanned.
       integer(ip) :: first  !! Character position at which to start scanning.
       integer(ip) :: idspec ( lbcell : * )  !! Identifier character specification.
@@ -641,7 +635,6 @@ contains
       subroutine lxdfid ( idspec )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: idspec ( lbcell : * )  !! Identifier character specification.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()
@@ -655,7 +648,6 @@ contains
       subroutine lxcsid ( hdchrs, tlchrs, idspec )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: hdchrs  !! Allowed head characters for identifiers.
       character(*) :: tlchrs  !! Allowed tail characters for identifiers.
       integer(ip) :: idspec ( lbcell : * )  !! Identifier character specification.
@@ -672,7 +664,6 @@ contains
       subroutine npelpt ( point, ellips, pnear, dist )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubel = 9
       real(wp) :: ellips ( ubel )  !! A SPICE ellipse.
       real(wp) :: point  (    3 )  !! Point whose distance to an ellipse is to be found.
       real(wp) :: pnear  (    3 )  !! Nearest point on ellipse to input point.
@@ -1053,7 +1044,6 @@ contains
       subroutine zzasryel ( extrem, ellips, vertex, dir, angle, extpt )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubel = 9
       character(*) :: extrem  !! Type of extremum to find.
       real(wp) :: ellips ( ubel )  !! SPICE ellipse.
       real(wp) :: vertex ( 3 )  !! Vertex and direction vector of ray.
@@ -1998,7 +1988,6 @@ contains
                             tol,    result, points, endflg  )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       logical :: cstep  !! Logical indicating constant step size.
       real(wp) :: step  !! Constant step size for finding geometric events.
       real(wp) :: start  !! Beginning of the search interval.
@@ -2074,7 +2063,6 @@ contains
       integer(ip) function zzwind ( plane, n, vertcs, point )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubpl = 4
       real(wp) :: plane  ( ubpl )  !! A SPICELIB plane.
       integer(ip) :: n  !! Number of vertices of polygon.
       real(wp) :: vertcs ( 3, * )  !! Vertices of polygon.
@@ -2454,7 +2442,6 @@ contains
       subroutine wrkvar ( unit, name, dirctv, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: unit  !! Output logical unit.
       character(*) :: name  !! Name of the variable.
       character(*) :: dirctv  !! Kernel directive: '=' or '+='.
@@ -2773,7 +2760,6 @@ contains
       subroutine cgv2el ( center, vec1, vec2, ellips )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubel = 9
       real(wp) :: center (    3 )  !! Center and two generating vectors for an ellipse.
       real(wp) :: vec1   (    3 )  !! Center and two generating vectors for an ellipse.
       real(wp) :: vec2   (    3 )  !! Center and two generating vectors for an ellipse.
@@ -2868,7 +2854,6 @@ contains
       subroutine rdkvar ( tabsym, tabptr, tabval, name, eof )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: tabsym     ( lbcell:* )  !! Symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Symbol table.
       real(wp) :: tabval     ( lbcell:* )  !! Symbol table.
@@ -3072,8 +3057,6 @@ contains
       subroutine inedpl ( a, b, c, plane, ellips, found )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubel = 9
-      integer(ip), parameter :: ubpl = 4
       real(wp) :: a  !! Length of ellipsoid semi-axis lying on the x-axis.
       real(wp) :: b  !! Length of ellipsoid semi-axis lying on the y-axis.
       real(wp) :: c  !! Length of ellipsoid semi-axis lying on the z-axis.
@@ -3092,8 +3075,6 @@ contains
       subroutine pjelpl ( elin, plane, elout )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubel = 9
-      integer(ip), parameter :: ubpl = 4
       real(wp) :: elin  ( ubel )  !! A SPICE ellipse to be projected.
       real(wp) :: plane ( ubpl )  !! A plane onto which ELIN is to be projected.
       real(wp) :: elout ( ubel )  !! A SPICE ellipse resulting from the projection.
@@ -3212,7 +3193,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_errhnd
       implicit none
-      integer(ip), parameter :: ubel = 9
       real(wp) :: ellips ( ubel )  !! A SPICELIB ellipse.
       real(wp) :: vertex ( 3 )  !! Vertex of a pyramid.
       real(wp) :: axis   ( 3 )  !! Axis of a pyramid.
@@ -3272,7 +3252,6 @@ contains
       subroutine edlimb ( a, b, c, viewpt, limb )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubel = 9
       real(wp) :: a  !! Length of ellipsoid semi-axis lying on the x-axis.
       real(wp) :: b  !! Length of ellipsoid semi-axis lying on the y-axis.
       real(wp) :: c  !! Length of ellipsoid semi-axis lying on the z-axis.
@@ -4153,7 +4132,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_zzdsk
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: curve  !! Type of curve: limb or terminator type.
       real(wp) :: srcrad  !! Radius of illumination source.
       integer(ip) :: shape  !! Target shape.

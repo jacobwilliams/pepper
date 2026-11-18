@@ -3017,7 +3017,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: id   (            * )  !! An array of integers that comprise an
                                                         !! identifier.
       integer(ip), intent(in) :: idsz  !! The number of integer components per identifier.

@@ -326,7 +326,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: ckfnm  !! Name of CK file.
       integer(ip), intent(inout) :: ids ( lbcell : * )  !! Set of ID codes of objects in CK file.
       integer(ip), allocatable :: list(:)
@@ -5133,7 +5132,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: ckfnm  !! Name of CK file.
       integer(ip), intent(in) :: idcode  !! ID code of object.
       logical, intent(in) :: needav  !! Flag indicating whether angular velocity is needed.

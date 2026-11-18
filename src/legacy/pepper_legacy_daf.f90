@@ -7,6 +7,7 @@ module pepper_legacy_daf
       pepper_zzdafnfr => zzdafnfr, pepper_zzdafgdr => zzdafgdr, pepper_zzdafgsr => zzdafgsr, &
       pepper_zzxlated => zzxlated
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbcell
 
    implicit none
 
@@ -393,7 +394,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_zzddhman
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: fhset ( lbcell : * )  !! A set containing handles of currently open DAFS.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()

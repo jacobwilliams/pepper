@@ -5,6 +5,7 @@ module pepper_legacy_array_ops
 
    use pepper_instance_module, only: pepper_context
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbpool
 
    implicit none
 
@@ -333,7 +334,6 @@ contains
       subroutine lnkan ( pool, new )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
       integer(ip) :: new  !! Number of new node that was allocated.
       type(pepper_context), pointer :: ctx
@@ -347,7 +347,6 @@ contains
       subroutine lnkfsl ( head, tail, pool )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: head  !! Head and tail nodes of a sublist to be freed.
       integer(ip) :: tail  !! Head and tail nodes of a sublist to be freed.
       integer(ip) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
@@ -362,7 +361,6 @@ contains
       integer(ip) function lnkhl ( node, pool )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: node  !! Number of a node.
       integer(ip) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
       type(pepper_context), pointer :: ctx
@@ -377,7 +375,6 @@ contains
       subroutine lnkila ( prev, list, pool )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: prev  !! Node after which a new list is to be inserted.
       integer(ip) :: list  !! Node in the list to be inserted.
       integer(ip) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
@@ -393,7 +390,6 @@ contains
       subroutine lnkilb ( list, next, pool )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: list  !! Node in the list to be inserted.
       integer(ip) :: next  !! Node before which a new list is to be inserted.
       integer(ip) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
@@ -408,7 +404,6 @@ contains
       subroutine lnkini ( size, pool )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: size  !! Number of nodes in the pool.
       integer(ip) :: pool ( 2,  lbpool : * )  !! An array that is a linked pool on output.
       type(pepper_context), pointer :: ctx
@@ -422,7 +417,6 @@ contains
       integer(ip) function lnknfn ( pool )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()
@@ -436,7 +430,6 @@ contains
       integer(ip) function lnknxt ( node, pool )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: pool ( 2,  lbpool :  *  )  !! A doubly linked list pool.
       integer(ip) :: node  !! Number of an allocated node.
       type(pepper_context), pointer :: ctx
@@ -451,7 +444,6 @@ contains
       integer(ip) function lnkprv ( node, pool )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
       integer(ip) :: node  !! Number of an allocated node.
       type(pepper_context), pointer :: ctx
@@ -465,7 +457,6 @@ contains
       integer(ip) function lnksiz ( pool )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()
@@ -478,7 +469,6 @@ contains
       integer(ip) function lnktl ( node, pool )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: node  !! Number of a node.
       integer(ip) :: pool (  2,  lbpool : *  )  !! A doubly linked list pool.
       type(pepper_context), pointer :: ctx
@@ -492,7 +482,6 @@ contains
       subroutine lnkxsl ( head, tail, pool )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip) :: head  !! Head and tail nodes of a sublist to be extracted.
       integer(ip) :: tail  !! Head and tail nodes of a sublist to be extracted.
       integer(ip) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.

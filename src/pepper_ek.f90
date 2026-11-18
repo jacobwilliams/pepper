@@ -744,7 +744,6 @@ submodule (pepper_instance_module) pepper_ek
    ! declared them in each routine that used them).
    integer(ip), parameter :: empty = 4  !! code of an empty table
    integer(ip), parameter :: equi = 1  !! code of an equality join
-   integer(ip), parameter :: lbcell = -5  !! lower bound of a SPICE cell (its control area: elements -5 to 0)
    integer(ip), parameter :: noneq = 2  !! code of a non-equality join
    integer(ip), parameter :: ntypes = 4  !! number of EK data types
    integer(ip), parameter :: typlen = 4  !! length of an EK data type name
@@ -19699,7 +19698,6 @@ contains
       use pepper_inc_eksegdsc
       use pepper_inc_ektype
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: op  !! Code for relational operator.
       integer(ip), intent(in) :: ncols  !! Number of columns used to define order relation.
       integer(ip), intent(in) :: tabs   ( * )  !! Indices of tables containing order-by columns.
@@ -20877,7 +20875,6 @@ contains
       use pepper_inc_ektype
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: njrs  !! Number of join row sets in union.
       integer(ip), intent(in) :: ubases ( * )  !! Base addresses of join row sets of union.
       integer(ip), intent(in) :: norder  !! Number of order-by columns.
@@ -23214,7 +23211,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_eksegdsc
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: segvec ( * )  !! Composite segment vector for joined table.
       integer(ip), intent(in) :: jbase1  !! Scratch area base address of first join row set.
       integer(ip), intent(in) :: nt1  !! Width of first table.
@@ -26195,7 +26191,6 @@ contains
       use pepper_inc_ekqlimit
       use pepper_inc_eksegdsc
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: jbase1  !! Scratch area base address of first join row set.
       integer(ip), intent(in) :: jbase2  !! Scratch area base address of second join row set.
       integer(ip), intent(in) :: njcnst  !! Number of join constraints.
@@ -32177,7 +32172,6 @@ contains
       use pepper_inc_ektype
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: eqryc  !! Character component of encoded query.
       real(wp), intent(in) :: eqryd  ( * )  !! D.p. component of encoded query.
       integer(ip), intent(in) :: eqryi  ( lbcell : * )  !! Integer component of encoded query.
@@ -38906,7 +38900,6 @@ contains
       use pepper_inc_ekqlimit
       use pepper_inc_ekquery
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: query  !! Original query string.
       integer(ip), intent(inout) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*), intent(inout) :: eqryc  !! Character component of query.
@@ -39256,7 +39249,6 @@ contains
       use pepper_inc_ektnamsz
       use pepper_inc_ektokn
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: qcol  !! Column name, possibly qualified.
       integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*), intent(in) :: eqryc  !! Character component of query.
@@ -39666,7 +39658,6 @@ contains
       use pepper_inc_ektnamsz
       use pepper_inc_ektype
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: query  !! Original query.
       integer(ip), intent(inout) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*), intent(inout) :: eqryc  !! Character component of query.
@@ -40110,7 +40101,6 @@ contains
       use pepper_inc_ektnamsz
       use pepper_inc_ektype
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: query  !! Original query string.
       integer(ip), intent(inout) :: eqryi  ( lbcell : * )  !! Integer component of query.
       character(*), intent(inout) :: eqryc  !! Character component of query.
@@ -41009,7 +40999,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ektnamsz
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: query  !! Original query string.
       integer(ip), intent(inout) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*), intent(inout) :: eqryc  !! Character component of query.

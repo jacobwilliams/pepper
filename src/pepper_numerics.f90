@@ -7329,9 +7329,7 @@ contains
       use pepper_constants, only: halfpi
       use pepper_math, only: el2cgv, pl2nvc, pl2nvp, vdot, vnormg, vsep
       implicit none
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubel = 9  !! number of elements of an ellipse
       real(wp), intent(in) :: ellips ( ubel )  !! A SPICE ellipse.
       real(wp), intent(in) :: plane  ( ubpl )  !! A SPICE plane.
       integer(ip), intent(out) :: nxpts  !! Number of intersection points of plane and ellipse.
@@ -8103,7 +8101,6 @@ contains
       use pepper_math, only: pl2nvc, smsgnd, vdot, vhat, vnorm
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp), intent(in) :: vertex (    3 )  !! Vertex and direction vector of ray.
       real(wp), intent(in) :: dir    (    3 )  !! Vertex and direction vector of ray.
       real(wp), intent(in) :: plane  ( ubpl )  !! A SPICE plane.
@@ -10742,7 +10739,6 @@ contains
       use pepper_math, only: unorm
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp), intent(in) :: normal (    3 )  !! A normal vector and constant defining a plane.
       real(wp), intent(in) :: konst  !! A normal vector and constant defining a plane.
       real(wp), intent(out) :: plane  ( ubpl )  !! An array representing the plane.
@@ -10911,7 +10907,6 @@ contains
       use pepper_math, only: vdot, vhat
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp), intent(in) :: normal (    3 )  !! A normal vector and a point defining a plane.
       real(wp), intent(in) :: point  (    3 )  !! A normal vector and a point defining a plane.
       real(wp), intent(out) :: plane  ( ubpl )  !! An array representing the plane.
@@ -11076,7 +11071,6 @@ contains
       use pepper_math, only: ucrss, vdot
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp), intent(in) :: point (    3 )  !! A point and two spanning vectors defining a
                                               !! plane.
       real(wp), intent(in) :: span1 (    3 )  !! A point and two spanning vectors defining a
@@ -13575,7 +13569,6 @@ contains
       use pepper_math, only: approx, pl2nvc, vdot, vnorm
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp), intent(in) :: vin   (    3 )  !! Vector to be projected.
       real(wp), intent(in) :: plane ( ubpl )  !! A SPICE plane onto which VIN is projected.
       real(wp), intent(out) :: vout  (    3 )  !! Vector resulting from projection.
@@ -13805,7 +13798,6 @@ contains
       use pepper_math, only: approx, pl2nvc, vdot, vnorm
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp), intent(in) :: vin    (    3 )  !! The projected vector.
       real(wp), intent(in) :: projpl ( ubpl )  !! Plane containing VIN.
       real(wp), intent(in) :: invpl  ( ubpl )  !! Plane containing inverse image of VIN.

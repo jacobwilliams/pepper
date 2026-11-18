@@ -38,6 +38,7 @@ module pepper_legacy_ek_storage
       pepper_zzekaps => zzekaps, pepper_zzekbs01 => zzekbs01, pepper_zzekbs02 => zzekbs02, &
       pepper_zzekde04 => zzekde04, pepper_zzekrp2n => zzekrp2n
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbcell
 
    implicit none
 
@@ -241,7 +242,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ekqlimit
       use pepper_inc_ekbool
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: isize  !! Size of integer component of encoded query.
       integer(ip) :: dsize  !! Size of d.p. component of encoded query.
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
@@ -283,7 +283,6 @@ contains
       subroutine zzekreqi ( eqryi, name, value )
       use pepper_kinds, only: ip
       use pepper_inc_ekquery
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*) :: name  !! Name of scalar item to read.
       integer(ip) :: value  !! Value of item.
@@ -527,7 +526,6 @@ contains
       subroutine zzekweqi ( name, value, eqryi )
       use pepper_kinds, only: ip
       use pepper_inc_ekquery
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of scalar item to write.
       integer(ip) :: value  !! Value to write.
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
@@ -588,7 +586,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ektype
       use pepper_inc_ekbool
-      integer(ip), parameter :: lbcell = -5
       character(*) :: value  !! Character value.
       integer(ip) :: length  !! Length of item to insert.
       integer(ip) :: lexbeg  !! Begin and end positions of value's lexeme.
@@ -613,7 +610,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ektype
       use pepper_inc_ekbool
-      integer(ip), parameter :: lbcell = -5
       real(wp) :: value  !! Numeric value.
       integer(ip) :: type  !! Data type.  May be INT, DP, or TIME.
       integer(ip) :: lexbeg  !! Begin and end positions of value's lexeme.
@@ -885,7 +881,6 @@ contains
       use pepper_kinds, only: ip
       use pepper_inc_ekquery
       use pepper_inc_ekbool
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
       integer(ip) :: n  !! Index within FROM clause of table name to read.
       integer(ip) :: size  !! Size of Nth conjunction in WHERE clause.
@@ -912,7 +907,6 @@ contains
       use pepper_inc_ekopcd
       use pepper_inc_ektype
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*) :: eqryc  !! Character component of query.
       real(wp) :: eqryd ( * )  !! Numeric component of query.
@@ -949,7 +943,6 @@ contains
       use pepper_kinds, only: ip
       use pepper_inc_ekquery
       use pepper_inc_ekbool
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*) :: eqryc  !! Character component of query.
       integer(ip) :: n  !! Index within FROM clause of table name to read.
@@ -974,7 +967,6 @@ contains
       use pepper_kinds, only: ip
       use pepper_inc_ekquery
       use pepper_inc_ekbool
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*) :: eqryc  !! Character component of query.
       integer(ip) :: n  !! Index within SELECT clause of table name to read.
@@ -999,7 +991,6 @@ contains
       use pepper_kinds, only: ip
       use pepper_inc_ekquery
       use pepper_inc_ekbool
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*) :: eqryc  !! Character component of query.
       integer(ip) :: n  !! Index within FROM clause of table name to read.
@@ -1162,7 +1153,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ektokn
       use pepper_inc_ektype
-      integer(ip), parameter :: lbcell = -5
       character(*) :: query  !! Input EK query.
       integer(ip) :: ntoken  !! Number of tokens in query.
       integer(ip) :: lxbegs ( * )  !! Start positions of lexemes comprising WHERE clause.
@@ -1461,7 +1451,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ekqlimit
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: query  !! Query in string form.
       integer(ip) :: ntoken  !! Number of tokens in query.
       integer(ip) :: lxbegs ( * )  !! Lexeme begin and end positions in QUERY.

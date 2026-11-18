@@ -6,6 +6,7 @@
 module pepper_math
 
    use pepper_kinds, only: ip, wp
+   use pepper_bounds, only: ubpl, ubel
 
    implicit none
 
@@ -33,7 +34,6 @@ module pepper_math
    integer(ip), parameter :: dx = 1  !! index of x in a vector
    integer(ip), parameter :: dy = 2  !! index of y in a vector
    integer(ip), parameter :: dz = 3  !! index of z in a vector
-   integer(ip), parameter :: ubpl = 4  !! upper bound of a plane array (normal vector and constant)
 
 contains
 
@@ -6417,8 +6417,6 @@ contains
       pure subroutine el2cgv ( ellips, center, smajor, sminor )
       use pepper_kinds, only: ip, wp
       implicit none
-
-      integer(ip), parameter :: ubel = 9
 
       real(wp), intent(in) :: ellips ( ubel )  !! A SPICE ellipse.
       real(wp), intent(out) :: center (    3 )  !! Center and semi-axes of ELLIPS.

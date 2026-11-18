@@ -16612,7 +16612,6 @@ contains
       module subroutine spkw01 ( ctx, handle, body, center, frame, first, last, segid, n, dlines, epochs )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: dlsize = 71
       class(pepper_context), intent(inout) :: ctx  !! the context
       integer(ip), intent(in) :: handle  !! Handle of an SPK file open for writing.
       integer(ip), intent(in) :: body  !! NAIF code for an ephemeris object.

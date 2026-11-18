@@ -4450,7 +4450,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
       integer(ip), intent(out) :: new  !! Number of new node that was allocated.
 
@@ -4607,7 +4606,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: head  !! Head and tail nodes of a sublist to be freed.
       integer(ip), intent(in) :: tail  !! Head and tail nodes of a sublist to be freed.
       integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
@@ -4897,7 +4895,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: node  !! Number of a node.
       integer(ip), intent(in) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
 
@@ -5104,7 +5101,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: prev  !! Node after which a new list is to be inserted.
       integer(ip), intent(in) :: list  !! Node in the list to be inserted.
       integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
@@ -5342,7 +5338,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: list  !! Node in the list to be inserted.
       integer(ip), intent(in) :: next  !! Node before which a new list is to be inserted.
       integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
@@ -5529,7 +5524,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: size  !! Number of nodes in the pool.
       integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! An array that is a linked pool on
                                                              !! output.
@@ -5665,7 +5659,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
 
 
@@ -5796,7 +5789,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: pool ( 2,  lbpool :  *  )  !! A doubly linked list pool.
       integer(ip), intent(in) :: node  !! Number of an allocated node.
 
@@ -5960,7 +5952,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
       integer(ip), intent(in) :: node  !! Number of an allocated node.
 
@@ -6078,7 +6069,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
 
 
@@ -6203,7 +6193,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: node  !! Number of a node.
       integer(ip), intent(in) :: pool (  2,  lbpool : *  )  !! A doubly linked list pool.
 
@@ -6390,7 +6379,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
       integer(ip), intent(in) :: head  !! Head and tail nodes of a sublist to be extracted.
       integer(ip), intent(in) :: tail  !! Head and tail nodes of a sublist to be extracted.
       integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.

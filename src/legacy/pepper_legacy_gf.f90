@@ -24,6 +24,7 @@ module pepper_legacy_gf
       pepper_zzgfcosd => zzgfcosd, pepper_zzgflong => zzgflong, pepper_zzgfcslv => zzgfcslv
    use pepper_legacy_context, only: legacy_context, legacy_spice
    use pepper_legacy_callbacks
+   use pepper_bounds, only: lbcell
 
    implicit none
 
@@ -349,7 +350,6 @@ contains
                             result )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       procedure(legacy_gf_bail) :: udbail  !! Name of a routine that signals a program interrupt.
       logical :: bail  !! Logical indicating program interrupt monitoring.
       logical :: cstep  !! Logical indicating constant step size.
@@ -399,7 +399,6 @@ contains
                              result )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       procedure(legacy_gf_bail) :: udbail  !! Name of a routine that signals a program interrupt.
       logical :: bail  !! Logical indicating program interrupt monitoring.
       logical :: cstep  !! Logical indicating constant step size.
@@ -623,7 +622,6 @@ contains
       subroutine zzgfwsts ( wndw1, wndw2, inclsn, wndw3 )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       real(wp) :: wndw1 ( lbcell : * )  !! Input window 1.
       real(wp) :: wndw2 ( lbcell : * )  !! Input window 2.
       character(*) :: inclsn  !! Flag indicating inclusion desired.
@@ -688,7 +686,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_gf
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: inst  !! Name of the instrument.
       character(*) :: tshape  !! Type of shape model used for target body.
       real(wp) :: raydir ( 3 )  !! Ray's direction vector.
@@ -753,7 +750,6 @@ contains
       use pepper_inc_gf
       use pepper_inc_zzdsk
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: occtyp  !! Type of occultation.
       character(*) :: front  !! Name of body occulting the other.
       character(*) :: fshape  !! Type of shape model used for front body.
@@ -1010,7 +1006,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_gf
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: relate  !! Operator that either looks for an extreme value (max, min, local, absolute) or compares the geometric quantity value and a number.
       real(wp) :: refval  !! Value used as reference for geometric quantity condition.
       real(wp) :: tol  !! Convergence tolerance in seconds.
@@ -1088,7 +1083,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_gf
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: relate  !! Operator that either looks for an extreme value (max, min, local, absolute) or compares the scalar quantity value and a number.
       real(wp) :: refval  !! Value used as reference for scalar quantity condition.
       real(wp) :: tol  !! Convergence tolerance in seconds.
@@ -1311,7 +1305,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_gf
       implicit none
-      integer(ip), parameter :: lbcell = -5
       real(wp) :: tol  !! Convergence tolerance in seconds.
       logical :: rpt  !! Progress report flag.
       logical :: bail  !! Logical indicating program interrupt monitoring.
@@ -1373,7 +1366,6 @@ contains
       use pepper_inc_gf
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: occtyp  !! Type of occultation.
       character(*) :: front  !! Name of body occulting the other.
       character(*) :: fshape  !! Type of shape model used for front body.
@@ -1402,7 +1394,6 @@ contains
       use pepper_inc_gf
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: inst  !! Name of the instrument.
       real(wp) :: raydir ( 3 )  !! Ray's direction vector.
       character(*) :: rframe  !! Reference frame of ray's direction vector.
@@ -1424,7 +1415,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_zzgf
       implicit none
-      integer(ip), parameter :: lbcell = -5
       real(wp) :: window ( lbcell : * )  !! A window over which a job is to be performed.
       character(*) :: begmss  !! Beginning of the text portion of output message.
       character(*) :: endmss  !! End of the text portion of output message.
@@ -1471,7 +1461,6 @@ contains
       use pepper_inc_gf
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: inst  !! Name of the instrument.
       character(*) :: target  !! Name of the target body.
       character(*) :: tshape  !! Type of shape model used for target body.
@@ -1495,7 +1484,6 @@ contains
       use pepper_inc_zzgf
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       real(wp) :: step  !! Constant step size in seconds for finding geometric events.
       real(wp) :: cnfine ( lbcell : * )  !! SPICE window to which the search is restricted.
       real(wp) :: result ( lbcell : * )  !! SPICE window containing results.
@@ -1525,7 +1513,6 @@ contains
       use pepper_inc_zzgf
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: relate  !! Operator that either looks for an extreme value (max, min, local, absolute) or compares the geometric quantity value and a number.
       real(wp) :: refval  !! Value used as reference for scalar quantity condition.
       real(wp) :: adjust  !! Allowed variation for absolute extremal geometric conditions.
@@ -1723,7 +1710,6 @@ contains
       use pepper_inc_gf
       use pepper_inc_zzgf
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: vecdef  !! Vector definition.
       character(*) :: method  !! Computation method.
       character(*) :: target  !! Target name.
@@ -1792,7 +1778,6 @@ contains
       use pepper_inc_gf
       use pepper_inc_zzgf
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: vecdef  !! Vector definition.
       character(*) :: method  !! Computation method.
       character(*) :: target  !! Target name.
@@ -1863,7 +1848,6 @@ contains
       use pepper_inc_zzgf
       use pepper_inc_zzabcorr
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: gquant  !! Type of geometric quantity.
       integer(ip) :: qnpars  !! Number of quantity definition parameters.
       character(*) :: qpnams ( * )  !! Names of quantity definition parameters.
@@ -1928,7 +1912,6 @@ contains
       use pepper_inc_gf
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: target  !! Name of the target body.
       character(*) :: abcorr  !! Aberration correction flag.
       character(*) :: obsrvr  !! Name of the observing body.
@@ -1960,7 +1943,6 @@ contains
       use pepper_inc_zzabcorr
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: method  !! Computation method.
       character(*) :: angtyp  !! Type of illumination angle.
       character(*) :: target  !! Name of the target body.
@@ -1998,7 +1980,6 @@ contains
       use pepper_inc_gf
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: target  !! Name of the target body.
       character(*) :: illmn  !! Name of the illuminating body.
       character(*) :: abcorr  !! Aberration correction flag.
@@ -2031,7 +2012,6 @@ contains
       use pepper_inc_zzabcorr
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: target  !! Name of the target body.
       character(*) :: frame  !! Name of the reference frame for coordinate calculations.
       character(*) :: abcorr  !! Aberration correction flag.
@@ -2064,7 +2044,6 @@ contains
       use pepper_inc_zzgf
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: target  !! Name of the target body.
       character(*) :: abcorr  !! Aberration correction flag.
       character(*) :: obsrvr  !! Name of the observing body.
@@ -2098,7 +2077,6 @@ contains
       use pepper_inc_zzabcorr
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: targ1  !! Name of first body.
       character(*) :: shape1  !! Name of shape model describing the first body.
       character(*) :: frame1  !! The body-fixed reference frame of the first body.
@@ -2137,7 +2115,6 @@ contains
       use pepper_inc_zzgf
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: target  !! Name of the target body.
       character(*) :: fixref  !! Body fixed frame associated with TARGET.
       character(*) :: method  !! Name of method type for surface intercept calculation.
@@ -2178,7 +2155,6 @@ contains
       use pepper_inc_zzabcorr
       use pepper_inc_zzholdd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: target  !! Name of the target body.
       character(*) :: fixref  !! Body fixed frame associated with TARGET.
       character(*) :: method  !! Name of method type for subpoint calculation.

@@ -7,6 +7,7 @@ module pepper_legacy_ck_api
       pepper_zzckcv02 => zzckcv02, pepper_zzckcv03 => zzckcv03, pepper_zzckcv04 => zzckcv04, &
       pepper_zzckcv05 => zzckcv05, pepper_zzckcv06 => zzckcv06
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbcell
 
    implicit none
 
@@ -22,7 +23,6 @@ contains
       subroutine ckobj ( ckfnm, ids )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: ckfnm  !! Name of CK file.
       integer(ip) :: ids ( lbcell : * )  !! Set of ID codes of objects in CK file.
       type(pepper_context), pointer :: ctx
@@ -82,7 +82,6 @@ contains
       use pepper_windows, only: interval_list
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: handle  !! Handle of a C-kernel open for read access
       integer(ip) :: arrbeg  !! Beginning DAF address
       integer(ip) :: arrend  !! Ending DAF address
@@ -112,7 +111,6 @@ contains
       use pepper_windows, only: interval_list
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: handle  !! Handle of a C-kernel open for read access
       integer(ip) :: arrbeg  !! Beginning DAF address
       integer(ip) :: arrend  !! Ending DAF address
@@ -142,7 +140,6 @@ contains
       use pepper_windows, only: interval_list
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: handle  !! Handle of a C-kernel open for read access
       integer(ip) :: arrbeg  !! Beginning DAF address
       integer(ip) :: arrend  !! Ending DAF address
@@ -173,7 +170,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_ckparam
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: handle  !! Handle of a C-kernel open for read access
       integer(ip) :: arrbeg  !! Beginning DAF address
       integer(ip) :: arrend  !! Ending DAF address
@@ -204,7 +200,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_ck05
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: handle  !! Handle of a C-kernel open for read access
       integer(ip) :: arrbeg  !! Beginning DAF address
       integer(ip) :: arrend  !! Ending DAF address
@@ -236,7 +231,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_ck06
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: handle  !! Handle of a C-kernel open for read access.
       integer(ip) :: arrbeg  !! Beginning DAF address.
       integer(ip) :: arrend  !! Ending DAF address.
@@ -265,7 +259,6 @@ contains
                          tol,   timsys, cover          )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: ckfnm  !! Name of CK file.
       integer(ip) :: idcode  !! ID code of object.
       logical :: needav  !! Flag indicating whether angular velocity is needed.

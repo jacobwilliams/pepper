@@ -1913,7 +1913,6 @@ submodule (pepper_instance_module) pepper_gf
    ! Parameters shared by this file's procedures (PEPPER: SPICELIB
    ! declared them in each routine that used them).
    real(wp), parameter :: atol = 1.0e-12_wp  !! tolerance of an angle (radians)
-   integer(ip), parameter :: lbcell = -5  !! lower bound of a SPICE cell (its control area: elements -5 to 0)
    integer(ip), parameter :: b = lbcell  !! lower bound of the work windows (LBCELL)
    logical, parameter :: bail = .false.  !! interrupt handling: off
    integer(ip), parameter :: confin = 3  !! work window: the confinement window
@@ -1946,7 +1945,6 @@ submodule (pepper_instance_module) pepper_gf
    real(wp), parameter :: tdelta = 1.0_wp  !! time step of numerical derivatives (s)
    integer(ip), parameter :: tempw = 5  !! work window: temporary
    integer(ip), parameter :: timlen = 40  !! length of a time string
-   integer(ip), parameter :: ubel = 9  !! upper bound of an ellipse array (center, semi-major and semi-minor axes)
 
 contains
 
@@ -12795,7 +12793,6 @@ contains
       use pepper_strings, only: cmprss
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       real(wp), intent(in) :: wndw1 ( lbcell : * )  !! Input window 1.
       real(wp), intent(in) :: wndw2 ( lbcell : * )  !! Input window 2.
       character(*), intent(in) :: inclsn  !! Flag indicating inclusion desired.
@@ -25179,7 +25176,6 @@ contains
       use pepper_inc_zzholdd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: occtyp  !! Type of occultation.
       character(*), intent(in) :: front  !! Name of body occulting the other.
       character(*), intent(in) :: fshape  !! Type of shape model used for front body.
@@ -26040,7 +26036,6 @@ contains
       use pepper_inc_zzholdd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: inst  !! Name of the instrument.
       real(wp), intent(in) :: raydir ( 3 )  !! Ray's direction vector.
       character(*), intent(in) :: rframe  !! Reference frame of ray's direction vector.
@@ -26220,7 +26215,6 @@ contains
       use pepper_inc_zzgf
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       real(wp), intent(in) :: window ( lbcell : * )  !! A window over which a job is to be performed.
       character(*), intent(in) :: begmss  !! Beginning of the text portion of output message.
       character(*), intent(in) :: endmss  !! End of the text portion of output message.
@@ -27452,7 +27446,6 @@ contains
       use pepper_inc_zzholdd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: inst  !! Name of the instrument.
       character(*), intent(in) :: target  !! Name of the target body.
       character(*), intent(in) :: tshape  !! Type of shape model used for target body.
@@ -32232,7 +32225,6 @@ contains
 !     Short alias for LBCELL:
 !
       integer(ip), parameter :: lb = lbcell
-      integer(ip), parameter :: lbpool = lbcell
 !
 !     NAMLEN is the maximum length of both a frame name and of
 !     any kernel pool variable name.
@@ -38263,7 +38255,6 @@ contains
       use pepper_inc_zzholdd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: target  !! Name of the target body.
       character(*), intent(in) :: abcorr  !! Aberration correction flag.
       character(*), intent(in) :: obsrvr  !! Name of the observing body.
@@ -39524,7 +39515,6 @@ contains
       use pepper_inc_zzholdd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: method  !! Computation method.
       character(*), intent(in) :: angtyp  !! Type of illumination angle.
       character(*), intent(in) :: target  !! Name of the target body.
@@ -40582,7 +40572,6 @@ contains
       use pepper_inc_zzholdd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: target  !! Name of the target body.
       character(*), intent(in) :: illmn  !! Name of the illuminating body.
       character(*), intent(in) :: abcorr  !! Aberration correction flag.
@@ -42464,7 +42453,6 @@ contains
       use pepper_inc_zzholdd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: target  !! Name of the target body.
       character(*), intent(in) :: frame  !! Name of the reference frame for coordinate calculations.
       character(*), intent(in) :: abcorr  !! Aberration correction flag.
@@ -43510,7 +43498,6 @@ contains
       use pepper_inc_zzholdd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: target  !! Name of the target body.
       character(*), intent(in) :: abcorr  !! Aberration correction flag.
       character(*), intent(in) :: obsrvr  !! Name of the observing body.
@@ -44629,7 +44616,6 @@ contains
       use pepper_inc_zzholdd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: targ1  !! Name of first body.
       character(*), intent(in) :: shape1  !! Name of shape model describing the first body.
       character(*), intent(in) :: frame1  !! The body-fixed reference frame of the first body.
@@ -46124,7 +46110,6 @@ contains
       use pepper_inc_zzholdd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: target  !! Name of the target body.
       character(*), intent(in) :: fixref  !! Body fixed frame associated with TARGET.
       character(*), intent(in) :: method  !! Name of method type for surface intercept calculation.
@@ -47371,7 +47356,6 @@ contains
       use pepper_inc_zzholdd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: target  !! Name of the target body.
       character(*), intent(in) :: fixref  !! Body fixed frame associated with TARGET.
       character(*), intent(in) :: method  !! Name of method type for subpoint calculation.

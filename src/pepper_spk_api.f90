@@ -4388,7 +4388,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: spkfnm  !! Name of SPK file.
       integer(ip), intent(in) :: idcode  !! ID code of ephemeris object.
       real(wp), intent(inout) :: cover ( lbcell : * )  !! Window giving coverage in SPKFNM for IDCODE.
@@ -6733,7 +6732,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: spkfnm  !! Name of SPK file.
       integer(ip), intent(inout) :: ids    ( lbcell : * )  !! Set of ID codes of objects in SPK file.
       integer(ip), allocatable :: list(:)

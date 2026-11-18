@@ -9,6 +9,7 @@ module pepper_legacy_dsk_files
       pepper_zzinilnk => zzinilnk, pepper_zzgetvox => zzgetvox, pepper_zzaddlnk => zzaddlnk, &
       pepper_zzmkspin => zzmkspin
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbcell
 
    implicit none
 
@@ -734,7 +735,6 @@ contains
       use pepper_inc_dla
       use pepper_inc_dskdsc
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: dskfnm  !! Name of DSK file.
       integer(ip) :: bodids ( lbcell : * )  !! Set of ID codes of objects in DSK file.
       type(pepper_context), pointer :: ctx
@@ -751,7 +751,6 @@ contains
       use pepper_inc_dla
       use pepper_inc_dskdsc
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: dskfnm  !! Name of DSK file.
       integer(ip) :: bodyid  !! Integer body ID code.
       integer(ip) :: srfids ( lbcell : * )  !! Set of ID codes of surfaces in DSK file.

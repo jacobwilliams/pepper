@@ -6,6 +6,7 @@ module pepper_legacy_spk_api
    use pepper_instance_module, only: pepper_context, pepper_zzcorsxf => zzcorsxf, &
       pepper_zzcvxsta => zzcvxsta, pepper_zzcvssta => zzcvssta
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbcell
 
    implicit none
 
@@ -135,7 +136,6 @@ contains
       subroutine spkcov ( spkfnm, idcode, cover )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: spkfnm  !! Name of SPK file.
       integer(ip) :: idcode  !! ID code of ephemeris object.
       real(wp) :: cover ( lbcell : * )  !! Window giving coverage in SPKFNM for IDCODE.
@@ -190,7 +190,6 @@ contains
       subroutine spkobj ( spkfnm, ids )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: spkfnm  !! Name of SPK file.
       integer(ip) :: ids    ( lbcell : * )  !! Set of ID codes of objects in SPK file.
       type(pepper_context), pointer :: ctx

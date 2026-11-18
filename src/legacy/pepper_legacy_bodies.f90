@@ -13,6 +13,7 @@ module pepper_legacy_bodies
       pepper_zzbodkik => zzbodkik, pepper_zzbodrst => zzbodrst, pepper_zzbctrck => zzbctrck, &
       pepper_instance, pepper_zzbods2c => zzbods2c, pepper_zzbodvcd => zzbodvcd
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbpool
 
    implicit none
 
@@ -64,7 +65,6 @@ contains
       use pepper_hash, only: name_hash
       use pepper_constants, only: intmax
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: hashsz  !! Hash size
       integer(ip) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip) :: collst  ( lbpool : * )  !! Hash node collision list
@@ -83,7 +83,6 @@ contains
       use pepper_hash, only: name_hash
       use pepper_constants, only: intmax
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip) :: collst  ( lbpool : * )  !! Hash node collision list
       character(*) :: items   (          * )  !! Hash item list
@@ -106,7 +105,6 @@ contains
       use pepper_hash, only: name_hash
       use pepper_constants, only: intmax
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip) :: collst  ( lbpool : * )  !! Hash node collision list
       character(*) :: items   (          * )  !! Hash item list
@@ -127,7 +125,6 @@ contains
       use pepper_hash, only: name_hash
       use pepper_constants, only: intmax
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: collst  ( lbpool : * )  !! Hash node collision list
       integer(ip) :: avail  !! Room available in the hash
       type(pepper_context), pointer :: ctx
@@ -145,7 +142,6 @@ contains
       use pepper_hash, only: name_hash
       use pepper_constants, only: intmax
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip) :: collst  ( lbpool : * )  !! Hash node collision list
       character(*) :: items   (          * )  !! Hash item list
@@ -164,7 +160,6 @@ contains
       subroutine zzhsiini ( hashsz, hedlst, collst )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: hashsz  !! Hash size
       integer(ip) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip) :: collst  ( lbpool : * )  !! Hash node collision list
@@ -181,7 +176,6 @@ contains
       subroutine zzhsiadd ( hedlst, collst, items, item, itemat, new )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip) :: collst  ( lbpool : * )  !! Hash node collision list
       integer(ip) :: items   (          * )  !! Hash item list
@@ -201,7 +195,6 @@ contains
       subroutine zzhsichk ( hedlst, collst, items, item, itemat )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip) :: collst  ( lbpool : * )  !! Hash node collision list
       integer(ip) :: items   (          * )  !! Hash item list
@@ -220,7 +213,6 @@ contains
       subroutine zzhsiavl ( collst, avail )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: collst  ( lbpool : * )  !! Hash node collision list
       integer(ip) :: avail  !! Room available in the hash
       type(pepper_context), pointer :: ctx
@@ -236,7 +228,6 @@ contains
       subroutine zzhsiinf ( hedlst, collst, items, param, avail )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip) :: collst  ( lbpool : * )  !! Hash node collision list
       integer(ip) :: items   (          * )  !! Hash item list
@@ -258,7 +249,6 @@ contains
       use pepper_kinds, only: ip
       use pepper_inc_zzbodtrn
       implicit none
-      integer(ip), parameter :: lbpool = -5
       character(maxl) :: names  (          * )  !! Array of names
       character(maxl) :: nornam (          * )  !! Array of normalized names
       integer(ip) :: codes  (          * )  !! Array of ID codes for NAMES/NORNAM
@@ -294,7 +284,6 @@ contains
       use pepper_kinds, only: ip
       use pepper_inc_zzbodtrn
       implicit none
-      integer(ip), parameter :: lbpool = -5
       character(maxl) :: names  (          nroom )  !! Array of kernel pool assigned names.
       character(maxl) :: nornam (          nroom )  !! Array of normalized kernel pool assigned
                                                     !! names.

@@ -61,6 +61,7 @@ module pepper_instance_module
    use pepper_inc_zzctr, only: ctrsiz
    use pepper_inc_zzsgp4, only: ngravc, ngravs
    use pepper_inc_zzswtchf, only: lbsngl
+   use pepper_bounds, only: lbcell, lbpool, ubpl, ubel, mxcomp, dlsize
    implicit none
 
    private
@@ -1670,10 +1671,9 @@ module pepper_instance_module
       !> A GF progress report initialization routine. SPICELIB's is [[gfrepi]].
       !> PEPPER: the context is its first argument.
       subroutine gf_rep_init ( ctx, window, begmss, endmss )
-         import :: pepper_context, ip, wp
+         import :: pepper_context, ip, wp, lbcell
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a SPICE cell
          real(wp), intent(in) :: window ( lbcell : * )  !! the window over which the search runs
          character(*), intent(in) :: begmss  !! beginning of the text of the report
          character(*), intent(in) :: endmss  !! end of the text of the report
@@ -2535,49 +2535,42 @@ module pepper_instance_module
       module integer(ip) function cardc ( ctx, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: cell  ( lbcell:* )  !! Input cell.
       end function cardc
 
       module integer(ip) function cardd ( ctx, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: cell  ( lbcell:* )  !! Input cell.
       end function cardd
 
       module integer(ip) function cardi ( ctx, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: cell  ( lbcell:* )  !! Input cell.
       end function cardi
 
       module integer(ip) function sizec ( ctx, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: cell   ( lbcell:* )  !! Input cell.
       end function sizec
 
       module integer(ip) function sized ( ctx, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: cell   ( lbcell:* )  !! Input cell.
       end function sized
 
       module integer(ip) function sizei ( ctx, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: cell  ( lbcell: * )  !! Input cell.
       end function sizei
 
       module subroutine scardc ( ctx, card, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: card  !! Cardinality of (number of elements in) the cell.
          character(*), intent(inout) :: cell   ( lbcell:* )  !! The cell.
       end subroutine scardc
@@ -2585,7 +2578,6 @@ module pepper_instance_module
       module subroutine scardd ( ctx, card, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: card  !! Cardinality of (number of elements in) the cell.
          real(wp), intent(inout) :: cell   ( lbcell:* )  !! The cell.
       end subroutine scardd
@@ -2593,7 +2585,6 @@ module pepper_instance_module
       module subroutine scardi ( ctx, card, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: card  !! Cardinality of (number of elements in) the cell.
          integer(ip), intent(inout) :: cell   ( lbcell:* )  !! The cell.
       end subroutine scardi
@@ -2601,7 +2592,6 @@ module pepper_instance_module
       module subroutine ssizec ( ctx, size, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the cell.
          character(*), intent(inout) :: cell   ( lbcell:* )  !! The cell.
       end subroutine ssizec
@@ -2609,7 +2599,6 @@ module pepper_instance_module
       module subroutine ssized ( ctx, size, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the cell.
          real(wp), intent(inout) :: cell   ( lbcell:* )  !! The cell.
       end subroutine ssized
@@ -2617,7 +2606,6 @@ module pepper_instance_module
       module subroutine ssizei ( ctx, size, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the cell.
          integer(ip), intent(inout) :: cell   ( lbcell:* )  !! The cell.
       end subroutine ssizei
@@ -2625,7 +2613,6 @@ module pepper_instance_module
       module subroutine validc ( ctx, size, n, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the set.
          integer(ip), intent(in) :: n  !! Initial no. of (possibly non-distinct) elements.
          character(*), intent(inout) :: a      ( lbcell:* )  !! Set to be validated.
@@ -2634,7 +2621,6 @@ module pepper_instance_module
       module subroutine validd ( ctx, size, n, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the set.
          integer(ip), intent(in) :: n  !! Initial no. of (possibly non-distinct) elements.
          real(wp), intent(inout) :: a       ( lbcell:* )  !! Set to be validated.
@@ -2643,7 +2629,6 @@ module pepper_instance_module
       module subroutine validi ( ctx, size, n, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the set.
          integer(ip), intent(in) :: n  !! Initial no. of (possibly non-distinct) elements.
          integer(ip), intent(inout) :: a       ( lbcell:* )  !! Set to be validated.
@@ -2652,7 +2637,6 @@ module pepper_instance_module
       module subroutine appndc ( ctx, item, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: item  !! The item to append.
          character(*), intent(inout) :: cell ( lbcell:* )  !! The cell to which ITEM will be
                                                            !! appended.
@@ -2661,7 +2645,6 @@ module pepper_instance_module
       module subroutine appndd ( ctx, item, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: item  !! The item to append.
          real(wp), intent(inout) :: cell ( lbcell:* )  !! The cell to which ITEM will be appended.
       end subroutine appndd
@@ -2669,7 +2652,6 @@ module pepper_instance_module
       module subroutine appndi ( ctx, item, cell )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: item  !! The item to append.
          integer(ip), intent(inout) :: cell ( lbcell:* )  !! The cell to which ITEM will be
                                                           !! appended.
@@ -2678,7 +2660,6 @@ module pepper_instance_module
       module subroutine copyc ( ctx, cell, copy )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: cell     ( lbcell:* )  !! Cell to be copied.
          character(*), intent(inout) :: copy     ( lbcell:* )  !! New cell.
       end subroutine copyc
@@ -2686,7 +2667,6 @@ module pepper_instance_module
       module subroutine copyd ( ctx, cell, copy )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: cell     ( lbcell:* )  !! Cell to be copied.
          real(wp), intent(inout) :: copy     ( lbcell:* )  !! New cell.
       end subroutine copyd
@@ -2694,7 +2674,6 @@ module pepper_instance_module
       module subroutine copyi ( ctx, cell, copy )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: cell     ( lbcell:* )  !! Cell to be copied.
          integer(ip), intent(inout) :: copy     ( lbcell:* )  !! New cell.
       end subroutine copyi
@@ -2702,7 +2681,6 @@ module pepper_instance_module
       module subroutine insrtc ( ctx, item, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: item  !! Item to be inserted.
          character(*), intent(inout) :: a        ( lbcell:* )  !! Insertion set.
       end subroutine insrtc
@@ -2710,7 +2688,6 @@ module pepper_instance_module
       module subroutine insrtd ( ctx, item, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: item  !! Item to be inserted.
          real(wp), intent(inout) :: a     ( lbcell:* )  !! Insertion set.
       end subroutine insrtd
@@ -2718,7 +2695,6 @@ module pepper_instance_module
       module subroutine insrti ( ctx, item, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: item  !! Item to be inserted.
          integer(ip), intent(inout) :: a        ( lbcell:* )  !! Insertion set.
       end subroutine insrti
@@ -2726,7 +2702,6 @@ module pepper_instance_module
       module subroutine removc ( ctx, item, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: item  !! Item to be removed.
          character(*), intent(inout) :: a       ( lbcell:* )  !! Removal set.
       end subroutine removc
@@ -2734,7 +2709,6 @@ module pepper_instance_module
       module subroutine removd ( ctx, item, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: item  !! Item to be removed.
          real(wp), intent(inout) :: a        ( lbcell:* )  !! Removal set.
       end subroutine removd
@@ -2742,7 +2716,6 @@ module pepper_instance_module
       module subroutine removi ( ctx, item, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: item  !! Item to be removed.
          integer(ip), intent(inout) :: a        ( lbcell:* )  !! Removal set.
       end subroutine removi
@@ -2750,7 +2723,6 @@ module pepper_instance_module
       module logical function elemc ( ctx, item, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: item  !! Item to be tested.
          character(*), intent(in) :: a      ( lbcell:* )  !! Set to be tested.
       end function elemc
@@ -2758,7 +2730,6 @@ module pepper_instance_module
       module logical function elemd ( ctx, item, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: item  !! Item to be tested.
          real(wp), intent(in) :: a      ( lbcell:* )  !! Set to be tested.
       end function elemd
@@ -2766,7 +2737,6 @@ module pepper_instance_module
       module logical function elemi ( ctx, item, a )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: item  !! Item to be tested.
          integer(ip), intent(in) :: a      ( lbcell:* )  !! Set to be tested.
       end function elemi
@@ -2774,7 +2744,6 @@ module pepper_instance_module
       module integer(ip) function ordc ( ctx, item, set )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: item  !! An item to locate within a set.
          character(*), intent(in) :: set ( lbcell:* )  !! A set to search for a given item.
       end function ordc
@@ -2782,7 +2751,6 @@ module pepper_instance_module
       module integer(ip) function ordd ( ctx, item, set )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: item  !! An item to locate within a set.
          real(wp), intent(in) :: set ( lbcell:* )  !! A set to search for a given item.
       end function ordd
@@ -2790,7 +2758,6 @@ module pepper_instance_module
       module integer(ip) function ordi ( ctx, item, set )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: item  !! An item to locate within a set.
          integer(ip), intent(in) :: set ( lbcell:* )  !! A set to search for a given item.
       end function ordi
@@ -2798,7 +2765,6 @@ module pepper_instance_module
       module logical function setc ( ctx, a, op, b )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: a      ( lbcell:* )  !! First set.
          character(*), intent(in) :: op  !! Comparison operator.
          character(*), intent(in) :: b      ( lbcell:* )  !! Second set.
@@ -2807,7 +2773,6 @@ module pepper_instance_module
       module logical function setd ( ctx, a, op, b )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: a      ( lbcell:* )  !! First set.
          character(*), intent(in) :: op  !! Comparison operator.
          real(wp), intent(in) :: b      ( lbcell:* )  !! Second set.
@@ -2816,7 +2781,6 @@ module pepper_instance_module
       module logical function seti ( ctx, a, op, b )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: a      ( lbcell:* )  !! First set.
          character(*), intent(in) :: op  !! Comparison operator.
          integer(ip), intent(in) :: b      ( lbcell:* )  !! Second set.
@@ -2825,7 +2789,6 @@ module pepper_instance_module
       module subroutine unionc ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: a      ( lbcell:* )  !! First input set.
          character(*), intent(in) :: b      ( lbcell:* )  !! Second input set.
          character(*), intent(inout) :: c      ( lbcell:* )  !! Union of A and B.
@@ -2834,7 +2797,6 @@ module pepper_instance_module
       module subroutine uniond ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: a      ( lbcell:* )  !! First input set.
          real(wp), intent(in) :: b      ( lbcell:* )  !! Second input set.
          real(wp), intent(inout) :: c      ( lbcell:* )  !! Union of A and B.
@@ -2843,7 +2805,6 @@ module pepper_instance_module
       module subroutine unioni ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: a      ( lbcell:* )  !! First input set.
          integer(ip), intent(in) :: b      ( lbcell:* )  !! Second input set.
          integer(ip), intent(inout) :: c      ( lbcell:* )  !! Union of A and B.
@@ -2852,7 +2813,6 @@ module pepper_instance_module
       module subroutine interc ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: a      ( lbcell:* )  !! First input set.
          character(*), intent(in) :: b      ( lbcell:* )  !! Second input set.
          character(*), intent(inout) :: c      ( lbcell:* )  !! Intersection of A and B.
@@ -2861,7 +2821,6 @@ module pepper_instance_module
       module subroutine interd ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: a      ( lbcell:* )  !! First input set.
          real(wp), intent(in) :: b      ( lbcell:* )  !! Second input set.
          real(wp), intent(inout) :: c      ( lbcell:* )  !! Intersection of A and B.
@@ -2870,7 +2829,6 @@ module pepper_instance_module
       module subroutine interi ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: a      ( lbcell:* )  !! First input set.
          integer(ip), intent(in) :: b      ( lbcell:* )  !! Second input set.
          integer(ip), intent(inout) :: c      ( lbcell:* )  !! Intersection of A and B.
@@ -2879,7 +2837,6 @@ module pepper_instance_module
       module subroutine diffc ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: a      ( lbcell:* )  !! First input set.
          character(*), intent(in) :: b      ( lbcell:* )  !! Second input set.
          character(*), intent(inout) :: c      ( lbcell:* )  !! Difference of A and B.
@@ -2888,7 +2845,6 @@ module pepper_instance_module
       module subroutine diffd ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: a      ( lbcell:* )  !! First input set.
          real(wp), intent(in) :: b      ( lbcell:* )  !! Second input set.
          real(wp), intent(inout) :: c      ( lbcell:* )  !! Difference of A and B.
@@ -2897,7 +2853,6 @@ module pepper_instance_module
       module subroutine diffi ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: a      ( lbcell:* )  !! First input set.
          integer(ip), intent(in) :: b      ( lbcell:* )  !! Second input set.
          integer(ip), intent(inout) :: c      ( lbcell:* )  !! Difference of A and B.
@@ -2906,7 +2861,6 @@ module pepper_instance_module
       module subroutine sdiffc ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(*), intent(in) :: a      ( lbcell:* )  !! First input set.
          character(*), intent(in) :: b      ( lbcell:* )  !! Second input set.
          character(*), intent(inout) :: c      ( lbcell:* )  !! Symmetric difference of A and B.
@@ -2915,7 +2869,6 @@ module pepper_instance_module
       module subroutine sdiffd ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: a      ( lbcell:* )  !! First input set.
          real(wp), intent(in) :: b      ( lbcell:* )  !! Second input set.
          real(wp), intent(inout) :: c      ( lbcell:* )  !! Symmetric difference of A and B.
@@ -2924,7 +2877,6 @@ module pepper_instance_module
       module subroutine sdiffi ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: a      ( lbcell:* )  !! First input set.
          integer(ip), intent(in) :: b      ( lbcell:* )  !! Second input set.
          integer(ip), intent(inout) :: c      ( lbcell:* )  !! Symmetric difference of A and B.
@@ -2933,7 +2885,6 @@ module pepper_instance_module
       module subroutine zzwninsd ( ctx, left, right, context, window )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: left  !! Left, right endpoints of new interval.
          real(wp), intent(in) :: right  !! Left, right endpoints of new interval.
          character(*), intent(in) :: context  !! A call explanation string.
@@ -2943,14 +2894,12 @@ module pepper_instance_module
       module integer(ip) function wncard ( ctx, window )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: window  ( lbcell:* )  !! Input window.
       end function wncard
 
       module subroutine wncomd ( ctx, left, right, window, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: left  !! Left, right endpoints of complement interval.
          real(wp), intent(in) :: right  !! Left, right endpoints of complement interval.
          real(wp), intent(in) :: window   ( lbcell:* )  !! Input window.
@@ -2961,7 +2910,6 @@ module pepper_instance_module
       module subroutine wncond ( ctx, left, right, window )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: left  !! Amount added to each left endpoint.
          real(wp), intent(in) :: right  !! Amount subtracted from each right endpoint.
          real(wp), intent(inout) :: window  ( lbcell:* )  !! Window to be contracted.
@@ -2970,7 +2918,6 @@ module pepper_instance_module
       module subroutine wndifd ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: a        ( lbcell:* )  !! Input windows.
          real(wp), intent(in) :: b        ( lbcell:* )  !! Input windows.
          real(wp), intent(inout) :: c        ( lbcell:* )  !! Difference of A and B.
@@ -2979,7 +2926,6 @@ module pepper_instance_module
       module logical function wnelmd ( ctx, point, window )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: point  !! Input point.
          real(wp), intent(in) :: window      ( lbcell:* )  !! Input window.
       end function wnelmd
@@ -2987,7 +2933,6 @@ module pepper_instance_module
       module subroutine wnexpd ( ctx, left, right, window )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: left  !! Amount subtracted from each left endpoint.
          real(wp), intent(in) :: right  !! Amount added to each right endpoint.
          real(wp), intent(inout) :: window  ( lbcell:* )  !! Window to be expanded.
@@ -2996,7 +2941,6 @@ module pepper_instance_module
       module subroutine wnextd ( ctx, side, window )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          character(1), intent(in) :: side  !! Extract left ('L') or right ('R') endpoints.
          real(wp), intent(inout) :: window  ( lbcell:* )  !! Window to be extracted.
       end subroutine wnextd
@@ -3004,7 +2948,6 @@ module pepper_instance_module
       module subroutine wnfetd ( ctx, window, n, left, right )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: window      ( lbcell:* )  !! Input window.
          integer(ip), intent(in) :: n  !! Index of interval to be fetched.
          real(wp), intent(out) :: left  !! Left, right endpoints of the Nth interval.
@@ -3014,7 +2957,6 @@ module pepper_instance_module
       module subroutine wnfild ( ctx, smlgap, window )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: smlgap  !! Limiting measure of small gaps.
          real(wp), intent(inout) :: window  ( lbcell:* )  !! Window to be filled.
       end subroutine wnfild
@@ -3022,7 +2964,6 @@ module pepper_instance_module
       module subroutine wnfltd ( ctx, smlint, window )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: smlint  !! Limiting measure of small intervals.
          real(wp), intent(inout) :: window  ( lbcell:* )  !! Window to be filtered.
       end subroutine wnfltd
@@ -3030,7 +2971,6 @@ module pepper_instance_module
       module logical function wnincd ( ctx, left, right, window )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: left  !! Input interval.
          real(wp), intent(in) :: right  !! Input interval.
          real(wp), intent(in) :: window      ( lbcell:* )  !! Input window.
@@ -3039,7 +2979,6 @@ module pepper_instance_module
       module subroutine wninsd ( ctx, left, right, window )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: left  !! Left, right endpoints of new interval.
          real(wp), intent(in) :: right  !! Left, right endpoints of new interval.
          real(wp), intent(inout) :: window    ( lbcell:* )  !! Input, output window.
@@ -3056,7 +2995,6 @@ module pepper_instance_module
       module subroutine wnintd ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: a        ( lbcell:* )  !! Input windows.
          real(wp), intent(in) :: b        ( lbcell:* )  !! Input windows.
          real(wp), intent(inout) :: c        ( lbcell:* )  !! Intersection of A and B.
@@ -3065,7 +3003,6 @@ module pepper_instance_module
       module logical function wnreld ( ctx, a, op, b )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: a        ( lbcell:* )  !! First window.
          character(*), intent(in) :: op  !! Comparison operator.
          real(wp), intent(in) :: b        ( lbcell:* )  !! Second window.
@@ -3074,7 +3011,6 @@ module pepper_instance_module
       module subroutine wnsumd ( ctx, window, meas, avg, stddev, idxsml, idxlon )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: window    ( lbcell:* )  !! Window to be summarized.
          real(wp), intent(out) :: meas  !! Total measure of intervals in WINDOW.
          real(wp), intent(out) :: avg  !! Average measure.
@@ -3086,7 +3022,6 @@ module pepper_instance_module
       module subroutine wnunid ( ctx, a, b, c )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          real(wp), intent(in) :: a        ( lbcell:* )  !! Input windows.
          real(wp), intent(in) :: b        ( lbcell:* )  !! Input windows.
          real(wp), intent(inout) :: c        ( lbcell:* )  !! Union of A and B.
@@ -3095,7 +3030,6 @@ module pepper_instance_module
       module subroutine wnvald ( ctx, size, n, window )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
          integer(ip), intent(in) :: size  !! Size of window.
          integer(ip), intent(in) :: n  !! Original number of endpoints.
          real(wp), intent(inout) :: window ( lbcell:* )  !! Input, output window.
@@ -3303,8 +3237,6 @@ module pepper_instance_module
       module subroutine inelpl ( ctx, ellips, plane, nxpts, xpt1, xpt2 )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubel = 9  !! number of elements of an ellipse
-         integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
          real(wp), intent(in) :: ellips ( ubel )  !! A SPICE ellipse.
          real(wp), intent(in) :: plane  ( ubpl )  !! A SPICE plane.
          integer(ip), intent(out) :: nxpts  !! Number of intersection points of plane and ellipse.
@@ -3315,7 +3247,6 @@ module pepper_instance_module
       module subroutine inrypl ( ctx, vertex, dir, plane, nxpts, xpt )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
          real(wp), intent(in) :: vertex (    3 )  !! Vertex and direction vector of ray.
          real(wp), intent(in) :: dir    (    3 )  !! Vertex and direction vector of ray.
          real(wp), intent(in) :: plane  ( ubpl )  !! A SPICE plane.
@@ -3390,7 +3321,6 @@ module pepper_instance_module
       module subroutine nvc2pl ( ctx, normal, konst, plane )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
          real(wp), intent(in) :: normal (    3 )  !! A normal vector and constant defining a plane.
          real(wp), intent(in) :: konst  !! A normal vector and constant defining a plane.
          real(wp), intent(out) :: plane  ( ubpl )  !! An array representing the plane.
@@ -3399,7 +3329,6 @@ module pepper_instance_module
       module subroutine nvp2pl ( ctx, normal, point, plane )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
          real(wp), intent(in) :: normal (    3 )  !! A normal vector and a point defining a plane.
          real(wp), intent(in) :: point  (    3 )  !! A normal vector and a point defining a plane.
          real(wp), intent(out) :: plane  ( ubpl )  !! An array representing the plane.
@@ -3408,7 +3337,6 @@ module pepper_instance_module
       module subroutine psv2pl ( ctx, point, span1, span2, plane )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
          real(wp), intent(in) :: point (    3 )  !! A point and two spanning vectors defining a
                                                  !! plane.
          real(wp), intent(in) :: span1 (    3 )  !! A point and two spanning vectors defining a
@@ -3496,7 +3424,6 @@ module pepper_instance_module
       module subroutine vprjp ( ctx, vin, plane, vout )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
          real(wp), intent(in) :: vin   (    3 )  !! Vector to be projected.
          real(wp), intent(in) :: plane ( ubpl )  !! A SPICE plane onto which VIN is projected.
          real(wp), intent(out) :: vout  (    3 )  !! Vector resulting from projection.
@@ -3505,7 +3432,6 @@ module pepper_instance_module
       module subroutine vprjpi ( ctx, vin, projpl, invpl, vout, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
          real(wp), intent(in) :: vin    (    3 )  !! The projected vector.
          real(wp), intent(in) :: projpl ( ubpl )  !! Plane containing VIN.
          real(wp), intent(in) :: invpl  ( ubpl )  !! Plane containing inverse image of VIN.
@@ -3731,7 +3657,6 @@ module pepper_instance_module
       module subroutine lnkan ( ctx, pool, new )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
          integer(ip), intent(out) :: new  !! Number of new node that was allocated.
       end subroutine lnkan
@@ -3739,7 +3664,6 @@ module pepper_instance_module
       module subroutine lnkfsl ( ctx, head, tail, pool )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: head  !! Head and tail nodes of a sublist to be freed.
          integer(ip), intent(in) :: tail  !! Head and tail nodes of a sublist to be freed.
          integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
@@ -3748,7 +3672,6 @@ module pepper_instance_module
       module integer(ip) function lnkhl ( ctx, node, pool )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: node  !! Number of a node.
          integer(ip), intent(in) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
       end function lnkhl
@@ -3756,7 +3679,6 @@ module pepper_instance_module
       module subroutine lnkila ( ctx, prev, list, pool )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: prev  !! Node after which a new list is to be inserted.
          integer(ip), intent(in) :: list  !! Node in the list to be inserted.
          integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
@@ -3765,7 +3687,6 @@ module pepper_instance_module
       module subroutine lnkilb ( ctx, list, next, pool )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: list  !! Node in the list to be inserted.
          integer(ip), intent(in) :: next  !! Node before which a new list is to be inserted.
          integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
@@ -3774,7 +3695,6 @@ module pepper_instance_module
       module subroutine lnkini ( ctx, size, pool )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: size  !! Number of nodes in the pool.
          integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! An array that is a linked pool on
                                                                 !! output.
@@ -3783,14 +3703,12 @@ module pepper_instance_module
       module integer(ip) function lnknfn ( ctx, pool )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
       end function lnknfn
 
       module integer(ip) function lnknxt ( ctx, node, pool )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: pool ( 2,  lbpool :  *  )  !! A doubly linked list pool.
          integer(ip), intent(in) :: node  !! Number of an allocated node.
       end function lnknxt
@@ -3798,7 +3716,6 @@ module pepper_instance_module
       module integer(ip) function lnkprv ( ctx, node, pool )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
          integer(ip), intent(in) :: node  !! Number of an allocated node.
       end function lnkprv
@@ -3806,14 +3723,12 @@ module pepper_instance_module
       module integer(ip) function lnksiz ( ctx, pool )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
       end function lnksiz
 
       module integer(ip) function lnktl ( ctx, node, pool )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: node  !! Number of a node.
          integer(ip), intent(in) :: pool (  2,  lbpool : *  )  !! A doubly linked list pool.
       end function lnktl
@@ -3821,7 +3736,6 @@ module pepper_instance_module
       module subroutine lnkxsl ( ctx, head, tail, pool )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: head  !! Head and tail nodes of a sublist to be extracted.
          integer(ip), intent(in) :: tail  !! Head and tail nodes of a sublist to be extracted.
          integer(ip), intent(inout) :: pool ( 2,  lbpool : * )  !! A doubly linked list pool.
@@ -3927,7 +3841,6 @@ module pepper_instance_module
       module subroutine locati ( ctx, id, idsz, list, pool, at, presnt )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5  !! lower bound of a linked-list pool (its control area)
          integer(ip), intent(in) :: id   (            * )  !! An array of integers that comprise an
                                                            !! identifier.
          integer(ip), intent(in) :: idsz  !! The number of integer components per identifier.
@@ -4486,7 +4399,6 @@ module pepper_instance_module
       module subroutine zzhscini ( ctx, hashsz, hedlst, collst )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: hashsz  !! Hash size
          integer(ip), intent(inout) :: hedlst  (          * )  !! Hash head node pointer list
          integer(ip), intent(inout) :: collst  ( lbpool : * )  !! Hash node collision list
@@ -4495,7 +4407,6 @@ module pepper_instance_module
       module subroutine zzhscadd ( ctx, hedlst, collst, items, item, itemat, new )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(inout) :: hedlst  (          * )  !! Hash head node pointer list
          integer(ip), intent(inout) :: collst  ( lbpool : * )  !! Hash node collision list
          character(*), intent(inout) :: items   (          * )  !! Hash item list
@@ -4507,7 +4418,6 @@ module pepper_instance_module
       module subroutine zzhscchk ( ctx, hedlst, collst, items, item, itemat )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: hedlst  (          * )  !! Hash head node pointer list
          integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
          character(*), intent(in) :: items   (          * )  !! Hash item list
@@ -4518,7 +4428,6 @@ module pepper_instance_module
       module subroutine zzhscavl ( ctx, collst, avail )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
          integer(ip), intent(out) :: avail  !! Room available in the hash
       end subroutine zzhscavl
@@ -4526,7 +4435,6 @@ module pepper_instance_module
       module subroutine zzhscinf ( ctx, hedlst, collst, items, item, avail )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: hedlst  (          * )  !! Hash head node pointer list
          integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
          character(*), intent(in) :: items   (          * )  !! Hash item list
@@ -4537,7 +4445,6 @@ module pepper_instance_module
       module subroutine zzhsiini ( ctx, hashsz, hedlst, collst )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: hashsz  !! Hash size
          integer(ip), intent(inout) :: hedlst  (          * )  !! Hash head node pointer list
          integer(ip), intent(inout) :: collst  ( lbpool : * )  !! Hash node collision list
@@ -4546,7 +4453,6 @@ module pepper_instance_module
       module subroutine zzhsiadd ( ctx, hedlst, collst, items, item, itemat, new )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(inout) :: hedlst  (          * )  !! Hash head node pointer list
          integer(ip), intent(inout) :: collst  ( lbpool : * )  !! Hash node collision list
          integer(ip), intent(inout) :: items   (          * )  !! Hash item list
@@ -4558,7 +4464,6 @@ module pepper_instance_module
       module subroutine zzhsichk ( ctx, hedlst, collst, items, item, itemat )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: hedlst  (          * )  !! Hash head node pointer list
          integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
          integer(ip), intent(in) :: items   (          * )  !! Hash item list
@@ -4569,7 +4474,6 @@ module pepper_instance_module
       module subroutine zzhsiavl ( ctx, collst, avail )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
          integer(ip), intent(out) :: avail  !! Room available in the hash
       end subroutine zzhsiavl
@@ -4577,7 +4481,6 @@ module pepper_instance_module
       module subroutine zzhsiinf ( ctx, hedlst, collst, items, param, avail )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: hedlst  (          * )  !! Hash head node pointer list
          integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
          integer(ip), intent(in) :: items   (          * )  !! Hash item list
@@ -4588,7 +4491,6 @@ module pepper_instance_module
       module subroutine zzbodini ( ctx, names, nornam, codes, nvals, maxval, bnmlst, bnmpol, bnmnms, bnmidx, bidlst, bidpol, bidids, bididx )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          character(maxl), intent(in) :: names  (          * )  !! Array of names
          character(maxl), intent(in) :: nornam (          * )  !! Array of normalized names
          integer(ip), intent(in) :: codes  (          * )  !! Array of ID codes for NAMES/NORNAM
@@ -5252,7 +5154,6 @@ module pepper_instance_module
       module subroutine dafhof ( ctx, fhset )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(inout) :: fhset ( lbcell : * )  !! A set containing handles of
                                                              !! currently
                                                            !! open DAFS.
@@ -5820,7 +5721,6 @@ module pepper_instance_module
       module subroutine dashof ( ctx, fhset )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(inout) :: fhset  ( lbcell : * )  !! A set containing handles of
                                                               !! currently
                                                             !! open DAS files.
@@ -5873,7 +5773,6 @@ module pepper_instance_module
       module subroutine daswrd ( ctx, handle, recno, recd )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: nwd = 128
          integer(ip), intent(in) :: handle  !! Handle of DAS file.
          integer(ip), intent(in) :: recno  !! Record number.
          real(wp), intent(in) :: recd    ( nwd )  !! Double precision data to be written to record.
@@ -5882,7 +5781,6 @@ module pepper_instance_module
       module subroutine daswri ( ctx, handle, recno, reci )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: nwi = 256
          integer(ip), intent(in) :: handle  !! Handle of DAS file.
          integer(ip), intent(in) :: recno  !! Record number.
          integer(ip), intent(in) :: reci    ( nwi )  !! Integer data to be written to record.
@@ -5945,7 +5843,6 @@ module pepper_instance_module
       module subroutine dasiod ( ctx, action, unit, recno, record )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: nwd = 128
          character(*), intent(in) :: action  !! Action to take (read or write).
          integer(ip), intent(in) :: unit  !! Fortran unit connected to DAS file.
          integer(ip), intent(in) :: recno  !! Number of record to read or write.
@@ -5955,7 +5852,6 @@ module pepper_instance_module
       module subroutine dasioi ( ctx, action, unit, recno, record )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: nwi = 256
          character(*), intent(in) :: action  !! Action to take (read or write).
          integer(ip), intent(in) :: unit  !! Fortran unit connected to DAS file.
          integer(ip), intent(in) :: recno  !! Number of record to read or write.
@@ -6626,7 +6522,6 @@ module pepper_instance_module
       module subroutine dskobj ( ctx, dskfnm, bodids )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: dskfnm  !! Name of DSK file.
          integer(ip), intent(inout) :: bodids ( lbcell : * )  !! Set of ID codes of objects in DSK
                                                               !! file.
@@ -6642,7 +6537,6 @@ module pepper_instance_module
       module subroutine dsksrf ( ctx, dskfnm, bodyid, srfids )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: dskfnm  !! Name of DSK file.
          integer(ip), intent(in) :: bodyid  !! Integer body ID code.
          integer(ip), intent(inout) :: srfids ( lbcell : * )  !! Set of ID codes of surfaces in DSK
@@ -7071,7 +6965,6 @@ module pepper_instance_module
       module subroutine ttrans ( ctx, from, to, tvec )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: mxcomp = 10
          character(*), intent(in) :: from  !! description of a time vector.
          character(*), intent(in) :: to  !! description of a time vector.
          real(wp), intent(inout) :: tvec ( mxcomp )  !! time vector representing an epoch.
@@ -8384,7 +8277,6 @@ module pepper_instance_module
       module subroutine zzfdat ( ctx, ncount, maxbfr, name, idcode, center, type, typid, centrd, bnmlst, bnmpol, bnmnms, bnmidx, bidlst, bidpol, bidids, bididx )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: ncount  !! Input checking variable.
          integer(ip), intent(in) :: maxbfr  !! build-in frame hash size.
          character(*), intent(out) :: name   (          * )  !! array containing the names of all built-in frames
@@ -8912,7 +8804,6 @@ module pepper_instance_module
       module subroutine ckobj ( ctx, ckfnm, ids )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: ckfnm  !! Name of CK file.
          integer(ip), intent(inout) :: ids ( lbcell : * )  !! Set of ID codes of objects in CK file.
       end subroutine ckobj
@@ -9026,7 +8917,6 @@ module pepper_instance_module
       module subroutine ckcov ( ctx, ckfnm, idcode, needav, level, tol, timsys, cover )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: ckfnm  !! Name of CK file.
          integer(ip), intent(in) :: idcode  !! ID code of object.
          logical, intent(in) :: needav  !! Flag indicating whether angular velocity is needed.
@@ -9056,7 +8946,6 @@ module pepper_instance_module
       module subroutine pckcov ( ctx, pckfnm, idcode, cover )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: pckfnm  !! Name of PCK file.
          integer(ip), intent(in) :: idcode  !! Class ID code of PCK reference frame.
          real(wp), intent(inout) :: cover  ( lbcell : * )  !! Window giving coverage in PCKFNM for IDCODE.
@@ -9083,7 +8972,6 @@ module pepper_instance_module
       module subroutine pckfrm ( ctx, pckfnm, ids )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: pckfnm  !! Name of PCK file.
          integer(ip), intent(inout) :: ids    ( lbcell : * )  !! Set of frame class ID codes of frames in PCK file.
       end subroutine pckfrm
@@ -9208,7 +9096,6 @@ module pepper_instance_module
       module subroutine spkcov ( ctx, spkfnm, idcode, cover )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: spkfnm  !! Name of SPK file.
          integer(ip), intent(in) :: idcode  !! ID code of ephemeris object.
          real(wp), intent(inout) :: cover ( lbcell : * )  !! Window giving coverage in SPKFNM for IDCODE.
@@ -9247,7 +9134,6 @@ module pepper_instance_module
       module subroutine spkobj ( ctx, spkfnm, ids )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: spkfnm  !! Name of SPK file.
          integer(ip), intent(inout) :: ids    ( lbcell : * )  !! Set of ID codes of objects in SPK file.
       end subroutine spkobj
@@ -9847,7 +9733,6 @@ module pepper_instance_module
       module subroutine sydelc ( ctx, name, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol to be deleted.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -9857,7 +9742,6 @@ module pepper_instance_module
       module subroutine sydeld ( ctx, name, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol to be deleted.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -9867,7 +9751,6 @@ module pepper_instance_module
       module subroutine sydeli ( ctx, name, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol to be deleted.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -9877,7 +9760,6 @@ module pepper_instance_module
       module integer(ip) function sydimc ( ctx, name, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose dimension is desired.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -9887,7 +9769,6 @@ module pepper_instance_module
       module integer(ip) function sydimd ( ctx, name, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose dimension is desired.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -9897,7 +9778,6 @@ module pepper_instance_module
       module integer(ip) function sydimi ( ctx, name, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose dimension is desired.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -9907,7 +9787,6 @@ module pepper_instance_module
       module subroutine sydupc ( ctx, name, copy, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol to be duplicated.
          character(*), intent(in) :: copy  !! Name of the new symbol.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -9918,7 +9797,6 @@ module pepper_instance_module
       module subroutine sydupd ( ctx, name, copy, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol to be duplicated.
          character(*), intent(in) :: copy  !! Name of the new symbol.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -9929,7 +9807,6 @@ module pepper_instance_module
       module subroutine sydupi ( ctx, name, copy, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol to be duplicated.
          character(*), intent(in) :: copy  !! Name of the new symbol.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -9940,7 +9817,6 @@ module pepper_instance_module
       module subroutine syfetc ( ctx, nth, tabsym, tabptr, tabval, name, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: nth  !! Index of symbol to be fetched.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -9952,7 +9828,6 @@ module pepper_instance_module
       module subroutine syfetd ( ctx, nth, tabsym, tabptr, tabval, name, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: nth  !! Index of symbol to be fetched.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -9964,7 +9839,6 @@ module pepper_instance_module
       module subroutine syfeti ( ctx, nth, tabsym, tabptr, tabval, name, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: nth  !! Index of symbol to be fetched.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -9976,7 +9850,6 @@ module pepper_instance_module
       module subroutine sygetc ( ctx, name, tabsym, tabptr, tabval, n, values, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose components are to be returned.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -9989,7 +9862,6 @@ module pepper_instance_module
       module subroutine sygetd ( ctx, name, tabsym, tabptr, tabval, n, values, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose components are to be returned.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -10002,7 +9874,6 @@ module pepper_instance_module
       module subroutine sygeti ( ctx, name, tabsym, tabptr, tabval, n, values, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose components are to be returned.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -10015,7 +9886,6 @@ module pepper_instance_module
       module subroutine synthc ( ctx, name, nth, tabsym, tabptr, tabval, value, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose Nth associated value is to be returned.
          integer(ip), intent(in) :: nth  !! Index of the value to be returned.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10028,7 +9898,6 @@ module pepper_instance_module
       module subroutine synthd ( ctx, name, nth, tabsym, tabptr, tabval, value, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose Nth component is to be returned.
          integer(ip), intent(in) :: nth  !! Index of the value to be returned.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10041,7 +9910,6 @@ module pepper_instance_module
       module subroutine synthi ( ctx, name, nth, tabsym, tabptr, tabval, value, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose Nth component is to be returned.
          integer(ip), intent(in) :: nth  !! Index of the value to be returned.
          character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10054,7 +9922,6 @@ module pepper_instance_module
       module subroutine syordc ( ctx, name, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose components are to be ordered.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -10064,7 +9931,6 @@ module pepper_instance_module
       module subroutine syordd ( ctx, name, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose components are to be ordered.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -10074,7 +9940,6 @@ module pepper_instance_module
       module subroutine syordi ( ctx, name, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose components are to be ordered.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -10084,7 +9949,6 @@ module pepper_instance_module
       module subroutine sypopc ( ctx, name, tabsym, tabptr, tabval, value, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be popped.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -10096,7 +9960,6 @@ module pepper_instance_module
       module subroutine sypopd ( ctx, name, tabsym, tabptr, tabval, value, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be popped.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -10108,7 +9971,6 @@ module pepper_instance_module
       module subroutine sypopi ( ctx, name, tabsym, tabptr, tabval, value, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be popped.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
          integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -10120,7 +9982,6 @@ module pepper_instance_module
       module subroutine syputc ( ctx, name, values, n, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be put into the symbol table.
          character(*), intent(in) :: values     (        * )  !! Values to be associated with the symbol NAME.
          integer(ip), intent(in) :: n  !! Number of values in VALUES.
@@ -10132,7 +9993,6 @@ module pepper_instance_module
       module subroutine syputd ( ctx, name, values, n, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be put into the symbol table.
          real(wp), intent(in) :: values     (        * )  !! Values to be associated with the symbol NAME.
          integer(ip), intent(in) :: n  !! Number of values in VALUES.
@@ -10144,7 +10004,6 @@ module pepper_instance_module
       module subroutine syputi ( ctx, name, values, n, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be put into the symbol table.
          integer(ip), intent(in) :: values     (        * )  !! Values to be associated with the symbol NAME.
          integer(ip), intent(in) :: n  !! Number of values in VALUES.
@@ -10156,7 +10015,6 @@ module pepper_instance_module
       module subroutine syselc ( ctx, name, begin, end, tabsym, tabptr, tabval, values, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be returned.
          integer(ip), intent(in) :: begin  !! Index of the first associated value to be returned.
          integer(ip), intent(in) :: end  !! Index of the last associated value to be returned.
@@ -10170,7 +10028,6 @@ module pepper_instance_module
       module subroutine syseld ( ctx, name, begin, end, tabsym, tabptr, tabval, values, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be returned.
          integer(ip), intent(in) :: begin  !! Index of the first associated value to be returned.
          integer(ip), intent(in) :: end  !! Index of the last associated value to be returned.
@@ -10184,7 +10041,6 @@ module pepper_instance_module
       module subroutine syseli ( ctx, name, begin, end, tabsym, tabptr, tabval, values, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be returned.
          integer(ip), intent(in) :: begin  !! Index of the first associated value to be returned.
          integer(ip), intent(in) :: end  !! Index of the last associated value to be returned.
@@ -10198,7 +10054,6 @@ module pepper_instance_module
       module subroutine sysetc ( ctx, name, value, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be set.
          character(*), intent(in) :: value  !! Associated value of the symbol NAME.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10209,7 +10064,6 @@ module pepper_instance_module
       module subroutine sysetd ( ctx, name, value, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be set.
          real(wp), intent(in) :: value  !! Associated value of the symbol NAME.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10220,7 +10074,6 @@ module pepper_instance_module
       module subroutine syseti ( ctx, name, value, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be set.
          integer(ip), intent(in) :: value  !! Associated value of the symbol NAME.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10231,7 +10084,6 @@ module pepper_instance_module
       module subroutine sytrnc ( ctx, name, idx1, idx2, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be transposed.
          integer(ip), intent(in) :: idx1  !! Index of first associated value to be transposed.
          integer(ip), intent(in) :: idx2  !! Index of second associated value to be transposed.
@@ -10243,7 +10095,6 @@ module pepper_instance_module
       module subroutine sytrnd ( ctx, name, idx1, idx2, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be transposed.
          integer(ip), intent(in) :: idx1  !! Index of first associated value to be transposed.
          integer(ip), intent(in) :: idx2  !! Index of second associated value to be transposed.
@@ -10255,7 +10106,6 @@ module pepper_instance_module
       module subroutine sytrni ( ctx, name, idx1, idx2, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be transposed.
          integer(ip), intent(in) :: idx1  !! Index of first associated value to be transposed.
          integer(ip), intent(in) :: idx2  !! Index of second associated value to be transposed.
@@ -10267,7 +10117,6 @@ module pepper_instance_module
       module subroutine syenqc ( ctx, name, value, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol onto which the value is enqueued.
          character(*), intent(in) :: value  !! Value to be enqueued.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10278,7 +10127,6 @@ module pepper_instance_module
       module subroutine syenqd ( ctx, name, value, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol onto which the value is enqueued.
          real(wp), intent(in) :: value  !! Value to be enqueued.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10289,7 +10137,6 @@ module pepper_instance_module
       module subroutine syenqi ( ctx, name, value, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol onto which the value is enqueued.
          integer(ip), intent(in) :: value  !! Value to be enqueued.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10300,7 +10147,6 @@ module pepper_instance_module
       module subroutine sypshc ( ctx, name, value, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol onto which the value is to be pushed.
          character(*), intent(in) :: value  !! Value that is to be pushed onto the symbol NAME.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10311,7 +10157,6 @@ module pepper_instance_module
       module subroutine sypshd ( ctx, name, value, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol onto which the value is to be pushed.
          real(wp), intent(in) :: value  !! Value that is to be pushed onto the symbol NAME.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10322,7 +10167,6 @@ module pepper_instance_module
       module subroutine sypshi ( ctx, name, value, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of the symbol onto which the value is to be pushed.
          integer(ip), intent(in) :: value  !! Value that is to be pushed onto the symbol NAME.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10333,7 +10177,6 @@ module pepper_instance_module
       module subroutine syrenc ( ctx, old, new, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: old  !! Name of the symbol to be renamed.
          character(*), intent(in) :: new  !! New name of the symbol.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10344,7 +10187,6 @@ module pepper_instance_module
       module subroutine syrend ( ctx, old, new, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: old  !! Name of the symbol to be renamed.
          character(*), intent(in) :: new  !! New name of the symbol.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10355,7 +10197,6 @@ module pepper_instance_module
       module subroutine syreni ( ctx, old, new, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: old  !! Name of the symbol to be renamed.
          character(*), intent(in) :: new  !! New name of the symbol.
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -10754,7 +10595,6 @@ module pepper_instance_module
       module subroutine spkw01 ( ctx, handle, body, center, frame, first, last, segid, n, dlines, epochs )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: dlsize = 71
          integer(ip), intent(in) :: handle  !! Handle of an SPK file open for writing.
          integer(ip), intent(in) :: body  !! NAIF code for an ephemeris object.
          integer(ip), intent(in) :: center  !! NAIF code for center of motion of BODY.
@@ -11147,7 +10987,6 @@ module pepper_instance_module
       module subroutine bltfrm ( ctx, frmcls, idset )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: frmcls  !! Frame class.
          integer(ip), intent(inout) :: idset  ( lbcell : * )  !! Set of ID codes of frames of the specified class.
       end subroutine bltfrm
@@ -11240,7 +11079,6 @@ module pepper_instance_module
       module integer(ip) function fetchc ( ctx, nth, set )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: nth  !! Index of a particular element.
          character(*), intent(in) :: set      ( lbcell:* )  !! Input set.
       end function fetchc
@@ -11248,7 +11086,6 @@ module pepper_instance_module
       module integer(ip) function fetchd ( ctx, nth, set )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: nth  !! Index of a particular element.
          real(wp), intent(in) :: set      ( lbcell:* )  !! Input set.
       end function fetchd
@@ -11256,7 +11093,6 @@ module pepper_instance_module
       module integer(ip) function fetchi ( ctx, nth, set )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: nth  !! Index of a particular element.
          integer(ip), intent(in) :: set      ( lbcell:* )  !! Input set.
       end function fetchi
@@ -11337,7 +11173,6 @@ module pepper_instance_module
       module subroutine kplfrm ( ctx, frmcls, idset )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: frmcls  !! Frame class.
          integer(ip), intent(inout) :: idset  ( lbcell : * )  !! Set of ID codes of frames of the specified class.
       end subroutine kplfrm
@@ -11345,7 +11180,6 @@ module pepper_instance_module
       module subroutine lparss ( ctx, list, delims, set )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: list  !! List of items delimited by DELIMS on input.
          character(*), intent(in) :: delims  !! Single characters which delimit items.
          character(*), intent(inout) :: set  ( lbcell:* )  !! Items in the list, validated, left justified.
@@ -11389,7 +11223,6 @@ module pepper_instance_module
       module subroutine lxidnt ( ctx, idspec, string, first, last, nchar )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: string  !! String to be scanned.
          integer(ip), intent(in) :: first  !! Character position at which to start scanning.
          integer(ip), intent(in) :: idspec ( lbcell : * )  !! Identifier character specification.
@@ -11400,14 +11233,12 @@ module pepper_instance_module
       module subroutine lxdfid ( ctx, idspec )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(inout) :: idspec ( lbcell : * )  !! Identifier character specification.
       end subroutine lxdfid
 
       module subroutine lxcsid ( ctx, hdchrs, tlchrs, idspec )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: hdchrs  !! Allowed head characters for identifiers.
          character(*), intent(in) :: tlchrs  !! Allowed tail characters for identifiers.
          integer(ip), intent(inout) :: idspec ( lbcell : * )  !! Identifier character specification.
@@ -11416,7 +11247,6 @@ module pepper_instance_module
       module subroutine npelpt ( ctx, point, ellips, pnear, dist )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubel = 9
          real(wp), intent(in) :: ellips ( ubel )  !! A SPICE ellipse.
          real(wp), intent(in) :: point  (    3 )  !! Point whose distance to an ellipse is to be found.
          real(wp), intent(out) :: pnear  (    3 )  !! Nearest point on ellipse to input point.
@@ -11617,7 +11447,6 @@ module pepper_instance_module
       module subroutine zzasryel ( ctx, extrem, ellips, vertex, dir, angle, extpt )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubel = 9
          character(*), intent(in) :: extrem  !! Type of extremum to find.
          real(wp), intent(in) :: ellips ( ubel )  !! SPICE ellipse.
          real(wp), intent(in) :: vertex ( 3 )  !! Vertex and direction vector of ray.
@@ -12115,7 +11944,6 @@ module pepper_instance_module
       module integer(ip) function zzwind ( ctx, plane, n, vertcs, point )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubpl = 4
          real(wp), intent(in) :: plane  ( ubpl )  !! A SPICELIB plane.
          integer(ip), intent(in) :: n  !! Number of vertices of polygon.
          real(wp), intent(in) :: vertcs ( 3, * )  !! Vertices of polygon.
@@ -12346,7 +12174,6 @@ module pepper_instance_module
       module subroutine wrkvar ( ctx, unit, name, dirctv, tabsym, tabptr, tabval )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: unit  !! Output logical unit.
          character(*), intent(in) :: name  !! Name of the variable.
          character(*), intent(in) :: dirctv  !! Kernel directive: '=' or '+='.
@@ -12495,7 +12322,6 @@ module pepper_instance_module
       module subroutine cgv2el ( ctx, center, vec1, vec2, ellips )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubel = 9
          real(wp), intent(in) :: center (    3 )  !! Center and two generating vectors for an ellipse.
          real(wp), intent(in) :: vec1   (    3 )  !! Center and two generating vectors for an ellipse.
          real(wp), intent(in) :: vec2   (    3 )  !! Center and two generating vectors for an ellipse.
@@ -12550,7 +12376,6 @@ module pepper_instance_module
       module subroutine rdkvar ( ctx, tabsym, tabptr, tabval, name, eof )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Symbol table.
          integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Symbol table.
          real(wp), intent(inout) :: tabval     ( lbcell:* )  !! Symbol table.
@@ -12662,8 +12487,6 @@ module pepper_instance_module
       module subroutine inedpl ( ctx, a, b, c, plane, ellips, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubel = 9
-         integer(ip), parameter :: ubpl = 4
          real(wp), intent(in) :: a  !! Length of ellipsoid semi-axis lying on the x-axis.
          real(wp), intent(in) :: b  !! Length of ellipsoid semi-axis lying on the y-axis.
          real(wp), intent(in) :: c  !! Length of ellipsoid semi-axis lying on the z-axis.
@@ -12675,8 +12498,6 @@ module pepper_instance_module
       module subroutine pjelpl ( ctx, elin, plane, elout )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubel = 9
-         integer(ip), parameter :: ubpl = 4
          real(wp), intent(in) :: elin  ( ubel )  !! A SPICE ellipse to be projected.
          real(wp), intent(in) :: plane ( ubpl )  !! A plane onto which ELIN is to be projected.
          real(wp), intent(out) :: elout ( ubel )  !! A SPICE ellipse resulting from the projection.
@@ -12740,7 +12561,6 @@ module pepper_instance_module
       module subroutine zzelvupy ( ctx, ellips, vertex, axis, n, bounds, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubel = 9
          real(wp), intent(in) :: ellips ( ubel )  !! A SPICELIB ellipse.
          real(wp), intent(in) :: vertex ( 3 )  !! Vertex of a pyramid.
          real(wp), intent(in) :: axis   ( 3 )  !! Axis of a pyramid.
@@ -12774,7 +12594,6 @@ module pepper_instance_module
       module subroutine edlimb ( ctx, a, b, c, viewpt, limb )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: ubel = 9
          real(wp), intent(in) :: a  !! Length of ellipsoid semi-axis lying on the x-axis.
          real(wp), intent(in) :: b  !! Length of ellipsoid semi-axis lying on the y-axis.
          real(wp), intent(in) :: c  !! Length of ellipsoid semi-axis lying on the z-axis.
@@ -13574,7 +13393,6 @@ module pepper_instance_module
       module subroutine zzgfsolv ( ctx, udcond, udstep, udrefn, bail, udbail, cstep, step, start, finish, tol, rpt, udrepu, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          procedure(gf_bail) :: udbail  !! Name of a routine that signals a program interrupt.
          logical, intent(in) :: bail  !! Logical indicating program interrupt monitoring.
          logical, intent(in) :: cstep  !! Logical indicating constant step size.
@@ -13593,7 +13411,6 @@ module pepper_instance_module
       module subroutine zzgfsolvx ( ctx, udfuns, udfunb, udstep, udrefn, bail, udbail, cstep, step, start, finish, tol, rpt, udrepu, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          procedure(gf_bail) :: udbail  !! Name of a routine that signals a program interrupt.
          logical, intent(in) :: bail  !! Logical indicating program interrupt monitoring.
          logical, intent(in) :: cstep  !! Logical indicating constant step size.
@@ -13702,7 +13519,6 @@ module pepper_instance_module
       module subroutine zzgfwsts ( ctx, wndw1, wndw2, inclsn, wndw3 )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          real(wp), intent(in) :: wndw1 ( lbcell : * )  !! Input window 1.
          real(wp), intent(in) :: wndw2 ( lbcell : * )  !! Input window 2.
          character(*), intent(in) :: inclsn  !! Flag indicating inclusion desired.
@@ -13737,7 +13553,6 @@ module pepper_instance_module
       module subroutine gffove ( ctx, inst, tshape, raydir, target, tframe, abcorr, obsrvr, tol, udstep, udrefn, rpt, udrepi, udrepu, udrepf, bail, udbail, cnfine, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: inst  !! Name of the instrument.
          character(*), intent(in) :: tshape  !! Type of shape model used for target body.
          real(wp), intent(in) :: raydir ( 3 )  !! Ray's direction vector.
@@ -13761,7 +13576,6 @@ module pepper_instance_module
       module subroutine gfocce ( ctx, occtyp, front, fshape, fframe, back, bshape, bframe, abcorr, obsrvr, tol, udstep, udrefn, rpt, udrepi, udrepu, udrepf, bail, udbail, cnfine, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: occtyp  !! Type of occultation.
          character(*), intent(in) :: front  !! Name of body occulting the other.
          character(*), intent(in) :: fshape  !! Type of shape model used for front body.
@@ -13887,7 +13701,6 @@ module pepper_instance_module
       module subroutine zzgfrel ( ctx, udstep, udrefn, udqdec, udcond, udfunc, udqref, relate, refval, tol, adjust, cnfine, mw, nw, work, rpt, udrepi, udrepu, udrepf, rptpre, rptsuf, bail, udbail, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: relate  !! Operator that either looks for an extreme value (max, min, local, absolute) or compares the geometric quantity value and a number.
          real(wp), intent(in) :: refval  !! Value used as reference for geometric quantity condition.
          real(wp), intent(in) :: tol  !! Convergence tolerance in seconds.
@@ -13916,7 +13729,6 @@ module pepper_instance_module
       module subroutine zzgfrelx ( ctx, udstep, udrefn, udqdec, udcond, udfunc, relate, refval, tol, adjust, cnfine, mw, nw, work, rpt, udrepi, udrepu, udrepf, rptpre, rptsuf, bail, udbail, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: relate  !! Operator that either looks for an extreme value (max, min, local, absolute) or compares the scalar quantity value and a number.
          real(wp), intent(in) :: refval  !! Value used as reference for scalar quantity condition.
          real(wp), intent(in) :: tol  !! Convergence tolerance in seconds.
@@ -14020,7 +13832,6 @@ module pepper_instance_module
       module subroutine zzgfudb ( ctx, udfuns, udfunb, tol, udstep, udrefn, rpt, udrepi, udrepu, udrepf, bail, udbail, cnfine, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          real(wp), intent(in) :: tol  !! Convergence tolerance in seconds.
          logical, intent(in) :: rpt  !! Progress report flag.
          logical, intent(in) :: bail  !! Logical indicating program interrupt monitoring.
@@ -14039,7 +13850,6 @@ module pepper_instance_module
       module subroutine gfoclt ( ctx, occtyp, front, fshape, fframe, back, bshape, bframe, abcorr, obsrvr, step, cnfine, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: occtyp  !! Type of occultation.
          character(*), intent(in) :: front  !! Name of body occulting the other.
          character(*), intent(in) :: fshape  !! Type of shape model used for front body.
@@ -14057,7 +13867,6 @@ module pepper_instance_module
       module subroutine gfrfov ( ctx, inst, raydir, rframe, abcorr, obsrvr, step, cnfine, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: inst  !! Name of the instrument.
          real(wp), intent(in) :: raydir ( 3 )  !! Ray's direction vector.
          character(*), intent(in) :: rframe  !! Reference frame of ray's direction vector.
@@ -14071,7 +13880,6 @@ module pepper_instance_module
       module subroutine gfrepi ( ctx, window, begmss, endmss )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          real(wp), intent(in) :: window ( lbcell : * )  !! A window over which a job is to be performed.
          character(*), intent(in) :: begmss  !! Beginning of the text portion of output message.
          character(*), intent(in) :: endmss  !! End of the text portion of output message.
@@ -14093,7 +13901,6 @@ module pepper_instance_module
       module subroutine gftfov ( ctx, inst, target, tshape, tframe, abcorr, obsrvr, step, cnfine, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: inst  !! Name of the instrument.
          character(*), intent(in) :: target  !! Name of the target body.
          character(*), intent(in) :: tshape  !! Type of shape model used for target body.
@@ -14108,7 +13915,6 @@ module pepper_instance_module
       module subroutine gfudb ( ctx, udfuns, udfunb, step, cnfine, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          real(wp), intent(in) :: step  !! Constant step size in seconds for finding geometric events.
          real(wp), intent(in) :: cnfine ( lbcell : * )  !! SPICE window to which the search is restricted.
          real(wp), intent(inout) :: result ( lbcell : * )  !! SPICE window containing results.
@@ -14119,7 +13925,6 @@ module pepper_instance_module
       module subroutine gfuds ( ctx, udfuns, udqdec, relate, refval, adjust, step, cnfine, mw, nw, work, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: relate  !! Operator that either looks for an extreme value (max, min, local, absolute) or compares the geometric quantity value and a number.
          real(wp), intent(in) :: refval  !! Value used as reference for scalar quantity condition.
          real(wp), intent(in) :: adjust  !! Allowed variation for absolute extremal geometric conditions.
@@ -14204,7 +14009,6 @@ module pepper_instance_module
       module subroutine zzgflong ( ctx, vecdef, method, target, ref, abcorr, obsrvr, dref, dvec, crdsys, crdnam, relate, refval, tol, adjust, udstep, udrefn, rpt, udrepi, udrepu, udrepf, bail, udbail, mw, nw, work, cnfine, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: vecdef  !! Vector definition.
          character(*), intent(in) :: method  !! Computation method.
          character(*), intent(in) :: target  !! Target name.
@@ -14237,7 +14041,6 @@ module pepper_instance_module
       module subroutine zzgfcslv ( ctx, vecdef, method, target, ref, abcorr, obsrvr, dref, dvec, crdsys, crdnam, relate, refval, tol, adjust, udstep, udrefn, rpt, udrepi, udrepu, udrepf, bail, udbail, mw, nw, work, cnfine, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: vecdef  !! Vector definition.
          character(*), intent(in) :: method  !! Computation method.
          character(*), intent(in) :: target  !! Target name.
@@ -14270,7 +14073,6 @@ module pepper_instance_module
       module subroutine gfevnt ( ctx, udstep, udrefn, gquant, qnpars, qpnams, qcpars, qdpars, qipars, qlpars, op, refval, tol, adjust, cnfine, rpt, udrepi, udrepu, udrepf, mw, nw, work, bail, udbail, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: gquant  !! Type of geometric quantity.
          integer(ip), intent(in) :: qnpars  !! Number of quantity definition parameters.
          character(*), intent(in) :: qpnams ( * )  !! Names of quantity definition parameters.
@@ -14541,7 +14343,6 @@ module pepper_instance_module
       module subroutine gfdist ( ctx, target, abcorr, obsrvr, relate, refval, adjust, step, cnfine, mw, nw, work, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: target  !! Name of the target body.
          character(*), intent(in) :: abcorr  !! Aberration correction flag.
          character(*), intent(in) :: obsrvr  !! Name of the observing body.
@@ -14559,7 +14360,6 @@ module pepper_instance_module
       module subroutine gfilum ( ctx, method, angtyp, target, illmn, fixref, abcorr, obsrvr, spoint, relate, refval, adjust, step, cnfine, mw, nw, work, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: method  !! Computation method.
          character(*), intent(in) :: angtyp  !! Type of illumination angle.
          character(*), intent(in) :: target  !! Name of the target body.
@@ -14582,7 +14382,6 @@ module pepper_instance_module
       module subroutine gfpa ( ctx, target, illmn, abcorr, obsrvr, relate, refval, adjust, step, cnfine, mw, nw, work, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: target  !! Name of the target body.
          character(*), intent(in) :: illmn  !! Name of the illuminating body.
          character(*), intent(in) :: abcorr  !! Aberration correction flag.
@@ -14601,7 +14400,6 @@ module pepper_instance_module
       module subroutine gfposc ( ctx, target, frame, abcorr, obsrvr, crdsys, coord, relate, refval, adjust, step, cnfine, mw, nw, work, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: target  !! Name of the target body.
          character(*), intent(in) :: frame  !! Name of the reference frame for coordinate calculations.
          character(*), intent(in) :: abcorr  !! Aberration correction flag.
@@ -14622,7 +14420,6 @@ module pepper_instance_module
       module subroutine gfrr ( ctx, target, abcorr, obsrvr, relate, refval, adjust, step, cnfine, mw, nw, work, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: target  !! Name of the target body.
          character(*), intent(in) :: abcorr  !! Aberration correction flag.
          character(*), intent(in) :: obsrvr  !! Name of the observing body.
@@ -14640,7 +14437,6 @@ module pepper_instance_module
       module subroutine gfsep ( ctx, targ1, shape1, frame1, targ2, shape2, frame2, abcorr, obsrvr, relate, refval, adjust, step, cnfine, mw, nw, work, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: targ1  !! Name of first body.
          character(*), intent(in) :: shape1  !! Name of shape model describing the first body.
          character(*), intent(in) :: frame1  !! The body-fixed reference frame of the first body.
@@ -14663,7 +14459,6 @@ module pepper_instance_module
       module subroutine gfsntc ( ctx, target, fixref, method, abcorr, obsrvr, dref, dvec, crdsys, coord, relate, refval, adjust, step, cnfine, mw, nw, work, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: target  !! Name of the target body.
          character(*), intent(in) :: fixref  !! Body fixed frame associated with TARGET.
          character(*), intent(in) :: method  !! Name of method type for surface intercept calculation.
@@ -14687,7 +14482,6 @@ module pepper_instance_module
       module subroutine gfsubc ( ctx, target, fixref, method, abcorr, obsrvr, crdsys, coord, relate, refval, adjust, step, cnfine, mw, nw, work, result )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: target  !! Name of the target body.
          character(*), intent(in) :: fixref  !! Body fixed frame associated with TARGET.
          character(*), intent(in) :: method  !! Name of method type for subpoint calculation.
@@ -14820,7 +14614,6 @@ module pepper_instance_module
       module subroutine zzekqini ( ctx, isize, dsize, eqryi, eqryc, eqryd )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: isize  !! Size of integer component of encoded query.
          integer(ip), intent(in) :: dsize  !! Size of d.p. component of encoded query.
          integer(ip), intent(inout) :: eqryi ( lbcell : * )  !! Integer component of query.
@@ -14841,7 +14634,6 @@ module pepper_instance_module
       module subroutine zzekreqi ( ctx, eqryi, name, value )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
          character(*), intent(in) :: name  !! Name of scalar item to read.
          integer(ip), intent(out) :: value  !! Value of item.
@@ -14970,7 +14762,6 @@ module pepper_instance_module
       module subroutine zzekweqi ( ctx, name, value, eqryi )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: name  !! Name of scalar item to write.
          integer(ip), intent(in) :: value  !! Value to write.
          integer(ip), intent(inout) :: eqryi ( lbcell : * )  !! Integer component of query.
@@ -15001,7 +14792,6 @@ module pepper_instance_module
       module subroutine zzekinqc ( ctx, value, length, lexbeg, lexend, eqryi, eqryc, descr )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: value  !! Character value.
          integer(ip), intent(in) :: length  !! Length of item to insert.
          integer(ip), intent(in) :: lexbeg  !! Begin and end positions of value's lexeme.
@@ -15014,7 +14804,6 @@ module pepper_instance_module
       module subroutine zzekinqn ( ctx, value, type, lexbeg, lexend, eqryi, eqryd, descr )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          real(wp), intent(in) :: value  !! Numeric value.
          integer(ip), intent(in) :: type  !! Data type.  May be INT, DP, or TIME.
          integer(ip), intent(in) :: lexbeg  !! Begin and end positions of value's lexeme.
@@ -15138,7 +14927,6 @@ module pepper_instance_module
       module subroutine zzekqcnj ( ctx, eqryi, n, size )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
          integer(ip), intent(in) :: n  !! Index within FROM clause of table name to read.
          integer(ip), intent(out) :: size  !! Size of Nth conjunction in WHERE clause.
@@ -15147,7 +14935,6 @@ module pepper_instance_module
       module subroutine zzekqcon ( ctx, eqryi, eqryc, eqryd, n, cnstyp, ltname, ltidx, lcname, lcidx, opcode, rtname, rtidx, rcname, rcidx, dtype, cbeg, cend, dval, ival )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
          character(*), intent(in) :: eqryc  !! Character component of query.
          real(wp), intent(in) :: eqryd ( * )  !! Numeric component of query.
@@ -15172,7 +14959,6 @@ module pepper_instance_module
       module subroutine zzekqord ( ctx, eqryi, eqryc, n, table, tabidx, column, colidx, sense )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
          character(*), intent(in) :: eqryc  !! Character component of query.
          integer(ip), intent(in) :: n  !! Index within FROM clause of table name to read.
@@ -15186,7 +14972,6 @@ module pepper_instance_module
       module subroutine zzekqsel ( ctx, eqryi, eqryc, n, lxbeg, lxend, table, tabidx, column, colidx )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
          character(*), intent(in) :: eqryc  !! Character component of query.
          integer(ip), intent(in) :: n  !! Index within SELECT clause of table name to read.
@@ -15201,7 +14986,6 @@ module pepper_instance_module
       module subroutine zzekqtab ( ctx, eqryi, eqryc, n, table, alias )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
          character(*), intent(in) :: eqryc  !! Character component of query.
          integer(ip), intent(in) :: n  !! Index within FROM clause of table name to read.
@@ -16495,7 +16279,6 @@ module pepper_instance_module
       module logical function zzekvcmp ( ctx, op, ncols, tabs, cols, elts, senses, sthan, stsdsc, stdtpt, dtpool, dtdscs, sgvec1, rwvec1, sgvec2, rwvec2 )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: op  !! Code for relational operator.
          integer(ip), intent(in) :: ncols  !! Number of columns used to define order relation.
          integer(ip), intent(in) :: tabs   ( * )  !! Indices of tables containing order-by columns.
@@ -16560,7 +16343,6 @@ module pepper_instance_module
       module subroutine zzekjsrt ( ctx, njrs, ubases, norder, otabs, ocols, oelts, senses, sthan, stsdsc, stdtpt, dtpool, dtdscs, ordbas )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: njrs  !! Number of join row sets in union.
          integer(ip), intent(in) :: ubases ( * )  !! Base addresses of join row sets of union.
          integer(ip), intent(in) :: norder  !! Number of order-by columns.
@@ -16661,7 +16443,6 @@ module pepper_instance_module
       module subroutine zzekjprp ( ctx, segvec, jbase1, nt1, rb1, nr1, jbase2, nt2, rb2, nr2, njcnst, active, cpidx1, clidx1, elts1, ops, cpidx2, clidx2, elts2, sthan, stsdsc, stdtpt, dtpool, dtdscs )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: segvec ( * )  !! Composite segment vector for joined table.
          integer(ip), intent(in) :: jbase1  !! Scratch area base address of first join row set.
          integer(ip), intent(in) :: nt1  !! Width of first table.
@@ -16763,7 +16544,6 @@ module pepper_instance_module
       module subroutine zzekjoin ( ctx, jbase1, jbase2, njcnst, active, cpidx1, clidx1, elts1, ops, cpidx2, clidx2, elts2, sthan, stsdsc, stdtpt, dtpool, dtdscs, jbase3, nrows )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbpool = -5
          integer(ip), intent(in) :: jbase1  !! Scratch area base address of first join row set.
          integer(ip), intent(in) :: jbase2  !! Scratch area base address of second join row set.
          integer(ip), intent(in) :: njcnst  !! Number of join constraints.
@@ -16865,7 +16645,6 @@ module pepper_instance_module
       module subroutine eksrch ( ctx, eqryi, eqryc, eqryd, nmrows, semerr, errmsg )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: eqryc  !! Character component of encoded query.
          real(wp), intent(in) :: eqryd  ( * )  !! D.p. component of encoded query.
          integer(ip), intent(in) :: eqryi  ( lbcell : * )  !! Integer component of encoded query.
@@ -17020,7 +16799,6 @@ module pepper_instance_module
       module subroutine zzekcchk ( ctx, query, eqryi, eqryc, ntab, tablst, alslst, base, error, errmsg, errptr )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: query  !! Original query string.
          integer(ip), intent(inout) :: eqryi ( lbcell : * )  !! Integer component of query.
          character(*), intent(inout) :: eqryc  !! Character component of query.
@@ -17036,7 +16814,6 @@ module pepper_instance_module
       module subroutine zzekpcol ( ctx, qcol, eqryi, eqryc, table, alias, tabidx, column, colidx, error, errmsg )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: qcol  !! Column name, possibly qualified.
          integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
          character(*), intent(in) :: eqryc  !! Character component of query.
@@ -17052,7 +16829,6 @@ module pepper_instance_module
       module subroutine zzeksemc ( ctx, query, eqryi, eqryc, error, errmsg, errptr )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: query  !! Original query.
          integer(ip), intent(inout) :: eqryi ( lbcell : * )  !! Integer component of query.
          character(*), intent(inout) :: eqryc  !! Character component of query.
@@ -17064,7 +16840,6 @@ module pepper_instance_module
       module subroutine zzektres ( ctx, query, eqryi, eqryc, eqryd, error, errmsg, errptr )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: query  !! Original query string.
          integer(ip), intent(inout) :: eqryi  ( lbcell : * )  !! Integer component of query.
          character(*), intent(inout) :: eqryc  !! Character component of query.
@@ -17100,7 +16875,6 @@ module pepper_instance_module
       module subroutine zzeknres ( ctx, query, eqryi, eqryc, error, errmsg, errptr )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
-         integer(ip), parameter :: lbcell = -5
          character(*), intent(in) :: query  !! Original query string.
          integer(ip), intent(inout) :: eqryi ( lbcell : * )  !! Integer component of query.
          character(*), intent(inout) :: eqryc  !! Character component of query.

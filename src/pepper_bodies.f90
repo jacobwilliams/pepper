@@ -4475,7 +4475,6 @@ contains
       use pepper_constants, only: intmax
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: hashsz  !! Hash size
       integer(ip), intent(inout) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip), intent(inout) :: collst  ( lbpool : * )  !! Hash node collision list
@@ -4588,7 +4587,6 @@ contains
       use pepper_constants, only: intmax
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(inout) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip), intent(inout) :: collst  ( lbpool : * )  !! Hash node collision list
       character(*), intent(inout) :: items   (          * )  !! Hash item list
@@ -4805,7 +4803,6 @@ contains
       use pepper_constants, only: intmax
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
       character(*), intent(in) :: items   (          * )  !! Hash item list
@@ -4919,7 +4916,6 @@ contains
       use pepper_constants, only: intmax
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
       integer(ip), intent(out) :: avail  !! Room available in the hash
       logical :: return
@@ -5001,7 +4997,6 @@ contains
       use pepper_constants, only: intmax
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
       character(*), intent(in) :: items   (          * )  !! Hash item list
@@ -5158,7 +5153,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: hashsz  !! Hash size
       integer(ip), intent(inout) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip), intent(inout) :: collst  ( lbpool : * )  !! Hash node collision list
@@ -5266,7 +5260,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(inout) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip), intent(inout) :: collst  ( lbpool : * )  !! Hash node collision list
       integer(ip), intent(inout) :: items   (          * )  !! Hash item list
@@ -5497,7 +5490,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
       integer(ip), intent(in) :: items   (          * )  !! Hash item list
@@ -5618,7 +5610,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
       integer(ip), intent(out) :: avail  !! Room available in the hash
       logical :: return
@@ -5698,7 +5689,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: hedlst  (          * )  !! Hash head node pointer list
       integer(ip), intent(in) :: collst  ( lbpool : * )  !! Hash node collision list
       integer(ip), intent(in) :: items   (          * )  !! Hash item list
@@ -5962,7 +5952,6 @@ contains
       use pepper_inc_zzbodtrn
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       character(maxl), intent(in) :: names  (          * )  !! Array of names
       character(maxl), intent(in) :: nornam (          * )  !! Array of normalized names
       integer(ip), intent(in) :: codes  (          * )  !! Array of ID codes for NAMES/NORNAM

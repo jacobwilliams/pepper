@@ -5,6 +5,7 @@ module pepper_legacy_writers
 
    use pepper_instance_module, only: pepper_context, pepper_zzck4i2d => zzck4i2d
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: dlsize
 
    implicit none
 
@@ -686,7 +687,6 @@ contains
                            last,    segid,   n,       dlines,  epochs )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: dlsize = 71
       integer(ip) :: handle  !! Handle of an SPK file open for writing.
       integer(ip) :: body  !! NAIF code for an ephemeris object.
       integer(ip) :: center  !! NAIF code for center of motion of BODY.

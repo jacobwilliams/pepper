@@ -494,7 +494,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: pckfnm  !! Name of PCK file.
       integer(ip), intent(in) :: idcode  !! Class ID code of PCK reference frame.
       real(wp), intent(inout) :: cover  ( lbcell : * )  !! Window giving coverage in PCKFNM for IDCODE.
@@ -1116,7 +1115,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: pckfnm  !! Name of PCK file.
       integer(ip), intent(inout) :: ids    ( lbcell : * )  !! Set of frame class ID codes of frames in PCK file.
       integer(ip), allocatable :: list(:)

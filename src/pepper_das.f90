@@ -1031,8 +1031,6 @@ submodule (pepper_instance_module) pepper_das
    integer(ip), parameter :: minpch = 32  !! first printable character code
    integer(ip), parameter :: mxcrec = 1024  !! number of characters in a comment record
    integer(ip), parameter :: nwc = 1024  !! number of characters in a DAS record
-   integer(ip), parameter :: nwd = 128  !! number of double precision numbers in a DAS record
-   integer(ip), parameter :: nwi = 256  !! number of integers in a DAS record
    integer(ip), parameter :: rngbas = 2  !! index in a directory record before the address ranges
    ! The parameter TAILEN determines the tail length of a DAS file
    ! record.  This is the number of bytes (characters) that
@@ -8988,7 +8986,6 @@ contains
       use pepper_inc_das
       use pepper_inc_errhnd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       class(pepper_context), intent(inout) :: ctx  !! the context
       integer(ip), intent(inout) :: fhset  ( lbcell : * )  !! A set containing handles of
                                                            !! currently
@@ -10695,7 +10692,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: nwd = 128
       integer(ip), intent(in) :: handle  !! Handle of DAS file.
       integer(ip), intent(in) :: recno  !! Record number.
       real(wp), intent(in) :: recd    ( nwd )  !! Double precision data to be written to record.
@@ -10985,7 +10981,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: nwi = 256
       integer(ip), intent(in) :: handle  !! Handle of DAS file.
       integer(ip), intent(in) :: recno  !! Record number.
       integer(ip), intent(in) :: reci    ( nwi )  !! Integer data to be written to record.
@@ -13472,7 +13467,6 @@ contains
       use pepper_strings, only: eqstr
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: nwd = 128
       character(*), intent(in) :: action  !! Action to take (read or write).
       integer(ip), intent(in) :: unit  !! Fortran unit connected to DAS file.
       integer(ip), intent(in) :: recno  !! Number of record to read or write.
@@ -13688,7 +13682,6 @@ contains
       use pepper_strings, only: eqstr
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: nwi = 256
       character(*), intent(in) :: action  !! Action to take (read or write).
       integer(ip), intent(in) :: unit  !! Fortran unit connected to DAS file.
       integer(ip), intent(in) :: recno  !! Number of record to read or write.

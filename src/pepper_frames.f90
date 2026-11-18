@@ -2419,7 +2419,6 @@ contains
       use pepper_inc_nninrt
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbpool = -5
       integer(ip), intent(in) :: ncount  !! Input checking variable.
       integer(ip), intent(in) :: maxbfr  !! build-in frame hash size.
       character(*), intent(out) :: name   (          * )  !! array containing the names of all built-in frames

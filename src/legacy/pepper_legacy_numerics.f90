@@ -5,6 +5,7 @@ module pepper_legacy_numerics
 
    use pepper_instance_module, only: pepper_context
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: ubpl, ubel
 
    implicit none
 
@@ -371,8 +372,6 @@ contains
       subroutine inelpl ( ellips, plane, nxpts, xpt1, xpt2 )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubel = 9  !! number of elements of an ellipse
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp) :: ellips ( ubel )  !! A SPICE ellipse.
       real(wp) :: plane  ( ubpl )  !! A SPICE plane.
       integer(ip) :: nxpts  !! Number of intersection points of plane and ellipse.
@@ -390,7 +389,6 @@ contains
       subroutine inrypl ( vertex, dir, plane, nxpts, xpt )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp) :: vertex (    3 )  !! Vertex and direction vector of ray.
       real(wp) :: dir    (    3 )  !! Vertex and direction vector of ray.
       real(wp) :: plane  ( ubpl )  !! A SPICE plane.
@@ -533,7 +531,6 @@ contains
       subroutine nvc2pl ( normal, konst, plane )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp) :: normal (    3 )  !! A normal vector and constant defining a plane.
       real(wp) :: konst  !! A normal vector and constant defining a plane.
       real(wp) :: plane  ( ubpl )  !! An array representing the plane.
@@ -549,7 +546,6 @@ contains
       subroutine nvp2pl ( normal, point, plane )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp) :: normal (    3 )  !! A normal vector and a point defining a plane.
       real(wp) :: point  (    3 )  !! A normal vector and a point defining a plane.
       real(wp) :: plane  ( ubpl )  !! An array representing the plane.
@@ -565,7 +561,6 @@ contains
       subroutine psv2pl ( point, span1, span2, plane )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp) :: point (    3 )  !! A point and two spanning vectors defining a plane.
       real(wp) :: span1 (    3 )  !! A point and two spanning vectors defining a plane.
       real(wp) :: span2 (    3 )  !! A point and two spanning vectors defining a plane.
@@ -715,7 +710,6 @@ contains
       subroutine vprjp ( vin, plane, vout )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp) :: vin   (    3 )  !! Vector to be projected.
       real(wp) :: plane ( ubpl )  !! A SPICE plane onto which VIN is projected.
       real(wp) :: vout  (    3 )  !! Vector resulting from projection.
@@ -732,7 +726,6 @@ contains
       subroutine vprjpi ( vin, projpl, invpl, vout, found )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp) :: vin    (    3 )  !! The projected vector.
       real(wp) :: projpl ( ubpl )  !! Plane containing VIN.
       real(wp) :: invpl  ( ubpl )  !! Plane containing inverse image of VIN.

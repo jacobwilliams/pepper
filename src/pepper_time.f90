@@ -5043,7 +5043,6 @@ contains
       use pepper_containers, only: grow
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: mxcomp = 10
       character(*), intent(in) :: from  !! description of a time vector.
       character(*), intent(in) :: to  !! description of a time vector.
       real(wp), intent(inout) :: tvec ( mxcomp )  !! time vector representing an epoch.
@@ -6781,7 +6780,6 @@ contains
       real(wp) :: eb_1(1)  !! one-element copy of eb (array argument)
       real(wp) :: k_1(1)  !! one-element copy of k (array argument)
       real(wp) :: dta_1(1)  !! one-element copy of dta (array argument)
-      integer(ip), parameter :: lbcell = -5
       integer(ip), parameter :: needed = 4
       integer(ip), parameter :: typlen = 8
       integer(ip), parameter :: ntdt = 5

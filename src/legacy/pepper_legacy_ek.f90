@@ -32,6 +32,7 @@ module pepper_legacy_ek
       pepper_zzekpcol => zzekpcol, pepper_zzeksemc => zzeksemc, pepper_zzektres => zzektres, &
       pepper_zzekue03 => zzekue03, pepper_zzeknres => zzeknres, pepper_zzekencd => zzekencd
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbcell, lbpool
 
    implicit none
 
@@ -1532,7 +1533,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_eksegdsc
       use pepper_inc_ektype
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: op  !! Code for relational operator.
       integer(ip) :: ncols  !! Number of columns used to define order relation.
       integer(ip) :: tabs   ( * )  !! Indices of tables containing order-by columns.
@@ -1654,7 +1654,6 @@ contains
       use pepper_inc_eksegdsc
       use pepper_inc_ektype
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: njrs  !! Number of join row sets in union.
       integer(ip) :: ubases ( * )  !! Base addresses of join row sets of union.
       integer(ip) :: norder  !! Number of order-by columns.
@@ -1860,7 +1859,6 @@ contains
       use pepper_inc_ekqlimit
       use pepper_inc_ekquery
       use pepper_inc_eksegdsc
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: segvec ( * )  !! Composite segment vector for joined table.
       integer(ip) :: jbase1  !! Scratch area base address of first join row set.
       integer(ip) :: nt1  !! Width of first table.
@@ -2055,7 +2053,6 @@ contains
       use pepper_inc_ekjrs
       use pepper_inc_ekqlimit
       use pepper_inc_eksegdsc
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: jbase1  !! Scratch area base address of first join row set.
       integer(ip) :: jbase2  !! Scratch area base address of second join row set.
       integer(ip) :: njcnst  !! Number of join constraints.
@@ -2311,7 +2308,6 @@ contains
       use pepper_inc_ektnamsz
       use pepper_inc_ektype
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: eqryc  !! Character component of encoded query.
       real(wp) :: eqryd  ( * )  !! D.p. component of encoded query.
       integer(ip) :: eqryi  ( lbcell : * )  !! Integer component of encoded query.
@@ -2663,7 +2659,6 @@ contains
       use pepper_inc_ekcnamsz
       use pepper_inc_ekqlimit
       use pepper_inc_ekquery
-      integer(ip), parameter :: lbcell = -5
       character(*) :: query  !! Original query string.
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*) :: eqryc  !! Character component of query.
@@ -2696,7 +2691,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ektnamsz
       use pepper_inc_ektokn
-      integer(ip), parameter :: lbcell = -5
       character(*) :: qcol  !! Column name, possibly qualified.
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*) :: eqryc  !! Character component of query.
@@ -2728,7 +2722,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ektnamsz
       use pepper_inc_ektype
-      integer(ip), parameter :: lbcell = -5
       character(*) :: query  !! Original query.
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*) :: eqryc  !! Character component of query.
@@ -2757,7 +2750,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ektnamsz
       use pepper_inc_ektype
-      integer(ip), parameter :: lbcell = -5
       character(*) :: query  !! Original query string.
       integer(ip) :: eqryi  ( lbcell : * )  !! Integer component of query.
       character(*) :: eqryc  !! Character component of query.
@@ -2828,7 +2820,6 @@ contains
       use pepper_inc_ekqlimit
       use pepper_inc_ekquery
       use pepper_inc_ektnamsz
-      integer(ip), parameter :: lbcell = -5
       character(*) :: query  !! Original query string.
       integer(ip) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*) :: eqryc  !! Character component of query.
@@ -2873,7 +2864,6 @@ contains
       use pepper_inc_ekqlimit
       use pepper_inc_ekquery
       use pepper_inc_ektype
-      integer(ip), parameter :: lbcell = -5
       character(*) :: query  !! Query specifying events to be found.
       integer(ip) :: eqryi  ( lbcell : * )  !! Integer component of encoded query.
       character(*) :: eqryc  !! Character component of encoded query.

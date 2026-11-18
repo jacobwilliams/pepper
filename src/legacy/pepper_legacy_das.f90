@@ -6,6 +6,8 @@ module pepper_legacy_das
    use pepper_instance_module, only: pepper_context, pepper_zzdasgrd => zzdasgrd, &
       pepper_zzdasgri => zzdasgri, pepper_zzdasnfr => zzdasnfr, pepper_zzdasrfr => zzdasrfr
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbcell
+   use pepper_inc_das, only: nwd, nwi
 
    implicit none
 
@@ -387,7 +389,6 @@ contains
       use pepper_inc_das
       use pepper_inc_errhnd
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: fhset  ( lbcell : * )  !! A set containing handles of currently open DAS files.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()
@@ -479,7 +480,6 @@ contains
       subroutine daswrd ( handle, recno, recd )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: nwd = 128
       integer(ip) :: handle  !! Handle of DAS file.
       integer(ip) :: recno  !! Record number.
       real(wp) :: recd    ( nwd )  !! Double precision data to be written to record.
@@ -494,7 +494,6 @@ contains
       subroutine daswri ( handle, recno, reci )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: nwi = 256
       integer(ip) :: handle  !! Handle of DAS file.
       integer(ip) :: recno  !! Record number.
       integer(ip) :: reci    ( nwi )  !! Integer data to be written to record.
@@ -601,7 +600,6 @@ contains
       subroutine dasiod ( action, unit, recno, record )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: nwd = 128
       character(*) :: action  !! Action to take (read or write).
       integer(ip) :: unit  !! Fortran unit connected to DAS file.
       integer(ip) :: recno  !! Number of record to read or write.
@@ -619,7 +617,6 @@ contains
       subroutine dasioi ( action, unit, recno, record )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: nwi = 256
       character(*) :: action  !! Action to take (read or write).
       integer(ip) :: unit  !! Fortran unit connected to DAS file.
       integer(ip) :: recno  !! Number of record to read or write.

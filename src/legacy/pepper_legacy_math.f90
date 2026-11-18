@@ -3,6 +3,8 @@
 !> them through [[pepper_legacy]].
 module pepper_legacy_math
 
+   use pepper_bounds, only: ubpl, ubel
+
    implicit none
 
    private
@@ -349,7 +351,6 @@ contains
       use pepper_math, only: pepper_el2cgv => el2cgv
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubel = 9
       real(wp) :: ellips ( ubel )  !! A SPICE ellipse.
       real(wp) :: center (    3 )  !! Center and semi-axes of ELLIPS.
       real(wp) :: smajor (    3 )  !! Center and semi-axes of ELLIPS.
@@ -742,7 +743,6 @@ contains
       use pepper_math, only: pepper_pl2nvc => pl2nvc
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp) :: plane  ( ubpl )  !! A SPICE plane.
       real(wp) :: normal (    3 )  !! A normal vector and constant defining the geometric
                                              !! plane represented by PLANE.
@@ -762,7 +762,6 @@ contains
       use pepper_math, only: pepper_pl2nvp => pl2nvp
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp) :: plane  ( ubpl )  !! A SPICE plane.
       real(wp) :: normal (    3 )  !! A unit normal vector and point that define PLANE.
       real(wp) :: point  (    3 )  !! A unit normal vector and point that define PLANE.
@@ -778,7 +777,6 @@ contains
       use pepper_math, only: pepper_pl2psv => pl2psv
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: ubpl = 4  !! number of elements of a plane
       real(wp) :: plane ( ubpl )  !! A SPICE plane.
       real(wp) :: point (    3 )  !! A point in the input plane and two vectors spanning
                                             !! the input plane.

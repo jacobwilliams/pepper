@@ -11,7 +11,6 @@ submodule (pepper_instance_module) pepper_cells
 
    ! Parameters shared by this file's procedures (PEPPER: SPICELIB
    ! declared them in each routine that used them).
-   integer(ip), parameter :: lbcell = -5  !! lower bound of a SPICE cell (its control area: elements -5 to 0)
    integer(ip), parameter :: minlen = 5  !! minimum length of the strings of a character cell
 
 contains
@@ -969,7 +968,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: cell  ( lbcell:* )  !! Input cell.
 
 
@@ -1140,7 +1138,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: cell  ( lbcell:* )  !! Input cell.
 
 
@@ -1305,7 +1302,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: cell  ( lbcell:* )  !! Input cell.
 
 
@@ -1456,7 +1452,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: cell   ( lbcell:* )  !! Input cell.
 
 
@@ -1613,7 +1608,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: cell   ( lbcell:* )  !! Input cell.
 
 
@@ -1764,7 +1758,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: cell  ( lbcell: * )  !! Input cell.
 
 
@@ -1936,7 +1929,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: card  !! Cardinality of (number of elements in) the cell.
       character(*), intent(inout) :: cell   ( lbcell:* )  !! The cell.
 
@@ -2092,7 +2084,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: card  !! Cardinality of (number of elements in) the cell.
       real(wp), intent(inout) :: cell   ( lbcell:* )  !! The cell.
 
@@ -2243,7 +2234,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: card  !! Cardinality of (number of elements in) the cell.
       integer(ip), intent(inout) :: cell   ( lbcell:* )  !! The cell.
 
@@ -2394,7 +2384,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the cell.
       character(*), intent(inout) :: cell   ( lbcell:* )  !! The cell.
 
@@ -2551,7 +2540,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the cell.
       real(wp), intent(inout) :: cell   ( lbcell:* )  !! The cell.
 
@@ -2708,7 +2696,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the cell.
       integer(ip), intent(inout) :: cell   ( lbcell:* )  !! The cell.
 
@@ -2869,7 +2856,6 @@ contains
       use pepper_arrays, only: rmdupc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the set.
       integer(ip), intent(in) :: n  !! Initial no. of (possibly non-distinct) elements.
       character(*), intent(inout) :: a      ( lbcell:* )  !! Set to be validated.
@@ -3036,7 +3022,6 @@ contains
       use pepper_arrays, only: rmdupd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the set.
       integer(ip), intent(in) :: n  !! Initial no. of (possibly non-distinct) elements.
       real(wp), intent(inout) :: a       ( lbcell:* )  !! Set to be validated.
@@ -3206,7 +3191,6 @@ contains
       use pepper_arrays, only: rmdupi
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: size  !! Size (maximum cardinality) of the set.
       integer(ip), intent(in) :: n  !! Initial no. of (possibly non-distinct) elements.
       integer(ip), intent(inout) :: a       ( lbcell:* )  !! Set to be validated.
@@ -3347,7 +3331,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: item  !! The item to append.
       character(*), intent(inout) :: cell ( lbcell:* )  !! The cell to which ITEM will be
                                                         !! appended.
@@ -3568,7 +3551,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: item  !! The item to append.
       real(wp), intent(inout) :: cell ( lbcell:* )  !! The cell to which ITEM will be appended.
 
@@ -3786,7 +3768,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: item  !! The item to append.
       integer(ip), intent(inout) :: cell ( lbcell:* )  !! The cell to which ITEM will be
                                                        !! appended.
@@ -3923,7 +3904,6 @@ contains
       use pepper_strings, only: lastpc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: cell     ( lbcell:* )  !! Cell to be copied.
       character(*), intent(inout) :: copy     ( lbcell:* )  !! New cell.
 
@@ -4106,7 +4086,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: cell     ( lbcell:* )  !! Cell to be copied.
       real(wp), intent(inout) :: copy     ( lbcell:* )  !! New cell.
 
@@ -4243,7 +4222,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: cell     ( lbcell:* )  !! Cell to be copied.
       integer(ip), intent(inout) :: copy     ( lbcell:* )  !! New cell.
 
@@ -4493,7 +4471,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: item  !! Item to be inserted.
       character(*), intent(inout) :: a        ( lbcell:* )  !! Insertion set.
 
@@ -4762,7 +4739,6 @@ contains
       use pepper_arrays, only: lstled
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: item  !! Item to be inserted.
       real(wp), intent(inout) :: a     ( lbcell:* )  !! Insertion set.
 
@@ -5018,7 +4994,6 @@ contains
       use pepper_arrays, only: lstlei
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: item  !! Item to be inserted.
       integer(ip), intent(inout) :: a        ( lbcell:* )  !! Insertion set.
 
@@ -5267,7 +5242,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: item  !! Item to be removed.
       character(*), intent(inout) :: a       ( lbcell:* )  !! Removal set.
 
@@ -5498,7 +5472,6 @@ contains
       use pepper_arrays, only: bsrchd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: item  !! Item to be removed.
       real(wp), intent(inout) :: a        ( lbcell:* )  !! Removal set.
 
@@ -5725,7 +5698,6 @@ contains
       use pepper_arrays, only: bsrchi
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: item  !! Item to be removed.
       integer(ip), intent(inout) :: a        ( lbcell:* )  !! Removal set.
 
@@ -5953,7 +5925,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: item  !! Item to be tested.
       character(*), intent(in) :: a      ( lbcell:* )  !! Set to be tested.
 
@@ -6146,7 +6117,6 @@ contains
       use pepper_arrays, only: bsrchd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: item  !! Item to be tested.
       real(wp), intent(in) :: a      ( lbcell:* )  !! Set to be tested.
 
@@ -6336,7 +6306,6 @@ contains
       use pepper_arrays, only: bsrchi
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: item  !! Item to be tested.
       integer(ip), intent(in) :: a      ( lbcell:* )  !! Set to be tested.
 
@@ -6501,7 +6470,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: item  !! An item to locate within a set.
       character(*), intent(in) :: set ( lbcell:* )  !! A set to search for a given item.
 
@@ -6665,7 +6633,6 @@ contains
       use pepper_arrays, only: bsrchd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: item  !! An item to locate within a set.
       real(wp), intent(in) :: set ( lbcell:* )  !! A set to search for a given item.
 
@@ -6829,7 +6796,6 @@ contains
       use pepper_arrays, only: bsrchi
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: item  !! An item to locate within a set.
       integer(ip), intent(in) :: set ( lbcell:* )  !! A set to search for a given item.
 
@@ -7008,7 +6974,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: a      ( lbcell:* )  !! First set.
       character(*), intent(in) :: op  !! Comparison operator.
       character(*), intent(in) :: b      ( lbcell:* )  !! Second set.
@@ -7573,7 +7538,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: a      ( lbcell:* )  !! First set.
       character(*), intent(in) :: op  !! Comparison operator.
       real(wp), intent(in) :: b      ( lbcell:* )  !! Second set.
@@ -8137,7 +8101,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: a      ( lbcell:* )  !! First set.
       character(*), intent(in) :: op  !! Comparison operator.
       integer(ip), intent(in) :: b      ( lbcell:* )  !! Second set.
@@ -8660,7 +8623,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: a      ( lbcell:* )  !! First input set.
       character(*), intent(in) :: b      ( lbcell:* )  !! Second input set.
       character(*), intent(inout) :: c      ( lbcell:* )  !! Union of A and B.
@@ -8927,7 +8889,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: a      ( lbcell:* )  !! First input set.
       real(wp), intent(in) :: b      ( lbcell:* )  !! Second input set.
       real(wp), intent(inout) :: c      ( lbcell:* )  !! Union of A and B.
@@ -9176,7 +9137,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: a      ( lbcell:* )  !! First input set.
       integer(ip), intent(in) :: b      ( lbcell:* )  !! Second input set.
       integer(ip), intent(inout) :: c      ( lbcell:* )  !! Union of A and B.
@@ -9433,7 +9393,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: a      ( lbcell:* )  !! First input set.
       character(*), intent(in) :: b      ( lbcell:* )  !! Second input set.
       character(*), intent(inout) :: c      ( lbcell:* )  !! Intersection of A and B.
@@ -9670,7 +9629,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: a      ( lbcell:* )  !! First input set.
       real(wp), intent(in) :: b      ( lbcell:* )  !! Second input set.
       real(wp), intent(inout) :: c      ( lbcell:* )  !! Intersection of A and B.
@@ -9890,7 +9848,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: a      ( lbcell:* )  !! First input set.
       integer(ip), intent(in) :: b      ( lbcell:* )  !! Second input set.
       integer(ip), intent(inout) :: c      ( lbcell:* )  !! Intersection of A and B.
@@ -10125,7 +10082,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: a      ( lbcell:* )  !! First input set.
       character(*), intent(in) :: b      ( lbcell:* )  !! Second input set.
       character(*), intent(inout) :: c      ( lbcell:* )  !! Difference of A and B.
@@ -10383,7 +10339,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: a      ( lbcell:* )  !! First input set.
       real(wp), intent(in) :: b      ( lbcell:* )  !! Second input set.
       real(wp), intent(inout) :: c      ( lbcell:* )  !! Difference of A and B.
@@ -10621,7 +10576,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: a      ( lbcell:* )  !! First input set.
       integer(ip), intent(in) :: b      ( lbcell:* )  !! Second input set.
       integer(ip), intent(inout) :: c      ( lbcell:* )  !! Difference of A and B.
@@ -10865,7 +10819,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*), intent(in) :: a      ( lbcell:* )  !! First input set.
       character(*), intent(in) :: b      ( lbcell:* )  !! Second input set.
       character(*), intent(inout) :: c      ( lbcell:* )  !! Symmetric difference of A and B.
@@ -11132,7 +11085,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: a      ( lbcell:* )  !! First input set.
       real(wp), intent(in) :: b      ( lbcell:* )  !! Second input set.
       real(wp), intent(inout) :: c      ( lbcell:* )  !! Symmetric difference of A and B.
@@ -11380,7 +11332,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: a      ( lbcell:* )  !! First input set.
       integer(ip), intent(in) :: b      ( lbcell:* )  !! Second input set.
       integer(ip), intent(inout) :: c      ( lbcell:* )  !! Symmetric difference of A and B.
@@ -11620,7 +11571,6 @@ contains
       use pepper_inc_errhnd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: left  !! Left, right endpoints of new interval.
       real(wp), intent(in) :: right  !! Left, right endpoints of new interval.
       character(*), intent(in) :: context  !! A call explanation string.
@@ -11960,7 +11910,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: window  ( lbcell:* )  !! Input window.
 
 
@@ -12130,7 +12079,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: left  !! Left, right endpoints of complement interval.
       real(wp), intent(in) :: right  !! Left, right endpoints of complement interval.
       real(wp), intent(in) :: window   ( lbcell:* )  !! Input window.
@@ -12356,7 +12304,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: left  !! Amount added to each left endpoint.
       real(wp), intent(in) :: right  !! Amount subtracted from each right endpoint.
       real(wp), intent(inout) :: window  ( lbcell:* )  !! Window to be contracted.
@@ -12488,7 +12435,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: a        ( lbcell:* )  !! Input windows.
       real(wp), intent(in) :: b        ( lbcell:* )  !! Input windows.
       real(wp), intent(inout) :: c        ( lbcell:* )  !! Difference of A and B.
@@ -12863,7 +12809,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: point  !! Input point.
       real(wp), intent(in) :: window      ( lbcell:* )  !! Input window.
 
@@ -13015,7 +12960,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: left  !! Amount subtracted from each left endpoint.
       real(wp), intent(in) :: right  !! Amount added to each right endpoint.
       real(wp), intent(inout) :: window  ( lbcell:* )  !! Window to be expanded.
@@ -13211,7 +13155,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(1), intent(in) :: side  !! Extract left ('L') or right ('R') endpoints.
       real(wp), intent(inout) :: window  ( lbcell:* )  !! Window to be extracted.
 
@@ -13426,7 +13369,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: window      ( lbcell:* )  !! Input window.
       integer(ip), intent(in) :: n  !! Index of interval to be fetched.
       real(wp), intent(out) :: left  !! Left, right endpoints of the Nth interval.
@@ -13692,7 +13634,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: smlgap  !! Limiting measure of small gaps.
       real(wp), intent(inout) :: window  ( lbcell:* )  !! Window to be filled.
 
@@ -13962,7 +13903,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: smlint  !! Limiting measure of small intervals.
       real(wp), intent(inout) :: window  ( lbcell:* )  !! Window to be filtered.
 
@@ -14118,7 +14058,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: left  !! Input interval.
       real(wp), intent(in) :: right  !! Input interval.
       real(wp), intent(in) :: window      ( lbcell:* )  !! Input window.
@@ -14393,7 +14332,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: left  !! Left, right endpoints of new interval.
       real(wp), intent(in) :: right  !! Left, right endpoints of new interval.
       real(wp), intent(inout) :: window    ( lbcell:* )  !! Input, output window.
@@ -14677,7 +14615,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: a        ( lbcell:* )  !! Input windows.
       real(wp), intent(in) :: b        ( lbcell:* )  !! Input windows.
       real(wp), intent(inout) :: c        ( lbcell:* )  !! Intersection of A and B.
@@ -15016,7 +14953,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: a        ( lbcell:* )  !! First window.
       character(*), intent(in) :: op  !! Comparison operator.
       real(wp), intent(in) :: b        ( lbcell:* )  !! Second window.
@@ -15404,7 +15340,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: window    ( lbcell:* )  !! Window to be summarized.
       real(wp), intent(out) :: meas  !! Total measure of intervals in WINDOW.
       real(wp), intent(out) :: avg  !! Average measure.
@@ -15610,7 +15545,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp), intent(in) :: a        ( lbcell:* )  !! Input windows.
       real(wp), intent(in) :: b        ( lbcell:* )  !! Input windows.
       real(wp), intent(inout) :: c        ( lbcell:* )  !! Union of A and B.
@@ -15971,7 +15905,6 @@ contains
       use pepper_math, only: odd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip), intent(in) :: size  !! Size of window.
       integer(ip), intent(in) :: n  !! Original number of endpoints.
       real(wp), intent(inout) :: window ( lbcell:* )  !! Input, output window.

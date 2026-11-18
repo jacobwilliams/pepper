@@ -51,6 +51,7 @@ module pepper_states
    use pepper_inc_zzholdd, only: nid
    use pepper_inc_zzsc01, only: dplen, lbsngl, nivals
    use pepper_inc_zzswtchf, only: maxbas, maxfrm
+   use pepper_bounds, only: lbcell, lbpool, ubpl
 
    implicit none
 
@@ -73,8 +74,6 @@ module pepper_states
    integer(ip), parameter :: errlen = 240
    integer(ip), parameter :: evlfln = 25
    integer(ip), parameter :: filsiz = 255
-   integer(ip), parameter :: lbcell = -5
-   integer(ip), parameter :: lbpool = -5
    integer(ip), parameter :: maxivl = 1000
    integer(ip), parameter :: mrklen = 10
    integer(ip), parameter :: mxphas = 4
@@ -4119,7 +4118,6 @@ module pepper_states
 
    ! ------------------------------------------------------------------ ZZGFFVU
 
-   integer(ip), parameter :: ubpl = 4
    integer(ip), parameter :: zzgffvu_bdnmln = 36
    integer(ip), parameter :: zzgffvu_frnmln = 32
 

@@ -113,7 +113,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol to be deleted.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -271,7 +270,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol to be deleted.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -430,7 +428,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol to be deleted.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -596,7 +593,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose dimension is desired.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -751,7 +747,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose dimension is desired.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -911,7 +906,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose dimension is desired.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -1076,7 +1070,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol to be duplicated.
       character(*), intent(in) :: copy  !! Name of the new symbol.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -1356,7 +1349,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol to be duplicated.
       character(*), intent(in) :: copy  !! Name of the new symbol.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -1637,7 +1629,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol to be duplicated.
       character(*), intent(in) :: copy  !! Name of the new symbol.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -1900,7 +1891,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: nth  !! Index of symbol to be fetched.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -2048,7 +2038,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: nth  !! Index of symbol to be fetched.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -2198,7 +2187,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: nth  !! Index of symbol to be fetched.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -2371,7 +2359,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose components are to be returned.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -2561,7 +2548,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose components are to be returned.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -2751,7 +2737,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose components are to be returned.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(in) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -2923,7 +2908,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose Nth associated value is to be returned.
       integer(ip), intent(in) :: nth  !! Index of the value to be returned.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -3101,7 +3085,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose Nth component is to be returned.
       integer(ip), intent(in) :: nth  !! Index of the value to be returned.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -3278,7 +3261,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose Nth component is to be returned.
       integer(ip), intent(in) :: nth  !! Index of the value to be returned.
       character(*), intent(in) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -3441,7 +3423,6 @@ contains
       use pepper_arrays, only: bsrchc, shellc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose components are to be ordered.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -3592,7 +3573,6 @@ contains
       use pepper_arrays, only: bsrchc, shelld
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose components are to be ordered.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -3745,7 +3725,6 @@ contains
       use pepper_arrays, only: bsrchc, shelli
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose components are to be ordered.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -3911,7 +3890,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be popped.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -4121,7 +4099,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be popped.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -4330,7 +4307,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be popped.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -4555,7 +4531,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be put into the symbol table.
       character(*), intent(in) :: values     (        * )  !! Values to be associated with the symbol NAME.
       integer(ip), intent(in) :: n  !! Number of values in VALUES.
@@ -4842,7 +4817,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be put into the symbol table.
       real(wp), intent(in) :: values     (        * )  !! Values to be associated with the symbol NAME.
       integer(ip), intent(in) :: n  !! Number of values in VALUES.
@@ -5123,7 +5097,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be put into the symbol table.
       integer(ip), intent(in) :: values     (        * )  !! Values to be associated with the symbol NAME.
       integer(ip), intent(in) :: n  !! Number of values in VALUES.
@@ -5401,7 +5374,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be returned.
       integer(ip), intent(in) :: begin  !! Index of the first associated value to be returned.
       integer(ip), intent(in) :: end  !! Index of the last associated value to be returned.
@@ -5620,7 +5592,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be returned.
       integer(ip), intent(in) :: begin  !! Index of the first associated value to be returned.
       integer(ip), intent(in) :: end  !! Index of the last associated value to be returned.
@@ -5842,7 +5813,6 @@ contains
       use pepper_arrays, only: bsrchc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be returned.
       integer(ip), intent(in) :: begin  !! Index of the first associated value to be returned.
       integer(ip), intent(in) :: end  !! Index of the last associated value to be returned.
@@ -6047,7 +6017,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be set.
       character(*), intent(in) :: value  !! Associated value of the symbol NAME.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -6282,7 +6251,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be set.
       real(wp), intent(in) :: value  !! Associated value of the symbol NAME.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -6519,7 +6487,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated value is to be set.
       integer(ip), intent(in) :: value  !! Associated value of the symbol NAME.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -6755,7 +6722,6 @@ contains
       use pepper_arrays, only: bsrchc, swapc
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be transposed.
       integer(ip), intent(in) :: idx1  !! Index of first associated value to be transposed.
       integer(ip), intent(in) :: idx2  !! Index of second associated value to be transposed.
@@ -6968,7 +6934,6 @@ contains
       use pepper_arrays, only: bsrchc, swapd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be transposed.
       integer(ip), intent(in) :: idx1  !! Index of first associated value to be transposed.
       integer(ip), intent(in) :: idx2  !! Index of second associated value to be transposed.
@@ -7180,7 +7145,6 @@ contains
       use pepper_arrays, only: bsrchc, swapi
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol whose associated values are to be transposed.
       integer(ip), intent(in) :: idx1  !! Index of first associated value to be transposed.
       integer(ip), intent(in) :: idx2  !! Index of second associated value to be transposed.
@@ -7377,7 +7341,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol onto which the value is enqueued.
       character(*), intent(in) :: value  !! Value to be enqueued.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -7578,7 +7541,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol onto which the value is enqueued.
       real(wp), intent(in) :: value  !! Value to be enqueued.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -7775,7 +7737,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol onto which the value is enqueued.
       integer(ip), intent(in) :: value  !! Value to be enqueued.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -7969,7 +7930,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol onto which the value is to be pushed.
       character(*), intent(in) :: value  !! Value that is to be pushed onto the symbol NAME.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -8167,7 +8127,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol onto which the value is to be pushed.
       real(wp), intent(in) :: value  !! Value that is to be pushed onto the symbol NAME.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -8362,7 +8321,6 @@ contains
       use pepper_arrays, only: lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of the symbol onto which the value is to be pushed.
       integer(ip), intent(in) :: value  !! Value that is to be pushed onto the symbol NAME.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -8576,7 +8534,6 @@ contains
       use pepper_arrays, only: bsrchc, lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: old  !! Name of the symbol to be renamed.
       character(*), intent(in) :: new  !! New name of the symbol.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -8798,7 +8755,6 @@ contains
       use pepper_arrays, only: bsrchc, lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: old  !! Name of the symbol to be renamed.
       character(*), intent(in) :: new  !! New name of the symbol.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -9020,7 +8976,6 @@ contains
       use pepper_arrays, only: bsrchc, lstlec
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: old  !! Name of the symbol to be renamed.
       character(*), intent(in) :: new  !! New name of the symbol.
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Components of the symbol table.

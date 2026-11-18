@@ -1379,7 +1379,6 @@ submodule (pepper_instance_module) pepper_geometry
    integer(ip), parameter :: kvnmln = 32  !! length of a kernel variable name
    integer(ip), parameter :: latidx = 2  !! index of latitude in a coordinate bounds array
    real(wp), parameter :: latmrg = 1.0e-8_wp  !! margin of latitude near the poles (radians)
-   integer(ip), parameter :: lbcell = -5  !! lower bound of a SPICE cell (its control area: elements -5 to 0)
    integer(ip), parameter :: lnsize = 80  !! length of a line of text (messages, kernel lines)
    integer(ip), parameter :: lonidx = 1  !! index of longitude in a coordinate bounds array
    character(1), parameter :: lparen = '('  !! left parenthesis
@@ -1407,8 +1406,6 @@ submodule (pepper_instance_module) pepper_geometry
    integer(ip), parameter :: sun = 10  !! NAIF ID code of the Sun
    real(wp), parameter :: thdt = 4.3752691e-3_wp  !! SGP4 deep space: Earth rotation rate (radians/minute)
    real(wp), parameter :: tothrd = 2.0_wp/3.0_wp  !! two thirds
-   integer(ip), parameter :: ubel = 9  !! upper bound of an ellipse array (center, semi-major and semi-minor axes)
-   integer(ip), parameter :: ubpl = 4  !! upper bound of a plane array (normal vector and constant)
    integer(ip), parameter :: wdsize = 32  !! length of a word of text
    integer(ip), parameter :: west = 1  !! longitude sense: positive west
    real(wp), parameter :: zel = 0.05490_wp  !! SGP4 deep space: lunar orbit eccentricity
@@ -3170,12 +3167,10 @@ contains
       use pepper_inc_nninrt
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: frmcls  !! Frame class.
       integer(ip), intent(inout) :: idset  ( lbcell : * )  !! Set of ID codes of frames of the specified class.
       integer(ip), parameter :: nframe = ninert + nninrt
       integer(ip), parameter :: frnmln = 32
-      integer(ip), parameter :: lbpool = -5
       integer(ip), parameter :: maxbfr = nframe+1
       integer(ip) :: to
       integer(ip) :: j
@@ -8080,7 +8075,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: nth  !! Index of a particular element.
       character(*), intent(in) :: set      ( lbcell:* )  !! Input set.
 
@@ -8249,7 +8243,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: nth  !! Index of a particular element.
       real(wp), intent(in) :: set      ( lbcell:* )  !! Input set.
 
@@ -8417,7 +8410,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: nth  !! Index of a particular element.
       integer(ip), intent(in) :: set      ( lbcell:* )  !! Input set.
 
@@ -12560,7 +12552,6 @@ contains
       use pepper_inc_nninrt
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: frmcls  !! Frame class.
       integer(ip), intent(inout) :: idset  ( lbcell : * )  !! Set of ID codes of frames of the specified class.
       integer(ip) :: fclass_1(1)  !! one-element copy of fclass (array argument)
@@ -13005,7 +12996,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: list  !! List of items delimited by DELIMS on input.
       character(*), intent(in) :: delims  !! Single characters which delimit items.
       character(*), intent(inout) :: set  ( lbcell:* )  !! Items in the list, validated, left justified.
@@ -14374,7 +14364,6 @@ contains
       use pepper_strings, only: rtrim
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: string  !! String to be scanned.
       integer(ip), intent(in) :: first  !! Character position at which to start scanning.
       integer(ip), intent(in) :: idspec ( lbcell : * )  !! Identifier character specification.
@@ -14535,7 +14524,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(inout) :: idspec ( lbcell : * )  !! Identifier character specification.
       integer(ip) :: c
       integer(ip) :: headc  ( lbcell : maxchr )
@@ -14710,7 +14698,6 @@ contains
       use pepper_strings, only: rtrim
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: hdchrs  !! Allowed head characters for identifiers.
       character(*), intent(in) :: tlchrs  !! Allowed tail characters for identifiers.
       integer(ip), intent(inout) :: idspec ( lbcell : * )  !! Identifier character specification.
@@ -14963,7 +14950,6 @@ contains
       use pepper_math, only: el2cgv, mtxv, mxv, vdist, vnorm
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubel = 9
       real(wp), intent(in) :: ellips ( ubel )  !! A SPICE ellipse.
       real(wp), intent(in) :: point  (    3 )  !! Point whose distance to an ellipse is to be found.
       real(wp), intent(out) :: pnear  (    3 )  !! Nearest point on ellipse to input point.
@@ -21793,7 +21779,6 @@ contains
       use pepper_strings, only: cmprss
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubel = 9
       character(*), intent(in) :: extrem  !! Type of extremum to find.
       real(wp), intent(in) :: ellips ( ubel )  !! SPICE ellipse.
       real(wp), intent(in) :: vertex ( 3 )  !! Vertex and direction vector of ray.
@@ -36121,7 +36106,6 @@ contains
       use pepper_math, only: pl2nvc, ucrss, vdot, vperp, vsep
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubpl = 4
       real(wp), intent(in) :: plane  ( ubpl )  !! A SPICELIB plane.
       integer(ip), intent(in) :: n  !! Number of vertices of polygon.
       real(wp), intent(in) :: vertcs ( 3, * )  !! Vertices of polygon.
@@ -46328,7 +46312,6 @@ contains
       use pepper_strings, only: rjust
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: unit  !! Output logical unit.
       character(*), intent(in) :: name  !! Name of the variable.
       character(*), intent(in) :: dirctv  !! Kernel directive: '=' or '+='.
@@ -52081,7 +52064,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubel = 9
       real(wp), intent(in) :: center (    3 )  !! Center and two generating vectors for an ellipse.
       real(wp), intent(in) :: vec1   (    3 )  !! Center and two generating vectors for an ellipse.
       real(wp), intent(in) :: vec2   (    3 )  !! Center and two generating vectors for an ellipse.
@@ -54925,7 +54907,6 @@ contains
       use pepper_strings, only: nparsd, nextwd_inplace, replch_inplace
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(inout) :: tabsym     ( lbcell:* )  !! Symbol table.
       integer(ip), intent(inout) :: tabptr     ( lbcell:* )  !! Symbol table.
       real(wp), intent(inout) :: tabval     ( lbcell:* )  !! Symbol table.
@@ -58682,8 +58663,6 @@ contains
       use pepper_math, only: pl2nvc, pl2psv, vnorm
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubel = 9
-      integer(ip), parameter :: ubpl = 4
       real(wp), intent(in) :: a  !! Length of ellipsoid semi-axis lying on the x-axis.
       real(wp), intent(in) :: b  !! Length of ellipsoid semi-axis lying on the y-axis.
       real(wp), intent(in) :: c  !! Length of ellipsoid semi-axis lying on the z-axis.
@@ -59103,8 +59082,6 @@ contains
       use pepper_math, only: el2cgv, pl2nvc, vperp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubel = 9
-      integer(ip), parameter :: ubpl = 4
       real(wp), intent(in) :: elin  ( ubel )  !! A SPICE ellipse to be projected.
       real(wp), intent(in) :: plane ( ubpl )  !! A plane onto which ELIN is to be projected.
       real(wp), intent(out) :: elout ( ubel )  !! A SPICE ellipse resulting from the projection.
@@ -61236,7 +61213,6 @@ contains
       use pepper_inc_errhnd
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubel = 9
       real(wp), intent(in) :: ellips ( ubel )  !! A SPICELIB ellipse.
       real(wp), intent(in) :: vertex ( 3 )  !! Vertex of a pyramid.
       real(wp), intent(in) :: axis   ( 3 )  !! Axis of a pyramid.
@@ -63393,7 +63369,6 @@ contains
       use pepper_kinds, only: ip, wp
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: ubel = 9
       real(wp), intent(in) :: a  !! Length of ellipsoid semi-axis lying on the x-axis.
       real(wp), intent(in) :: b  !! Length of ellipsoid semi-axis lying on the y-axis.
       real(wp), intent(in) :: c  !! Length of ellipsoid semi-axis lying on the z-axis.

@@ -10976,7 +10976,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_zzddhman
       implicit none
-      integer(ip), parameter :: lbcell = -5
       class(pepper_context), intent(inout) :: ctx  !! the context
       integer(ip), intent(inout) :: fhset ( lbcell : * )  !! A set containing handles of
                                                           !! currently

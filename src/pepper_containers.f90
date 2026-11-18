@@ -21,6 +21,7 @@ module pepper_containers
 
    use, intrinsic :: iso_fortran_env, only: int64
    use pepper_kinds, only: ip, wp
+   use pepper_bounds, only: lbpool
 
    implicit none
 
@@ -294,7 +295,6 @@ contains
    pure subroutine lnkgrow(pool, size)
       integer(ip), allocatable, intent(inout) :: pool(:, :)  !! the pool, `pool(2, lbpool:n)`
       integer(ip), intent(in) :: size  !! the number of nodes needed
-      integer(ip), parameter :: lbpool = -5  !! lower bound of the second dimension ([[lnkini]])
       integer(ip), parameter :: forwrd = 1, bckwrd = 2  !! rows of the links
       integer(ip), parameter :: free = 0  !! backward link of a free node
       integer(ip), allocatable :: tmp(:, :)

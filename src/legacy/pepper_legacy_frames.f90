@@ -8,6 +8,7 @@ module pepper_legacy_frames
       pepper_zzdynvac => zzdynvac, pepper_zzdynvad => zzdynvad, pepper_zzswfcln => zzswfcln, &
       pepper_zzswfini => zzswfini, pepper_zzgftreb => zzgftreb, pepper_zzfdat => zzfdat
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbpool
 
    implicit none
 
@@ -212,7 +213,6 @@ contains
       use pepper_inc_ninert
       use pepper_inc_nninrt
       implicit none
-      integer(ip), parameter :: lbpool = -5
       integer(ip) :: ncount  !! Input checking variable.
       integer(ip) :: maxbfr  !! build-in frame hash size.
       character(*) :: name   (          * )  !! array containing the names of all built-in frames

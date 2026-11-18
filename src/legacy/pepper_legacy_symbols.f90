@@ -5,6 +5,7 @@ module pepper_legacy_symbols
 
    use pepper_instance_module, only: pepper_context
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbcell
 
    implicit none
 
@@ -24,7 +25,6 @@ contains
       subroutine sydelc ( name, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol to be deleted.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -42,7 +42,6 @@ contains
       subroutine sydeld ( name, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol to be deleted.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -60,7 +59,6 @@ contains
       subroutine sydeli ( name, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol to be deleted.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -79,7 +77,6 @@ contains
       integer(ip) function sydimc ( name, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose dimension is desired.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -97,7 +94,6 @@ contains
       integer(ip) function sydimd ( name, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose dimension is desired.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -115,7 +111,6 @@ contains
       integer(ip) function sydimi ( name, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose dimension is desired.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -133,7 +128,6 @@ contains
       subroutine sydupc ( name, copy, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol to be duplicated.
       character(*) :: copy  !! Name of the new symbol.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -153,7 +147,6 @@ contains
       subroutine sydupd ( name, copy, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol to be duplicated.
       character(*) :: copy  !! Name of the new symbol.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -173,7 +166,6 @@ contains
       subroutine sydupi ( name, copy, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol to be duplicated.
       character(*) :: copy  !! Name of the new symbol.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -191,7 +183,6 @@ contains
       subroutine syfetc ( nth, tabsym, tabptr, tabval, name, found )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: nth  !! Index of symbol to be fetched.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -209,7 +200,6 @@ contains
       subroutine syfetd ( nth, tabsym, tabptr, tabval, name, found )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: nth  !! Index of symbol to be fetched.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -227,7 +217,6 @@ contains
       subroutine syfeti ( nth, tabsym, tabptr, tabval, name, found )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       integer(ip) :: nth  !! Index of symbol to be fetched.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -249,7 +238,6 @@ contains
                           found                     )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose components are to be returned.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -273,7 +261,6 @@ contains
                           found                     )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose components are to be returned.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -296,7 +283,6 @@ contains
                           found                     )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose components are to be returned.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -320,7 +306,6 @@ contains
                           found                               )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose Nth associated value is to be returned.
       integer(ip) :: nth  !! Index of the value to be returned.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -345,7 +330,6 @@ contains
                           found                               )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose Nth component is to be returned.
       integer(ip) :: nth  !! Index of the value to be returned.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -369,7 +353,6 @@ contains
                           found                               )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose Nth component is to be returned.
       integer(ip) :: nth  !! Index of the value to be returned.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -390,7 +373,6 @@ contains
       subroutine syordc ( name, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose components are to be ordered.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -408,7 +390,6 @@ contains
       subroutine syordd ( name, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose components are to be ordered.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -426,7 +407,6 @@ contains
       subroutine syordi ( name, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose components are to be ordered.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -445,7 +425,6 @@ contains
       subroutine sypopc ( name, tabsym, tabptr, tabval, value, found )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated value is to be popped.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -466,7 +445,6 @@ contains
       subroutine sypopd ( name, tabsym, tabptr, tabval, value, found )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated value is to be popped.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -487,7 +465,6 @@ contains
       subroutine sypopi ( name, tabsym, tabptr, tabval, value, found )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated value is to be popped.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
       integer(ip) :: tabptr     ( lbcell:* )  !! Components of the symbol table.
@@ -508,7 +485,6 @@ contains
       subroutine syputc ( name, values, n, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated values are to be put into the symbol table.
       character(*) :: values     (        * )  !! Values to be associated with the symbol NAME.
       integer(ip) :: n  !! Number of values in VALUES.
@@ -529,7 +505,6 @@ contains
       subroutine syputd ( name, values, n, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated values are to be put into the symbol table.
       real(wp) :: values     (        * )  !! Values to be associated with the symbol NAME.
       integer(ip) :: n  !! Number of values in VALUES.
@@ -550,7 +525,6 @@ contains
       subroutine syputi ( name, values, n, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated values are to be put into the symbol table.
       integer(ip) :: values     (        * )  !! Values to be associated with the symbol NAME.
       integer(ip) :: n  !! Number of values in VALUES.
@@ -575,7 +549,6 @@ contains
                           found                     )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated values are to be returned.
       integer(ip) :: begin  !! Index of the first associated value to be returned.
       integer(ip) :: end  !! Index of the last associated value to be returned.
@@ -602,7 +575,6 @@ contains
                           found                     )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated values are to be returned.
       integer(ip) :: begin  !! Index of the first associated value to be returned.
       integer(ip) :: end  !! Index of the last associated value to be returned.
@@ -628,7 +600,6 @@ contains
                           found                     )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated values are to be returned.
       integer(ip) :: begin  !! Index of the first associated value to be returned.
       integer(ip) :: end  !! Index of the last associated value to be returned.
@@ -650,7 +621,6 @@ contains
       subroutine sysetc ( name, value, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated value is to be set.
       character(*) :: value  !! Associated value of the symbol NAME.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -670,7 +640,6 @@ contains
       subroutine sysetd ( name, value, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated value is to be set.
       real(wp) :: value  !! Associated value of the symbol NAME.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -690,7 +659,6 @@ contains
       subroutine syseti ( name, value, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated value is to be set.
       integer(ip) :: value  !! Associated value of the symbol NAME.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -709,7 +677,6 @@ contains
       subroutine sytrnc ( name, idx1, idx2, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated values are to be transposed.
       integer(ip) :: idx1  !! Index of first associated value to be transposed.
       integer(ip) :: idx2  !! Index of second associated value to be transposed.
@@ -729,7 +696,6 @@ contains
       subroutine sytrnd ( name, idx1, idx2, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated values are to be transposed.
       integer(ip) :: idx1  !! Index of first associated value to be transposed.
       integer(ip) :: idx2  !! Index of second associated value to be transposed.
@@ -749,7 +715,6 @@ contains
       subroutine sytrni ( name, idx1, idx2, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol whose associated values are to be transposed.
       integer(ip) :: idx1  !! Index of first associated value to be transposed.
       integer(ip) :: idx2  !! Index of second associated value to be transposed.
@@ -770,7 +735,6 @@ contains
       subroutine syenqc ( name, value, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol onto which the value is enqueued.
       character(*) :: value  !! Value to be enqueued.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -790,7 +754,6 @@ contains
       subroutine syenqd ( name, value, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol onto which the value is enqueued.
       real(wp) :: value  !! Value to be enqueued.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -810,7 +773,6 @@ contains
       subroutine syenqi ( name, value, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol onto which the value is enqueued.
       integer(ip) :: value  !! Value to be enqueued.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -830,7 +792,6 @@ contains
       subroutine sypshc ( name, value, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol onto which the value is to be pushed.
       character(*) :: value  !! Value that is to be pushed onto the symbol NAME.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -850,7 +811,6 @@ contains
       subroutine sypshd ( name, value, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol onto which the value is to be pushed.
       real(wp) :: value  !! Value that is to be pushed onto the symbol NAME.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -870,7 +830,6 @@ contains
       subroutine sypshi ( name, value, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: name  !! Name of the symbol onto which the value is to be pushed.
       integer(ip) :: value  !! Value that is to be pushed onto the symbol NAME.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -888,7 +847,6 @@ contains
       subroutine syrenc ( old, new, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: old  !! Name of the symbol to be renamed.
       character(*) :: new  !! New name of the symbol.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -906,7 +864,6 @@ contains
       subroutine syrend ( old, new, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: old  !! Name of the symbol to be renamed.
       character(*) :: new  !! New name of the symbol.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.
@@ -924,7 +881,6 @@ contains
       subroutine syreni ( old, new, tabsym, tabptr, tabval )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5
       character(*) :: old  !! Name of the symbol to be renamed.
       character(*) :: new  !! New name of the symbol.
       character(*) :: tabsym     ( lbcell:* )  !! Components of the symbol table.

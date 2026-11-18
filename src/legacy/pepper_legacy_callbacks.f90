@@ -9,6 +9,7 @@ module pepper_legacy_callbacks
    use pepper_instance_module, only: zzdsk_compare, zzspk_state, zzsfx_near, zzsfx_maxrad, zzsfx_rayx, &
       zztan_cond, gf_step, gf_refine, gf_rep_init, gf_rep_update, gf_rep_final, gf_bail, gf_cond, &
       gf_ref, gf_boolean, gf_decr, gf_decr_x, gf_scalar
+   use pepper_bounds, only: lbcell
 
    implicit none
 
@@ -98,8 +99,7 @@ module pepper_legacy_callbacks
 
       !> GF_REP_INIT in SPICELIB's form (without the context).
       subroutine legacy_gf_rep_init ( window, begmss, endmss )
-         import :: ip, wp
-         integer(ip), parameter :: lbcell = -5  !! lower bound of a SPICE cell
+         import :: ip, wp, lbcell
          real(wp) :: window ( lbcell : * )  !! the window over which the search runs
          character(*) :: begmss  !! beginning of the text of the report
          character(*) :: endmss  !! end of the text of the report
@@ -285,7 +285,6 @@ contains
    !> A gf_rep_init that calls the legacy caller's routine (current_gf_rep_init).
    subroutine bridge_gf_rep_init ( ctx, window, begmss, endmss )
       class(pepper_context), intent(inout) :: ctx  !! the context (not used)
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a SPICE cell
       real(wp), intent(in) :: window ( lbcell : * )  !! the window over which the search runs
       character(*), intent(in) :: begmss  !! beginning of the text of the report
       character(*), intent(in) :: endmss  !! end of the text of the report

@@ -5,6 +5,7 @@ module pepper_legacy_cells
 
    use pepper_instance_module, only: pepper_context, pepper_zzwninsd => zzwninsd
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: lbcell
 
    implicit none
 
@@ -81,7 +82,6 @@ contains
       integer(ip) function cardc ( cell )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: cell  ( lbcell:* )  !! Input cell.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()
@@ -95,7 +95,6 @@ contains
       integer(ip) function cardd ( cell )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: cell  ( lbcell:* )  !! Input cell.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()
@@ -108,7 +107,6 @@ contains
       integer(ip) function cardi ( cell )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: cell  ( lbcell:* )  !! Input cell.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()
@@ -121,7 +119,6 @@ contains
       integer(ip) function sizec ( cell )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: cell   ( lbcell:* )  !! Input cell.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()
@@ -135,7 +132,6 @@ contains
       integer(ip) function sized ( cell )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: cell   ( lbcell:* )  !! Input cell.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()
@@ -148,7 +144,6 @@ contains
       integer(ip) function sizei ( cell )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: cell  ( lbcell: * )  !! Input cell.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()
@@ -161,7 +156,6 @@ contains
       subroutine scardc ( card, cell )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: card  !! Cardinality of (number of elements in) the cell.
       character(*) :: cell   ( lbcell:* )  !! The cell.
       type(pepper_context), pointer :: ctx
@@ -175,7 +169,6 @@ contains
       subroutine scardd ( card, cell )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: card  !! Cardinality of (number of elements in) the cell.
       real(wp) :: cell   ( lbcell:* )  !! The cell.
       type(pepper_context), pointer :: ctx
@@ -189,7 +182,6 @@ contains
       subroutine scardi ( card, cell )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: card  !! Cardinality of (number of elements in) the cell.
       integer(ip) :: cell   ( lbcell:* )  !! The cell.
       type(pepper_context), pointer :: ctx
@@ -203,7 +195,6 @@ contains
       subroutine ssizec ( size, cell )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: size  !! Size (maximum cardinality) of the cell.
       character(*) :: cell   ( lbcell:* )  !! The cell.
       type(pepper_context), pointer :: ctx
@@ -217,7 +208,6 @@ contains
       subroutine ssized ( size, cell )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: size  !! Size (maximum cardinality) of the cell.
       real(wp) :: cell   ( lbcell:* )  !! The cell.
       type(pepper_context), pointer :: ctx
@@ -231,7 +221,6 @@ contains
       subroutine ssizei ( size, cell )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: size  !! Size (maximum cardinality) of the cell.
       integer(ip) :: cell   ( lbcell:* )  !! The cell.
       type(pepper_context), pointer :: ctx
@@ -245,7 +234,6 @@ contains
       subroutine validc ( size, n, a )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: size  !! Size (maximum cardinality) of the set.
       integer(ip) :: n  !! Initial no. of (possibly non-distinct) elements.
       character(*) :: a      ( lbcell:* )  !! Set to be validated.
@@ -260,7 +248,6 @@ contains
       subroutine validd ( size, n, a )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: size  !! Size (maximum cardinality) of the set.
       integer(ip) :: n  !! Initial no. of (possibly non-distinct) elements.
       real(wp) :: a       ( lbcell:* )  !! Set to be validated.
@@ -275,7 +262,6 @@ contains
       subroutine validi ( size, n, a )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: size  !! Size (maximum cardinality) of the set.
       integer(ip) :: n  !! Initial no. of (possibly non-distinct) elements.
       integer(ip) :: a       ( lbcell:* )  !! Set to be validated.
@@ -290,7 +276,6 @@ contains
       subroutine appndc ( item, cell )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: item  !! The item to append.
       character(*) :: cell ( lbcell:* )  !! The cell to which ITEM will be appended.
       type(pepper_context), pointer :: ctx
@@ -305,7 +290,6 @@ contains
       subroutine appndd ( item, cell )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: item  !! The item to append.
       real(wp) :: cell ( lbcell:* )  !! The cell to which ITEM will be appended.
       type(pepper_context), pointer :: ctx
@@ -319,7 +303,6 @@ contains
       subroutine appndi ( item, cell )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: item  !! The item to append.
       integer(ip) :: cell ( lbcell:* )  !! The cell to which ITEM will be appended.
       type(pepper_context), pointer :: ctx
@@ -333,7 +316,6 @@ contains
       subroutine copyc ( cell, copy )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: cell     ( lbcell:* )  !! Cell to be copied.
       character(*) :: copy     ( lbcell:* )  !! New cell.
       type(pepper_context), pointer :: ctx
@@ -347,7 +329,6 @@ contains
       subroutine copyd ( cell, copy )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: cell     ( lbcell:* )  !! Cell to be copied.
       real(wp) :: copy     ( lbcell:* )  !! New cell.
       type(pepper_context), pointer :: ctx
@@ -361,7 +342,6 @@ contains
       subroutine copyi ( cell, copy )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: cell     ( lbcell:* )  !! Cell to be copied.
       integer(ip) :: copy     ( lbcell:* )  !! New cell.
       type(pepper_context), pointer :: ctx
@@ -375,7 +355,6 @@ contains
       subroutine insrtc ( item, a )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: item  !! Item to be inserted.
       character(*) :: a        ( lbcell:* )  !! Insertion set.
       type(pepper_context), pointer :: ctx
@@ -390,7 +369,6 @@ contains
       subroutine insrtd ( item, a )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: item  !! Item to be inserted.
       real(wp) :: a     ( lbcell:* )  !! Insertion set.
       type(pepper_context), pointer :: ctx
@@ -404,7 +382,6 @@ contains
       subroutine insrti ( item, a )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: item  !! Item to be inserted.
       integer(ip) :: a        ( lbcell:* )  !! Insertion set.
       type(pepper_context), pointer :: ctx
@@ -418,7 +395,6 @@ contains
       subroutine removc ( item, a )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: item  !! Item to be removed.
       character(*) :: a       ( lbcell:* )  !! Removal set.
       type(pepper_context), pointer :: ctx
@@ -433,7 +409,6 @@ contains
       subroutine removd ( item, a )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: item  !! Item to be removed.
       real(wp) :: a        ( lbcell:* )  !! Removal set.
       type(pepper_context), pointer :: ctx
@@ -447,7 +422,6 @@ contains
       subroutine removi ( item, a )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: item  !! Item to be removed.
       integer(ip) :: a        ( lbcell:* )  !! Removal set.
       type(pepper_context), pointer :: ctx
@@ -461,7 +435,6 @@ contains
       logical function elemc ( item, a )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: item  !! Item to be tested.
       character(*) :: a      ( lbcell:* )  !! Set to be tested.
       type(pepper_context), pointer :: ctx
@@ -476,7 +449,6 @@ contains
       logical function elemd ( item, a )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: item  !! Item to be tested.
       real(wp) :: a      ( lbcell:* )  !! Set to be tested.
       type(pepper_context), pointer :: ctx
@@ -490,7 +462,6 @@ contains
       logical function elemi ( item, a )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: item  !! Item to be tested.
       integer(ip) :: a      ( lbcell:* )  !! Set to be tested.
       type(pepper_context), pointer :: ctx
@@ -505,7 +476,6 @@ contains
       integer(ip) function ordc ( item, set )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: item  !! An item to locate within a set.
       character(*) :: set ( lbcell:* )  !! A set to search for a given item.
       type(pepper_context), pointer :: ctx
@@ -520,7 +490,6 @@ contains
       integer(ip) function ordd ( item, set )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: item  !! An item to locate within a set.
       real(wp) :: set ( lbcell:* )  !! A set to search for a given item.
       type(pepper_context), pointer :: ctx
@@ -535,7 +504,6 @@ contains
       integer(ip) function ordi ( item, set )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: item  !! An item to locate within a set.
       integer(ip) :: set ( lbcell:* )  !! A set to search for a given item.
       type(pepper_context), pointer :: ctx
@@ -549,7 +517,6 @@ contains
       logical function setc ( a, op, b )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: a      ( lbcell:* )  !! First set.
       character(*) :: op  !! Comparison operator.
       character(*) :: b      ( lbcell:* )  !! Second set.
@@ -565,7 +532,6 @@ contains
       logical function setd ( a, op, b )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: a      ( lbcell:* )  !! First set.
       character(*) :: op  !! Comparison operator.
       real(wp) :: b      ( lbcell:* )  !! Second set.
@@ -580,7 +546,6 @@ contains
       logical function seti ( a, op, b )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: a      ( lbcell:* )  !! First set.
       character(*) :: op  !! Comparison operator.
       integer(ip) :: b      ( lbcell:* )  !! Second set.
@@ -595,7 +560,6 @@ contains
       subroutine unionc ( a, b, c )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: a      ( lbcell:* )  !! First input set.
       character(*) :: b      ( lbcell:* )  !! Second input set.
       character(*) :: c      ( lbcell:* )  !! Union of A and B.
@@ -611,7 +575,6 @@ contains
       subroutine uniond ( a, b, c )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: a      ( lbcell:* )  !! First input set.
       real(wp) :: b      ( lbcell:* )  !! Second input set.
       real(wp) :: c      ( lbcell:* )  !! Union of A and B.
@@ -626,7 +589,6 @@ contains
       subroutine unioni ( a, b, c )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: a      ( lbcell:* )  !! First input set.
       integer(ip) :: b      ( lbcell:* )  !! Second input set.
       integer(ip) :: c      ( lbcell:* )  !! Union of A and B.
@@ -641,7 +603,6 @@ contains
       subroutine interc ( a, b, c )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: a      ( lbcell:* )  !! First input set.
       character(*) :: b      ( lbcell:* )  !! Second input set.
       character(*) :: c      ( lbcell:* )  !! Intersection of A and B.
@@ -656,7 +617,6 @@ contains
       subroutine interd ( a, b, c )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: a      ( lbcell:* )  !! First input set.
       real(wp) :: b      ( lbcell:* )  !! Second input set.
       real(wp) :: c      ( lbcell:* )  !! Intersection of A and B.
@@ -671,7 +631,6 @@ contains
       subroutine interi ( a, b, c )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: a      ( lbcell:* )  !! First input set.
       integer(ip) :: b      ( lbcell:* )  !! Second input set.
       integer(ip) :: c      ( lbcell:* )  !! Intersection of A and B.
@@ -686,7 +645,6 @@ contains
       subroutine diffc ( a, b, c )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: a      ( lbcell:* )  !! First input set.
       character(*) :: b      ( lbcell:* )  !! Second input set.
       character(*) :: c      ( lbcell:* )  !! Difference of A and B.
@@ -702,7 +660,6 @@ contains
       subroutine diffd ( a, b, c )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: a      ( lbcell:* )  !! First input set.
       real(wp) :: b      ( lbcell:* )  !! Second input set.
       real(wp) :: c      ( lbcell:* )  !! Difference of A and B.
@@ -717,7 +674,6 @@ contains
       subroutine diffi ( a, b, c )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: a      ( lbcell:* )  !! First input set.
       integer(ip) :: b      ( lbcell:* )  !! Second input set.
       integer(ip) :: c      ( lbcell:* )  !! Difference of A and B.
@@ -733,7 +689,6 @@ contains
       subroutine sdiffc ( a, b, c )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(*) :: a      ( lbcell:* )  !! First input set.
       character(*) :: b      ( lbcell:* )  !! Second input set.
       character(*) :: c      ( lbcell:* )  !! Symmetric difference of A and B.
@@ -749,7 +704,6 @@ contains
       subroutine sdiffd ( a, b, c )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: a      ( lbcell:* )  !! First input set.
       real(wp) :: b      ( lbcell:* )  !! Second input set.
       real(wp) :: c      ( lbcell:* )  !! Symmetric difference of A and B.
@@ -765,7 +719,6 @@ contains
       subroutine sdiffi ( a, b, c )
       use pepper_kinds, only: ip
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: a      ( lbcell:* )  !! First input set.
       integer(ip) :: b      ( lbcell:* )  !! Second input set.
       integer(ip) :: c      ( lbcell:* )  !! Symmetric difference of A and B.
@@ -781,7 +734,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_errhnd
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: left  !! Left, right endpoints of new interval.
       real(wp) :: right  !! Left, right endpoints of new interval.
       character(*) :: context  !! A call explanation string.
@@ -798,7 +750,6 @@ contains
       integer(ip) function wncard ( window )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: window  ( lbcell:* )  !! Input window.
       type(pepper_context), pointer :: ctx
       ctx => legacy_context()
@@ -812,7 +763,6 @@ contains
       subroutine wncomd ( left, right, window, result )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: left  !! Left, right endpoints of complement interval.
       real(wp) :: right  !! Left, right endpoints of complement interval.
       real(wp) :: window   ( lbcell:* )  !! Input window.
@@ -828,7 +778,6 @@ contains
       subroutine wncond ( left, right, window )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: left  !! Amount added to each left endpoint.
       real(wp) :: right  !! Amount subtracted from each right endpoint.
       real(wp) :: window  ( lbcell:* )  !! Window to be contracted.
@@ -844,7 +793,6 @@ contains
       subroutine wndifd ( a, b, c )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: a        ( lbcell:* )  !! Input windows.
       real(wp) :: b        ( lbcell:* )  !! Input windows.
       real(wp) :: c        ( lbcell:* )  !! Difference of A and B.
@@ -860,7 +808,6 @@ contains
       logical function wnelmd ( point, window )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: point  !! Input point.
       real(wp) :: window      ( lbcell:* )  !! Input window.
       type(pepper_context), pointer :: ctx
@@ -874,7 +821,6 @@ contains
       subroutine wnexpd ( left, right, window )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: left  !! Amount subtracted from each left endpoint.
       real(wp) :: right  !! Amount added to each right endpoint.
       real(wp) :: window  ( lbcell:* )  !! Window to be expanded.
@@ -890,7 +836,6 @@ contains
       subroutine wnextd ( side, window )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       character(1) :: side  !! Extract left ('L') or right ('R') endpoints.
       real(wp) :: window  ( lbcell:* )  !! Window to be extracted.
       type(pepper_context), pointer :: ctx
@@ -904,7 +849,6 @@ contains
       subroutine wnfetd ( window, n, left, right )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: window      ( lbcell:* )  !! Input window.
       integer(ip) :: n  !! Index of interval to be fetched.
       real(wp) :: left  !! Left, right endpoints of the Nth interval.
@@ -921,7 +865,6 @@ contains
       subroutine wnfild ( smlgap, window )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: smlgap  !! Limiting measure of small gaps.
       real(wp) :: window  ( lbcell:* )  !! Window to be filled.
       type(pepper_context), pointer :: ctx
@@ -935,7 +878,6 @@ contains
       subroutine wnfltd ( smlint, window )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: smlint  !! Limiting measure of small intervals.
       real(wp) :: window  ( lbcell:* )  !! Window to be filtered.
       type(pepper_context), pointer :: ctx
@@ -950,7 +892,6 @@ contains
       logical function wnincd ( left, right, window )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: left  !! Input interval.
       real(wp) :: right  !! Input interval.
       real(wp) :: window      ( lbcell:* )  !! Input window.
@@ -965,7 +906,6 @@ contains
       subroutine wninsd ( left, right, window )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: left  !! Left, right endpoints of new interval.
       real(wp) :: right  !! Left, right endpoints of new interval.
       real(wp) :: window    ( lbcell:* )  !! Input, output window.
@@ -981,7 +921,6 @@ contains
       subroutine wnintd ( a, b, c )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: a        ( lbcell:* )  !! Input windows.
       real(wp) :: b        ( lbcell:* )  !! Input windows.
       real(wp) :: c        ( lbcell:* )  !! Intersection of A and B.
@@ -996,7 +935,6 @@ contains
       logical function  wnreld ( a, op, b )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: a        ( lbcell:* )  !! First window.
       character(*) :: op  !! Comparison operator.
       real(wp) :: b        ( lbcell:* )  !! Second window.
@@ -1013,7 +951,6 @@ contains
                           idxsml, idxlon         )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: window    ( lbcell:* )  !! Window to be summarized.
       real(wp) :: meas  !! Total measure of intervals in WINDOW.
       real(wp) :: avg  !! Average measure.
@@ -1032,7 +969,6 @@ contains
       subroutine wnunid ( a, b, c )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       real(wp) :: a        ( lbcell:* )  !! Input windows.
       real(wp) :: b        ( lbcell:* )  !! Input windows.
       real(wp) :: c        ( lbcell:* )  !! Union of A and B.
@@ -1048,7 +984,6 @@ contains
       subroutine wnvald ( size, n, window )
       use pepper_kinds, only: ip, wp
       implicit none
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a cell (its control area)
       integer(ip) :: size  !! Size of window.
       integer(ip) :: n  !! Original number of endpoints.
       real(wp) :: window ( lbcell:* )  !! Input, output window.

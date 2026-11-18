@@ -7,6 +7,7 @@ module pepper_legacy_time
       pepper_zzutcpm => zzutcpm, pepper_zzvststr => zzvststr, pepper_zzvsbstr => zzvsbstr, &
       pepper_zzprscor => zzprscor, pepper_zzvalcor => zzvalcor, pepper_zzcorepc => zzcorepc
    use pepper_legacy_context, only: legacy_context, legacy_spice
+   use pepper_bounds, only: mxcomp
 
    implicit none
 
@@ -244,7 +245,6 @@ contains
       use pepper_kinds, only: ip, wp
       use pepper_inc_zzctr
       implicit none
-      integer(ip), parameter :: mxcomp = 10
       character(*) :: from  !! description of a time vector.
       character(*) :: to  !! description of a time vector.
       real(wp) :: tvec ( mxcomp )  !! time vector representing an epoch.

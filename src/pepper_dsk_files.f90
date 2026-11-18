@@ -15377,7 +15377,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: dskfnm  !! Name of DSK file.
       integer(ip), intent(inout) :: bodids ( lbcell : * )  !! Set of ID codes of objects in DSK
                                                            !! file.
@@ -15724,7 +15723,6 @@ contains
       use pepper_kinds, only: ip
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: dskfnm  !! Name of DSK file.
       integer(ip), intent(in) :: bodyid  !! Integer body ID code.
       integer(ip), intent(inout) :: srfids ( lbcell : * )  !! Set of ID codes of surfaces in DSK

@@ -3130,7 +3130,6 @@ contains
       use pepper_inc_ekqlimit
       use pepper_inc_ekbool
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: isize  !! Size of integer component of encoded query.
       integer(ip), intent(in) :: dsize  !! Size of d.p. component of encoded query.
       integer(ip), intent(inout) :: eqryi ( lbcell : * )  !! Integer component of query.
@@ -3462,7 +3461,6 @@ contains
       use pepper_strings, only: ucase_inplace
       use pepper_inc_ekquery
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*), intent(in) :: name  !! Name of scalar item to read.
       integer(ip), intent(out) :: value  !! Value of item.
@@ -6397,7 +6395,6 @@ contains
       use pepper_strings, only: ucase_inplace
       use pepper_inc_ekquery
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: name  !! Name of scalar item to write.
       integer(ip), intent(in) :: value  !! Value to write.
       integer(ip), intent(inout) :: eqryi ( lbcell : * )  !! Integer component of query.
@@ -7229,7 +7226,6 @@ contains
       use pepper_inc_ektype
       use pepper_inc_ekbool
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       character(*), intent(in) :: value  !! Character value.
       integer(ip), intent(in) :: length  !! Length of item to insert.
       integer(ip), intent(in) :: lexbeg  !! Begin and end positions of value's lexeme.
@@ -7401,7 +7397,6 @@ contains
       use pepper_inc_ektype
       use pepper_inc_ekbool
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       real(wp), intent(in) :: value  !! Numeric value.
       integer(ip), intent(in) :: type  !! Data type.  May be INT, DP, or TIME.
       integer(ip), intent(in) :: lexbeg  !! Begin and end positions of value's lexeme.
@@ -9822,7 +9817,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ekbool
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
       integer(ip), intent(in) :: n  !! Index within FROM clause of table name to read.
       integer(ip), intent(out) :: size  !! Size of Nth conjunction in WHERE clause.
@@ -10023,7 +10017,6 @@ contains
       use pepper_inc_ektype
       implicit none
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*), intent(in) :: eqryc  !! Character component of query.
       real(wp), intent(in) :: eqryd ( * )  !! Numeric component of query.
@@ -10319,7 +10312,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ekbool
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*), intent(in) :: eqryc  !! Character component of query.
       integer(ip), intent(in) :: n  !! Index within FROM clause of table name to read.
@@ -10582,7 +10574,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ekbool
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*), intent(in) :: eqryc  !! Character component of query.
       integer(ip), intent(in) :: n  !! Index within SELECT clause of table name to read.
@@ -10851,7 +10842,6 @@ contains
       use pepper_inc_ekquery
       use pepper_inc_ekbool
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5
       integer(ip), intent(in) :: eqryi ( lbcell : * )  !! Integer component of query.
       character(*), intent(in) :: eqryc  !! Character component of query.
       integer(ip), intent(in) :: n  !! Index within FROM clause of table name to read.
@@ -12487,7 +12477,6 @@ contains
       real(wp), intent(out) :: eqryd  ( * )  !! Parsed query and string and number value buffers.
       logical, intent(out) :: error  !! Parse error flag.
       character(*), intent(out) :: prserr  !! Parse error message.
-      integer(ip), parameter :: lbcell = -5
 !
 !     Local parameters
 !
@@ -12496,7 +12485,6 @@ contains
 !     LBPOOL is the lower bound of the second index of a linked list
 !     pool array.
 !
-      integer(ip), parameter :: lbpool = -5
 !
 !     Operator parameters:
 !

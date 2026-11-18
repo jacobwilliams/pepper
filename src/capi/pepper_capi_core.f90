@@ -30,6 +30,7 @@ module pepper_capi_core
    use pepper_instance_module, only: pepper_instance, pepper_context, state_query, rotation_query, &
                               ephemeris_provider, frame_provider, gf_scalar, kernel_builder, kernel_loader, &
                               zzdynrot
+   use pepper_bounds, only: lbcell
    implicit none
    ! Public: the bind(c) procedures must stay global symbols at any
    ! optimization level.
@@ -923,7 +924,6 @@ contains
    !> hook, or GFREPI.
    subroutine capi_gf_repi ( ctx, window, begmss, endmss )
       class(pepper_context), intent(inout) :: ctx  !! the context
-      integer(ip), parameter :: lbcell = -5  !! lower bound of a SPICE cell
       real(wp), intent(in) :: window(lbcell:*)  !! the window searched
       character(*), intent(in) :: begmss  !! the text before the percentage
       character(*), intent(in) :: endmss  !! the text after it
