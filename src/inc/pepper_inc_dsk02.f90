@@ -62,7 +62,10 @@ module pepper_inc_dsk02
 
    public
 
-   integer(ip), parameter :: ixnv = 1  !! +-----------------+
+   integer(ip), parameter :: ixnv = 1  !! Integer layout:
+                                       !!
+                                       !! ```
+                                       !! +-----------------+
                                        !! | NV              |  (# of vertices)
                                        !! +-----------------+
                                        !! | NP              |  (# of plates )
@@ -91,6 +94,7 @@ module pepper_inc_dsk02
                                        !! +-----------------+
                                        !! | CGRPTR          |  (coarse grid occupancy pointers)
                                        !! +-----------------+
+                                       !! ```
 
    integer(ip), parameter :: ixnp = ixnv + 1
 
@@ -110,6 +114,7 @@ module pepper_inc_dsk02
 
    integer(ip), parameter :: ixdscr = 1  !! D.p. layout:
                                          !!
+                                         !! ```
                                          !! +-----------------+
                                          !! | DSK descriptor  |  DSKDSZ elements
                                          !! +-----------------+
@@ -121,6 +126,7 @@ module pepper_inc_dsk02
                                          !! +-----------------+
                                          !! | Vertices        |  3*NV elements
                                          !! +-----------------+
+                                         !! ```
 
    integer(ip), parameter :: dscsz2 = 24  !! This local parameter MUST be kept consistent with
                                           !! the parameter DSKDSZ which is declared in dskdsc.inc.

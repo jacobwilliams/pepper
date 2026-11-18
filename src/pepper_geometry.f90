@@ -837,6 +837,7 @@
 !>
 !>     The layout of the structure is:
 !>
+!>```
 !>                                                 Kernel variable table
 !>                                                 (only the portions
 !>                                                 used here are shown)
@@ -866,6 +867,7 @@
 !>
 !>      ----------------------------------------        --------------
 !>                       NROOM                              MXNSRF
+!>```
 !>
 !>      The diagram above is not to scale: the arrays on the left have
 !>      available length NROOM, while the arrays on the right have
@@ -912,6 +914,7 @@
 !>
 !>     The layout of the structure is:
 !>
+!>```
 !>                                                 Kernel variable table
 !>                                                 (only the portions
 !>                                                 used here are shown)
@@ -942,6 +945,7 @@
 !>
 !>      ----------------------------------------        --------------
 !>                       NROOM                              MXNSRF
+!>```
 !>
 !>      The diagram above is not to scale: the arrays on the left have
 !>      available length NROOM, while the arrays on the right have
@@ -21578,6 +21582,7 @@ contains
       !>     and maximum distance:  compare the points labeled 'M' and 'F'
       !>     in the diagram below.
       !>
+      !>```
       !>                                                            *
       !>                                                          (ray)
       !>                                  *
@@ -21591,6 +21596,7 @@ contains
       !>                           ^                 ^
       !>     point of maximum angular                farthest ellipse
       !>     separation                              point from ray
+      !>```
       !>
       !>     Applications
       !>     ============

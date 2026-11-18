@@ -1294,6 +1294,7 @@
 !>
 !>     Here's a picture of how this all works.
 !>
+!>```
 !>                                             Linked list Pool
 !>                                             of HASH collisions
 !>                       NAMLST                  NMPOOL         PNAME
@@ -1321,6 +1322,7 @@
 !>                                             +---------+    +--------+
 !>                                             |         |    |        |
 !>                                             +---------+    +--------+
+!>```
 !>
 !>      Linked       Variable    Heads of
 !>      List Pool     Names      Data lists
