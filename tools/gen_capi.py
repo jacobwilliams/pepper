@@ -55,7 +55,7 @@ EXCLUDE_CTX = {
     'gf_user_scalar', 'gf_user_boolean', 'uddc', 'instance',
 }
 # Instance procedures with hand-written wrappers.
-EXCLUDE_SPICE = {'furnsh', 'pcpool', 'pdpool', 'pipool', 'lmpool', 'add_ephemeris', 'add_frame',
+EXCLUDE_SPICE = {'furnsh', 'furnsh_memory', 'pcpool', 'pdpool', 'pipool', 'lmpool', 'add_ephemeris', 'add_frame',
                  'destroy',  # (destroy: the lifetime is pepper_spice_free's, Spice.close's)
                  'load_kernel',  # hand-written (the builder: pepper_builder_*, KernelBuilder)
                  'write_kernel',  # hand-written (its optional ck_file and text_file)

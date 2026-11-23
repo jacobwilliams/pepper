@@ -6889,7 +6889,11 @@ contains
             if (      kt%kernels(i)%type == 'TEXT' &
                  .or. kt%kernels(i)%type == 'META' ) then
 
-               call ldpool ( ctx, kt%kernels(i)%name )
+               if ( allocated ( kt%kernels(i)%memory_text ) ) then
+                  call ldpool_text ( ctx, kt%kernels(i)%name, kt%kernels(i)%memory_text )
+               else
+                  call ldpool ( ctx, kt%kernels(i)%name )
+               end if
 
                if ( kt%kernels(i)%type == 'META' ) then
 !
@@ -6996,5 +7000,306 @@ contains
       return
       end associate
       end subroutine unload
+
+      !> Load a SPICE kernel (binary DAF SPK/CK/PCK, ASCII text kernel, or
+      !> JSON kernel) directly from an in-memory byte buffer without any
+      !> filesystem access (PEPPER).
+      module subroutine furnsh_memory ( ctx, name, bytes )
+      use, intrinsic :: iso_fortran_env, only: int8, int64
+      use pepper_kinds, only: ip, wp
+      use pepper_strings, only: nextwd_inplace, pos, ucase_inplace
+      use pepper_inc_zzddhman
+      use pepper_inc_zzftprms
+      implicit none
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      character(*), intent(in) :: name  !! Virtual kernel name (e.g. 'de440s.bsp', 'naif0012.tls').
+      integer(int8), intent(in) :: bytes(:)  !! Raw kernel bytes.
+      integer(ip), parameter :: hdrlen = 12
+      integer(ip), parameter :: recl = 1024
+      integer(ip), parameter :: minpch = 32
+      integer(ip), parameter :: maxpch = 126
+      character(:), allocatable :: locfnm, text, short_err, long_err
+      character(hdrlen) :: tmpwrd, idword
+      character(typlen) :: arch, mytype
+      character(strsiz) :: strbff(numbff)
+      character(8) :: bffidw, null8
+      character(sizstr) :: ftpmem
+      character(sizdlm) :: ftpdlm
+      character(sizend) :: ftplft
+      character(sizend) :: ftprgt
+      character(len=recl), allocatable :: raw_records(:)
+      real(wp), allocatable :: image(:)
+      type(ddh_file) :: fentry
+      type(keeper_kernel) :: kentry
+      integer(int64) :: nbytes, nrec, base
+      integer(ip) :: bff, natbff, handle, tmp_han, i, b, r, ch, ddh_idx
+      integer :: stat
+      logical :: update, ftperr, found, added_ddh
+
+      if ( ctx%failed() ) return
+
+      locfnm = trim ( adjustl ( name ) )
+      if ( locfnm == ' ' ) then
+         call ctx%setmsg ( 'The attempt to load a kernel from memory failed ' &
+         //                'because the kernel name is blank.' )
+         call ctx%sigerr ( 'SPICE(BLANKFILENAME)' )
+         return
+      end if
+
+      associate ( kt => ctx%spice%keeper, &
+                  known => ctx%spice%keeper%known, &
+                  first => ctx%spice%keeper%first )
+
+      if ( first ) then
+         first    = .false.
+         known(1) = 'KERNELS_TO_LOAD'
+         known(2) = 'PATH_SYMBOLS'
+         known(3) = 'PATH_VALUES'
+         kt%loaded = 0
+         call swpool ( ctx, 'FURNSH', nknown, known )
+         call cvpool ( ctx, 'FURNSH', update )
+      end if
+
+      call cvpool ( ctx, 'FURNSH', update )
+
+      nbytes = size ( bytes, kind=int64 )
+      tmpwrd = ' '
+      do i = 1, int ( min ( int(hdrlen, int64), nbytes ), ip )
+         if ( bytes(i) == 10_int8 .or. bytes(i) == 13_int8 ) exit
+         ch = modulo ( int(bytes(i), ip), 256 )
+         if ( ch >= minpch .and. ch <= maxpch ) then
+            tmpwrd(i:i) = achar(ch)
+         end if
+      end do
+
+      tmpwrd = adjustl ( tmpwrd )
+      call ucase_inplace ( tmpwrd )
+      idword = ' '
+      call nextwd_inplace ( tmpwrd, idword )
+
+      if ( idword == 'DAFETF' ) then
+         arch   = 'XFR'
+         mytype = 'DAF'
+      else if ( idword == 'DASETF' ) then
+         arch   = 'XFR'
+         mytype = 'DAS'
+      else if ( idword(1:10) == '''NAIF/DAF''' ) then
+         arch   = 'DEC'
+         mytype = 'DAF'
+      else if ( idword(1:8) == 'NAIF/DAS' ) then
+         arch   = 'DAS'
+         mytype = 'PRE'
+      else
+         call idw2at ( ctx, idword(1:8), arch, mytype )
+      end if
+
+      if ( arch == 'XFR' .or. arch == 'DEC' ) then
+         call ctx%setmsg ( 'The attempt to load "#" from memory failed: ' &
+         //                'transfer format files cannot be loaded.' )
+         call ctx%errch  ( '#', locfnm )
+         call ctx%sigerr ( 'SPICE(TRANSFERFILE)' )
+         return
+      else if ( arch == 'TE1' ) then
+         call ctx%setmsg ( 'The attempt to load "#" from memory failed: ' &
+         //                'type 1 text E-kernels are obsolete.' )
+         call ctx%errch  ( '#', locfnm )
+         call ctx%sigerr ( 'SPICE(TYPE1TEXTEK)' )
+         return
+      else if ( arch == 'DAS' ) then
+         call ctx%setmsg ( 'The attempt to load "#" from memory failed: ' &
+         //                'DAS binary kernels are not supported by furnsh_memory.' )
+         call ctx%errch  ( '#', locfnm )
+         call ctx%sigerr ( 'SPICE(UNSUPPORTEDARCH)' )
+         return
+      end if
+
+      if ( arch == 'DAF' ) then
+         if ( nbytes < int(recl, int64) .or. mod(nbytes, int(recl, int64)) /= 0_int64 ) then
+            call ctx%setmsg ( 'In-memory DAF kernel ''#'' has invalid byte length # ' &
+            //                '(must be a positive multiple of 1024).' )
+            call ctx%errch  ( '#', locfnm )
+            call ctx%errint ( '#', int(min(nbytes, int(huge(1_ip), int64)), ip) )
+            call ctx%sigerr ( 'SPICE(FILEREADFAILED)' )
+            return
+         end if
+
+         nrec = nbytes / int(recl, int64)
+         allocate ( raw_records(nrec), stat=stat )
+         if ( stat /= 0 ) then
+            call ctx%setmsg ( 'Not enough memory to allocate raw records for ''#''.' )
+            call ctx%errch  ( '#', locfnm )
+            call ctx%sigerr ( 'SPICE(MALLOCFAILED)' )
+            return
+         end if
+
+         do r = 1, int(nrec, ip)
+            base = int(r - 1, int64) * int(recl, int64)
+            do b = 1, recl
+               raw_records(r)(b:b) = achar ( modulo ( int(bytes(base + b), ip), 256 ) )
+            end do
+         end do
+
+         call zzftpchk ( ctx, raw_records(1)(500:1000), ftperr )
+         if ( ftperr ) then
+            call ctx%setmsg ( 'FTP transfer error detected in binary DAF ''#''.' )
+            call ctx%errch  ( '#', locfnm )
+            call ctx%sigerr ( 'SPICE(FTPXFERERROR)' )
+            return
+         end if
+
+         call zzddhnfc ( ctx, natbff )
+         do i = 1, numbff
+            call zzddhgsd ( ctx, 'BFF', i, strbff(i) )
+         end do
+         call zzftpstr ( ctx, ftpmem, ftplft, ftprgt, ftpdlm )
+         if ( ctx%failed() ) return
+
+         null8 = repeat ( achar(0), 8 )
+         bff   = 0_ip
+         if ( pos ( raw_records(1)(500:1000), ftplft, 1 ) /= 0 ) then
+            bffidw = raw_records(1)(89:96)
+            if ( bffidw /= null8 ) then
+               bff = findloc ( strbff(1:numbff), bffidw, dim=1 )
+               if ( bff == 0_ip ) then
+                  call ctx%setmsg ( 'The DAF ''#'' uses unrecognized binary file format ''#''.' )
+                  call ctx%errch  ( '#', locfnm )
+                  call ctx%errch  ( '#', bffidw )
+                  call ctx%sigerr ( 'SPICE(UNKNOWNBFF)' )
+                  return
+               end if
+            end if
+         end if
+
+         if ( bff == 0_ip ) then
+            if ( raw_records(1)(13:13) == achar(0) .and. &
+                 raw_records(1)(14:14) == achar(0) .and. &
+                 raw_records(1)(15:15) == achar(0) .and. &
+                 raw_records(1)(16:16) /= achar(0) ) then
+               bff = bigi3e
+            else if ( raw_records(1)(13:13) /= achar(0) .and. &
+                      raw_records(1)(14:14) == achar(0) .and. &
+                      raw_records(1)(15:15) == achar(0) .and. &
+                      raw_records(1)(16:16) == achar(0) ) then
+               bff = ltli3e
+            else
+               call ctx%setmsg ( 'Unable to determine binary file format of DAF ''#''.' )
+               call ctx%errch  ( '#', locfnm )
+               call ctx%sigerr ( 'SPICE(UNKNOWNBFF)' )
+               return
+            end if
+         end if
+
+         if ( bff /= ltli3e .and. bff /= bigi3e ) then
+            call ctx%setmsg ( 'Unsupported binary file format in DAF ''#''.' )
+            call ctx%errch  ( '#', locfnm )
+            call ctx%sigerr ( 'SPICE(UNSUPPORTEDBFF)' )
+            return
+         end if
+
+         allocate ( image(128_int64 * nrec), stat=stat )
+         if ( stat /= 0 ) then
+            call ctx%setmsg ( 'Not enough memory to allocate DAF image for ''#''.' )
+            call ctx%errch  ( '#', locfnm )
+            call ctx%sigerr ( 'SPICE(MALLOCFAILED)' )
+            return
+         end if
+
+         do r = 1, int(nrec, ip)
+            if ( bff == natbff ) then
+               base = int(r - 1, int64) * int(recl, int64)
+               image(128*(r - 1) + 1 : 128*r) = transfer ( bytes(base + 1_int64 : base + int(recl, int64)), 0.0_wp, 128 )
+            else
+               call zzxlated ( ctx, bff, raw_records(r), 128_ip, image(128*(r - 1) + 1 : 128*r) )
+               if ( ctx%failed() ) return
+            end if
+         end do
+
+         call zzddhfnh ( ctx, locfnm, handle, found )
+         added_ddh = .false.
+         if ( .not. found ) then
+            ctx%spice%zzddhman%next = ctx%spice%zzddhman%next + 1_ip
+            handle        = ctx%spice%zzddhman%next
+            fentry%handle = handle
+            fentry%method = read
+            fentry%arch   = daf
+            fentry%bff    = bff
+            fentry%mnm    = 0.0_wp
+            fentry%name   = locfnm
+            call move_alloc ( image, fentry%image )
+            call move_alloc ( raw_records, fentry%raw_records )
+            call ctx%spice%zzddhman%add ( fentry )
+            added_ddh = .true.
+         end if
+
+         tmp_han = 0_ip
+         if ( mytype == '?' ) then
+            call dafopr ( ctx, locfnm, tmp_han )
+            if ( .not. ctx%failed() ) call zzckspk ( ctx, tmp_han, mytype )
+         end if
+
+         if ( .not. ctx%failed() ) then
+            if ( mytype == 'SPK' ) then
+               call spklef ( ctx, locfnm, handle )
+            else if ( mytype == 'CK' ) then
+               call cklpf ( ctx, locfnm, handle )
+            else if ( mytype == 'PCK' ) then
+               call pcklof ( ctx, locfnm, handle )
+            else
+               call ctx%setmsg ( 'Unsupported DAF kernel type ''#'' in ''#''.' )
+               call ctx%errch  ( '#', mytype )
+               call ctx%errch  ( '#', locfnm )
+               call ctx%sigerr ( 'SPICE(UNKNOWNKERNELTYPE)' )
+            end if
+         end if
+
+         ! Keep the discovery reference alive while the typed loader opens
+         ! the memory image. Closing its last reference removes the bytes.
+         if ( tmp_han /= 0_ip ) then
+            if ( ctx%failed() ) then
+               short_err = short_text ( ctx )
+               long_err  = long_text ( ctx )
+               call ctx%reset()
+               call dafcls ( ctx, tmp_han )
+               call ctx%setmsg ( long_err )
+               call ctx%sigerr ( short_err )
+            else
+               call dafcls ( ctx, tmp_han )
+            end if
+         end if
+
+         if ( ctx%failed() ) then
+            if ( added_ddh ) then
+               short_err = short_text ( ctx )
+               long_err  = long_text ( ctx )
+               call ctx%reset()
+               ddh_idx = ctx%spice%zzddhman%find ( handle )
+               if ( ddh_idx > 0 ) call ctx%spice%zzddhman%remove ( ddh_idx )
+               call ctx%setmsg ( long_err )
+               call ctx%sigerr ( short_err )
+            end if
+            return
+         end if
+
+         call kt%add ( keeper_kernel ( name = locfnm, type = mytype, handle = handle, source = 0 ) )
+      else
+         allocate ( character(nbytes) :: text )
+         do base = 1_int64, nbytes
+            text(base:base) = achar ( modulo ( int(bytes(base), ip), 256 ) )
+         end do
+         call ldpool_text ( ctx, locfnm, text )
+         if ( ctx%failed() ) return
+         call zzbodkik ( ctx )
+         if ( ctx%failed() ) return
+         kentry%name   = locfnm
+         kentry%type   = 'TEXT'
+         kentry%handle = 0_ip
+         kentry%source = 0_ip
+         call move_alloc ( text, kentry%memory_text )
+         call kt%add ( kentry )
+         call cvpool ( ctx, 'FURNSH', update )
+      end if
+
+      end associate
+      end subroutine furnsh_memory
 
 end submodule pepper_keeper

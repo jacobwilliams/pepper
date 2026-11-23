@@ -6,7 +6,9 @@
  * a programmatic body from a C function, a prepared query.
  */
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "pepper.h"
@@ -269,6 +271,121 @@ int main(void) {
     double axis[3] = {0.0, 0.0, 1.0};
     pepper_axisar(axis, M_PI / 2, r);   /* column-major */
     CHECK(fabs(r[1] - 1.0) < 1e-15 && fabs(r[3] + 1.0) < 1e-15, "axisar %g %g", r[1], r[3]);
+
+    /* zero-filesystem in-memory kernels: text (.tls), JSON (.json), and binary DAF (.bsp) */
+    {
+        /* Build a small valid SPK binary with comments in memory via temp file, then unlink it */
+        const char *tmp_spk = "test_capi_mem.bsp";
+        remove(tmp_spk);
+        int spk_handle = 0;
+        CHECK(pepper_spkopn(ctx, tmp_spk, "MEM_TEST_SPK", 128, &spk_handle) == 0, "spkopn");
+        char cmt[2][80];
+        memset(cmt, ' ', sizeof(cmt));
+        memcpy(cmt[0], "In-memory SPK comment line 1", 28);
+        memcpy(cmt[1], "In-memory SPK comment line 2", 28);
+        CHECK(pepper_dafac(ctx, spk_handle, 2, 2, 80, &cmt[0][0]) == 0, "dafac");
+        double spk_states[2][6] = {
+            {7000.0, 0.0, 0.0, 0.0, 7.5, 0.0},
+            {7000.0, 750.0, 0.0, 0.0, 7.5, 0.0},
+        };
+        CHECK(pepper_spkw08(ctx, spk_handle, -777, 399, "J2000", 0.0, 100.0, "SEG777", 1, 2,
+                            &spk_states[0][0], 0.0, 100.0) == 0,
+              "spkw08");
+        CHECK(pepper_spkcls(ctx, spk_handle) == 0, "spkcls");
+
+        FILE *fp = fopen(tmp_spk, "rb");
+        CHECK(fp != NULL, "fopen tmp_spk");
+        fseek(fp, 0, SEEK_END);
+        long spk_len = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+        uint8_t *spk_bytes = (uint8_t *)malloc((size_t)spk_len);
+        CHECK(fread(spk_bytes, 1, (size_t)spk_len, fp) == (size_t)spk_len, "fread tmp_spk");
+        fclose(fp);
+        remove(tmp_spk); /* File no longer exists on disk! */
+
+        void *mem_spice = pepper_spice_new();
+        void *mem_ctx = pepper_context_new(mem_spice);
+
+        const char *mem_tls =
+            "KPL/LSK\n"
+            "\\begintext\n"
+            "In-memory leapseconds kernel.\n"
+            "\\begindata\n"
+            "DELTET/DELTA_T_A = 32.184\n"
+            "DELTET/K = 1.657D-3\n"
+            "DELTET/EB = 1.671D-2\n"
+            "DELTET/M = ( 6.239996D0 1.99096871D-7 )\n"
+            "DELTET/DELTA_AT = ( 10, @1972-JAN-1\n"
+            "                    37, @2017-JAN-1 )\n"
+            "\\begintext\n";
+        CHECK(pepper_spice_furnsh_memory(mem_spice, "virtual/naif0012.tls",
+                                         (const uint8_t *)mem_tls, (int64_t)strlen(mem_tls)) == 0,
+              "furnsh_memory tls");
+
+        const char *mem_json = "{ \"MEM_JSON_VAR\": [42.0, -1.5] }\n";
+        CHECK(pepper_spice_furnsh_memory(mem_spice, "virtual/extra.json",
+                                         (const uint8_t *)mem_json, (int64_t)strlen(mem_json)) == 0,
+              "furnsh_memory json");
+
+        CHECK(pepper_spice_furnsh_memory(mem_spice, "virtual/sat777.bsp", spk_bytes, (int64_t)spk_len) == 0,
+              "furnsh_memory bsp");
+        CHECK(pepper_spice_kernel_memory(mem_spice) == (int64_t)spk_len,
+              "kernel_memory %lld != %ld", (long long)pepper_spice_kernel_memory(mem_spice), spk_len);
+
+        int kcount = 0;
+        CHECK(pepper_ktotal(mem_ctx, "ALL", &kcount) == 0 && kcount == 3, "ktotal %d", kcount);
+
+        char kfile[64], ktype[32], ksrc[64];
+        int khandle = 0, kfound = 0;
+        CHECK(pepper_kdata(mem_ctx, 3, "ALL", sizeof kfile, kfile, sizeof ktype, ktype,
+                           sizeof ksrc, ksrc, &khandle, &kfound) == 0 && kfound,
+              "kdata 3");
+        CHECK(strcmp(kfile, "virtual/sat777.bsp") == 0 && strcmp(ktype, "SPK") == 0,
+              "kdata '%s' '%s'", kfile, ktype);
+
+        double mem_et = 0.0;
+        CHECK(pepper_str2et(mem_ctx, "2020-01-01T00:00:00", &mem_et) == 0 && fabs(mem_et - 631108869.1856) < 0.01,
+              "str2et from memory tls: %f", mem_et);
+
+        double mstate[6], mlt = 0.0;
+        CHECK(pepper_spkezr(mem_ctx, "-777", 50.0, "J2000", "NONE", "EARTH", mstate, &mlt) == 0,
+              "spkezr from memory bsp");
+        CHECK(fabs(mstate[0] - 7000.0) < 1e-9 && fabs(mstate[1] - 375.0) < 1e-9 && fabs(mstate[4] - 7.5) < 1e-9,
+              "mstate %g %g %g", mstate[0], mstate[1], mstate[4]);
+
+        const int *ids = NULL;
+        int nids = 0;
+        CHECK(pepper_spk_objects(mem_ctx, "virtual/sat777.bsp", &ids, &nids) == 0 && nids == 1 && ids[0] == -777,
+              "spk_objects from memory bsp: n=%d", nids);
+
+        const double *cov = NULL;
+        int cov_r = 0, cov_c = 0;
+        CHECK(pepper_spk_coverage(mem_ctx, "virtual/sat777.bsp", -777, &cov, &cov_r, &cov_c) == 0 &&
+                  cov_r == 1 && cov[0] == 0.0 && cov[1] == 100.0,
+              "spk_coverage from memory bsp: rows=%d", cov_r);
+
+        int daf_h = 0;
+        CHECK(pepper_dafopr(mem_ctx, "virtual/sat777.bsp", &daf_h) == 0, "dafopr memory bsp");
+        const char *clines = NULL;
+        int clines_n = 0;
+        CHECK(pepper_daf_comments(mem_ctx, daf_h, &clines, &clines_n) == 0 && clines_n == 2,
+              "daf_comments memory bsp: n=%d", clines_n);
+        CHECK(pepper_dafcls(mem_ctx, daf_h) == 0, "dafcls memory bsp");
+
+        /* Unload JSON kernel while keeping in-memory TLS active */
+        CHECK(pepper_spice_unload(mem_spice, "virtual/extra.json") == 0, "unload memory json");
+        CHECK(pepper_pool_values(mem_ctx, "MEM_JSON_VAR", &values, &nvalues, &found) == 0 && !found,
+              "unloaded json var gone");
+        CHECK(pepper_str2et(mem_ctx, "2020-01-01T00:00:00", &mem_et) == 0,
+              "in-memory tls survived unload of sibling text kernel");
+
+        CHECK(pepper_spice_kclear(mem_spice) == 0, "kclear memory spice");
+        CHECK(pepper_ktotal(mem_ctx, "ALL", &kcount) == 0 && kcount == 0, "ktotal after kclear: %d", kcount);
+
+        pepper_context_free(mem_ctx);
+        pepper_spice_free(mem_spice);
+        free(spk_bytes);
+    }
 
     pepper_context_free(ctx);
     pepper_spice_free(spice);

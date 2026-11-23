@@ -1305,60 +1305,88 @@ contains
 !     the moment, as far as we know, the file is not opened.
 !
       opened = .false.
+      kept   = .false.
 
       call zzddhfnh ( ctx, file, handle, found )
 
       if ( found ) then
 
+         i = daf_raw_slot ( ctx, handle )
+         if ( i > 0 ) then
+            kept   = .true.
+            tmpwrd = ctx%spice%zzddhman%files(i)%raw_records(1)(1:idlen)
+         else
 !
 !        If the file was recognized, we need to get the unit number
 !        associated with it.
 !
-         call zzddhnfo ( ctx, handle, fname, intarc, intbff, intamn, found )
+            call zzddhnfo ( ctx, handle, fname, intarc, intbff, intamn, found )
 
 !
 !        Translate the architecture ID to a string and retrieve the
 !        logical unit to use with this file.
 !
-         call zzddhgsd ( ctx, 'ARCH', intarc, filarc )
-         call zzddhhlu ( ctx, handle, filarc, .false., number )
+            call zzddhgsd ( ctx, 'ARCH', intarc, filarc )
+            call zzddhhlu ( ctx, handle, filarc, .false., number )
 
-         opened = .true.
+            opened = .true.
+         end if
 
       else
 
+         if ( .not. ctx%spice%zzddhman%files_only ) then
+            do i = 1, ctx%spice%keeper%loaded
+               if ( allocated ( ctx%spice%keeper%kernels(i)%memory_text ) ) then
+                  if ( ctx%spice%keeper%kernels(i)%name == trim ( adjustl ( file ) ) ) then
+                     kept   = .true.
+                     tmpwrd = ' '
+                     associate ( mtxt => ctx%spice%keeper%kernels(i)%memory_text )
+                        number = min ( idlen, len ( mtxt ) )
+                        do intamn = 1, number
+                           if ( mtxt(intamn:intamn) == achar(10) .or. &
+                                mtxt(intamn:intamn) == achar(13) ) exit
+                           tmpwrd(intamn:intamn) = mtxt(intamn:intamn)
+                        end do
+                     end associate
+                     exit
+                  end if
+               end if
+            end do
+         end if
+
+         if ( .not. kept ) then
 !
 !        We'll do a bit of inquiring before we try opening anything.
 !
-         inquire ( file   = file, &
-                   exist  = exist, &
-                   iostat = iostat, &
-                   opened = opened )
+            inquire ( file   = file, &
+                      exist  = exist, &
+                      iostat = iostat, &
+                      opened = opened )
 
 !
 !        Not too likely, but if the INQUIRE statement fails...
 !
-         if ( iostat /= 0 ) then
-            call ctx%setmsg ( 'IOSTAT error in INQUIRE statement. IOSTAT ' &
-            //              '= #.'                                    )
-            call ctx%errint ( '#', iostat                                 )
-            call ctx%sigerr ( 'SPICE(INQUIREERROR)'                       )
-            return
-         end if
+            if ( iostat /= 0 ) then
+               call ctx%setmsg ( 'IOSTAT error in INQUIRE statement. IOSTAT ' &
+               //              '= #.'                                    )
+               call ctx%errint ( '#', iostat                                 )
+               call ctx%sigerr ( 'SPICE(INQUIREERROR)'                       )
+               return
+            end if
 
 !
 !        Note: the following two tests MUST be performed in the order
 !        in which they appear, since in some environments files that do
 !        not exist are considered to be open.
 !
-         if ( .not. exist ) then
+            if ( .not. exist ) then
 
-            call ctx%setmsg ( 'The kernel file ''#'' does not exist.'   )
-            call ctx%errch  ( '#', file                                 )
-            call ctx%sigerr ( 'SPICE(FILENOTFOUND)'                     )
-            return
+               call ctx%setmsg ( 'The kernel file ''#'' does not exist.'   )
+               call ctx%errch  ( '#', file                                 )
+               call ctx%sigerr ( 'SPICE(FILENOTFOUND)'                     )
+               return
 
-         end if
+            end if
 
 !
 !        Reject open files not known to the handle manager subsystem.
@@ -1372,22 +1400,23 @@ contains
 !        had read it was not used since, failed; so did loading a file
 !        another instance had loaded.)
 !
-         if ( opened ) then
-            if ( opened_by_pepper ( ctx%spice, file ) ) opened = .false.
-         end if
+            if ( opened ) then
+               if ( opened_by_pepper ( ctx%spice, file ) ) opened = .false.
+            end if
 
-         if ( opened ) then
+            if ( opened ) then
 !
 !           Open files that are not opened within the SPICE
 !           binary file management subsystem are forbidden fruit.
 !           All we can do is signal an error letting the caller
 !           know that we are helpless in this case.
 !
-            call ctx%setmsg ( 'The file ''#'' is already open.' )
-            call ctx%errch  ( '#', file                         )
-            call ctx%sigerr ( 'SPICE(EXTERNALOPEN)'             )
-            return
+               call ctx%setmsg ( 'The file ''#'' is already open.' )
+               call ctx%errch  ( '#', file                         )
+               call ctx%sigerr ( 'SPICE(EXTERNALOPEN)'             )
+               return
 
+            end if
          end if
 
       end if
@@ -1398,15 +1427,17 @@ contains
 !     access): use it instead of opening the file again (see
 !     zzddhman_state).
 !
-      kept = .false.
-      if ( .not. opened ) then
-         if ( ctx%spice%zzddhman%kept_f2h ( file ) ) then
-            kept = ctx%spice%zzddhman%f2h_word_ok
+      if ( .not. kept ) then
+         if ( .not. opened ) then
+            if ( ctx%spice%zzddhman%kept_f2h ( file ) ) then
+               kept = ctx%spice%zzddhman%f2h_word_ok
+               if ( kept ) tmpwrd = ctx%spice%zzddhman%f2h_word
+            end if
          end if
       end if
 
       if ( kept ) then
-         tmpwrd = ctx%spice%zzddhman%f2h_word
+         continue
       else
 !
 !     Open the file with a record length of RECL (the length of the

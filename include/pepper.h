@@ -100,6 +100,9 @@ int pepper_spice_max_open_files(void *spice);
 /* in_memory: 1 reads binary kernels whole into memory, 0 not, -1 the
    instance's choice (pepper_spice_set_in_memory). */
 int pepper_spice_furnsh(void *spice, const char *file, int in_memory);
+/* Load a binary DAF (SPK/CK/PCK), ASCII text kernel, or JSON kernel directly
+   from an in-memory byte buffer without touching the filesystem. */
+int pepper_spice_furnsh_memory(void *spice, const char *name, const uint8_t *bytes, int64_t nbytes);
 /* n strings of width characters each (NUL-padded) */
 int pepper_spice_pcpool(void *spice, const char *name, int n, int width, const char *cvals);
 int pepper_spice_lmpool(void *spice, int n, int width, const char *cvals);

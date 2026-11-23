@@ -1,0 +1,39 @@
+{
+  "name": "pepper-wasm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sdn-module": "./dist/isomorphic/module.wasm",
+  "exports": {
+    "./plugin-manifest.json": "./plugin-manifest.json",
+    "./dist/*": "./dist/*",
+    "./include/pepper.h": "./include/pepper.h"
+  },
+  "description": "WebAssembly SpaceDataStandards.org & space-data-module-sdk plugin build and browser demo for PEPPER",
+  "scripts": {
+    "build": "node wasm/build.mjs",
+    "build:wasm": "node wasm/build.mjs",
+    "check:wasm": "node ./node_modules/space-data-module-sdk/bin/space-data-module.js check --manifest ./plugin-manifest.json --wasm ./dist/isomorphic/module.wasm",
+    "conformance:wasm": "node ./node_modules/space-data-module-sdk/bin/space-data-module.js conformance propagator --artifact ./dist/isomorphic/module.wasm",
+    "serve:wasm": "node wasm/serve.mjs",
+    "test": "node --test wasm/e2e.test.mjs",
+    "test:wasm": "node --test wasm/e2e.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.2",
+    "flatbuffers": "^25.9.23",
+    "flatc-wasm": "^25.12.19",
+    "playwright-core": "^1.58.2",
+    "space-data-module-sdk": "^0.10.1",
+    "spacedatastandards.org": "^1.279.0"
+  },
+  "files": [
+    "./plugin-manifest.json",
+    "./dist/isomorphic/module.wasm",
+    "./dist/guest-link/**",
+    "./include/pepper.h",
+    "./dist/include/pepper_wasm.h",
+    "./LICENSE",
+    "./README.md"
+  ]
+}

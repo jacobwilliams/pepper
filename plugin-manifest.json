@@ -1,0 +1,499 @@
+{
+  "pluginId": "org.spacedatastandards.pepper",
+  "name": "PEPPER SPICE Ephemeris, Attitude, Frames, Time & Events",
+  "version": "0.1.0",
+  "pluginFamily": "propagator",
+  "abiVersion": 1,
+  "invokeSurfaces": [
+    "direct",
+    "command"
+  ],
+  "runtimeTargets": [
+    "browser",
+    "wasmedge"
+  ],
+  "threadModel": "wasi-sequential",
+  "sequentialJustification": {
+    "kind": "caller-level-parallelism",
+    "detail": "PEPPER evaluates in-memory SPICE kernels at sub-microsecond latency per state vector; concurrent multi-satellite or multi-epoch sweeps scale across host Web Workers or WASI instances without shared-memory mutex contention inside a single guest instance."
+  },
+  "capabilities": [],
+  "methods": [
+    {
+      "methodId": "furnish_kernels",
+      "displayName": "Furnish SPICE Kernels ($MBL -> $NCD)",
+      "description": "Load one or more NAIF SPICE kernels (SPK, CK, PCK, LSK, SCLK, FK, DSK, JSON) from an in-memory $MBL auxiliary bundle into the resident PEPPER instance and emit $NCD container descriptors.",
+      "inputPorts": [
+        {
+          "portId": "kernels",
+          "acceptedTypeSets": [
+            {
+              "setId": "mbl-kernel-bundle",
+              "allowedTypes": [
+                {
+                  "schemaName": "MBL.fbs",
+                  "fileIdentifier": "$MBL",
+                  "rootTypeName": "MBL",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 16,
+          "required": true
+        }
+      ],
+      "outputPorts": [
+        {
+          "portId": "descriptors",
+          "acceptedTypeSets": [
+            {
+              "setId": "ncd-descriptor",
+              "allowedTypes": [
+                {
+                  "schemaName": "NCD.fbs",
+                  "fileIdentifier": "$NCD",
+                  "rootTypeName": "NCD",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 64,
+          "required": true
+        }
+      ],
+      "maxBatch": 16,
+      "drainPolicy": "drain-to-empty"
+    },
+    {
+      "methodId": "describe_kernel",
+      "displayName": "Describe SPICE Kernel Container ($MBL -> $NCD)",
+      "description": "Inspect a NAIF SPICE kernel carried in a $MBL entry and emit its $NCD Native Container Descriptor (format, internal file name, comment area, segment descriptors, coverage bounds, and SHA-256).",
+      "inputPorts": [
+        {
+          "portId": "kernel",
+          "acceptedTypeSets": [
+            {
+              "setId": "mbl-kernel-bundle",
+              "allowedTypes": [
+                {
+                  "schemaName": "MBL.fbs",
+                  "fileIdentifier": "$MBL",
+                  "rootTypeName": "MBL",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        }
+      ],
+      "outputPorts": [
+        {
+          "portId": "descriptor",
+          "acceptedTypeSets": [
+            {
+              "setId": "ncd-descriptor",
+              "allowedTypes": [
+                {
+                  "schemaName": "NCD.fbs",
+                  "fileIdentifier": "$NCD",
+                  "rootTypeName": "NCD",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        }
+      ],
+      "maxBatch": 1,
+      "drainPolicy": "single-shot"
+    },
+    {
+      "methodId": "compute_ephemeris",
+      "displayName": "Compute Orbit Ephemeris ($OEM)",
+      "description": "Evaluate target-relative-to-center state vectors via PEPPER SPKEZR over uniform or explicit epochs, returning a CCSDS/SDS $OEM Orbit Ephemeris Message.",
+      "inputPorts": [
+        {
+          "portId": "request",
+          "acceptedTypeSets": [
+            {
+              "setId": "oem-request",
+              "allowedTypes": [
+                {
+                  "schemaName": "OEM.fbs",
+                  "fileIdentifier": "$OEM",
+                  "rootTypeName": "OEM",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        },
+        {
+          "portId": "kernels",
+          "acceptedTypeSets": [
+            {
+              "setId": "mbl-kernel-bundle",
+              "allowedTypes": [
+                {
+                  "schemaName": "MBL.fbs",
+                  "fileIdentifier": "$MBL",
+                  "rootTypeName": "MBL",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 0,
+          "maxStreams": 16,
+          "required": false
+        }
+      ],
+      "outputPorts": [
+        {
+          "portId": "ephemeris",
+          "acceptedTypeSets": [
+            {
+              "setId": "oem-ephemeris",
+              "allowedTypes": [
+                {
+                  "schemaName": "OEM.fbs",
+                  "fileIdentifier": "$OEM",
+                  "rootTypeName": "OEM",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        }
+      ],
+      "maxBatch": 1,
+      "drainPolicy": "single-shot"
+    },
+    {
+      "methodId": "compute_attitude",
+      "displayName": "Compute Attitude Ephemeris ($AEM)",
+      "description": "Evaluate frame orientation quaternions and angular velocities via PEPPER SXFORM, XF2RAV, and M2Q, returning a CCSDS/SDS $AEM Attitude Ephemeris Message.",
+      "inputPorts": [
+        {
+          "portId": "request",
+          "acceptedTypeSets": [
+            {
+              "setId": "aem-request",
+              "allowedTypes": [
+                {
+                  "schemaName": "AEM.fbs",
+                  "fileIdentifier": "$AEM",
+                  "rootTypeName": "AEM",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        },
+        {
+          "portId": "kernels",
+          "acceptedTypeSets": [
+            {
+              "setId": "mbl-kernel-bundle",
+              "allowedTypes": [
+                {
+                  "schemaName": "MBL.fbs",
+                  "fileIdentifier": "$MBL",
+                  "rootTypeName": "MBL",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 0,
+          "maxStreams": 16,
+          "required": false
+        }
+      ],
+      "outputPorts": [
+        {
+          "portId": "attitude",
+          "acceptedTypeSets": [
+            {
+              "setId": "aem-attitude",
+              "allowedTypes": [
+                {
+                  "schemaName": "AEM.fbs",
+                  "fileIdentifier": "$AEM",
+                  "rootTypeName": "AEM",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        }
+      ],
+      "maxBatch": 1,
+      "drainPolicy": "single-shot"
+    },
+    {
+      "methodId": "transform_frame",
+      "displayName": "Transform Reference Frame & Geodesy ($FRM)",
+      "description": "Execute $FRM coordinate, geodetic (LLA <-> PCPF), state-vector, Keplerian/Cartesian, and 6x6 DCM transformations via PEPPER SXFORM, GEOREC, RECGEO, OSCELT, and CONICS.",
+      "inputPorts": [
+        {
+          "portId": "request",
+          "acceptedTypeSets": [
+            {
+              "setId": "frm-request",
+              "allowedTypes": [
+                {
+                  "schemaName": "FRM.fbs",
+                  "fileIdentifier": "$FRM",
+                  "rootTypeName": "FRM",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        },
+        {
+          "portId": "kernels",
+          "acceptedTypeSets": [
+            {
+              "setId": "mbl-kernel-bundle",
+              "allowedTypes": [
+                {
+                  "schemaName": "MBL.fbs",
+                  "fileIdentifier": "$MBL",
+                  "rootTypeName": "MBL",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 0,
+          "maxStreams": 16,
+          "required": false
+        }
+      ],
+      "outputPorts": [
+        {
+          "portId": "result",
+          "acceptedTypeSets": [
+            {
+              "setId": "frm-result",
+              "allowedTypes": [
+                {
+                  "schemaName": "FRM.fbs",
+                  "fileIdentifier": "$FRM",
+                  "rootTypeName": "FRM",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        }
+      ],
+      "maxBatch": 1,
+      "drainPolicy": "single-shot"
+    },
+    {
+      "methodId": "convert_time",
+      "displayName": "Convert Astronomical Time Scale ($TIM)",
+      "description": "Convert epochs across UTC, TAI, TT, TDB, GPS, and A1 in ISO 8601, Julian Date, Modified Julian Date, Unix seconds, and GPS seconds via PEPPER STR2ET, UNITIM, TIMOUT, and DELTET.",
+      "inputPorts": [
+        {
+          "portId": "request",
+          "acceptedTypeSets": [
+            {
+              "setId": "tim-request",
+              "allowedTypes": [
+                {
+                  "schemaName": "TIM.fbs",
+                  "fileIdentifier": "$TIM",
+                  "rootTypeName": "TIM",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        },
+        {
+          "portId": "kernels",
+          "acceptedTypeSets": [
+            {
+              "setId": "mbl-kernel-bundle",
+              "allowedTypes": [
+                {
+                  "schemaName": "MBL.fbs",
+                  "fileIdentifier": "$MBL",
+                  "rootTypeName": "MBL",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 0,
+          "maxStreams": 16,
+          "required": false
+        }
+      ],
+      "outputPorts": [
+        {
+          "portId": "result",
+          "acceptedTypeSets": [
+            {
+              "setId": "tim-result",
+              "allowedTypes": [
+                {
+                  "schemaName": "TIM.fbs",
+                  "fileIdentifier": "$TIM",
+                  "rootTypeName": "TIM",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        }
+      ],
+      "maxBatch": 1,
+      "drainPolicy": "single-shot"
+    },
+    {
+      "methodId": "locate_events",
+      "displayName": "Locate Geometric Events ($EVL)",
+      "description": "Search confinement intervals for eclipses/occultations, orbital apsides, and range or angular-separation conditions via PEPPER's Geometry Finder (GFOCLT, GFDIST, GFSEP).",
+      "inputPorts": [
+        {
+          "portId": "request",
+          "acceptedTypeSets": [
+            {
+              "setId": "evl-request",
+              "allowedTypes": [
+                {
+                  "schemaName": "EVL.fbs",
+                  "fileIdentifier": "$EVL",
+                  "rootTypeName": "EVL",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        },
+        {
+          "portId": "kernels",
+          "acceptedTypeSets": [
+            {
+              "setId": "mbl-kernel-bundle",
+              "allowedTypes": [
+                {
+                  "schemaName": "MBL.fbs",
+                  "fileIdentifier": "$MBL",
+                  "rootTypeName": "MBL",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 0,
+          "maxStreams": 16,
+          "required": false
+        }
+      ],
+      "outputPorts": [
+        {
+          "portId": "report",
+          "acceptedTypeSets": [
+            {
+              "setId": "evl-report",
+              "allowedTypes": [
+                {
+                  "schemaName": "EVL.fbs",
+                  "fileIdentifier": "$EVL",
+                  "rootTypeName": "EVL",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 1,
+          "required": true
+        }
+      ],
+      "maxBatch": 1,
+      "drainPolicy": "single-shot"
+    },
+    {
+      "methodId": "ingest_omm",
+      "displayName": "Ingest Orbit Mean-Elements Message ($OMM)",
+      "description": "Ingest one or more CCSDS/SDS $OMM Orbit Mean-Elements Messages into the propagator entity set.",
+      "inputPorts": [
+        {
+          "portId": "omm",
+          "acceptedTypeSets": [
+            {
+              "setId": "omm-record",
+              "allowedTypes": [
+                {
+                  "schemaName": "OMM.fbs",
+                  "fileIdentifier": "$OMM",
+                  "rootTypeName": "OMM",
+                  "wireFormat": "flatbuffer"
+                }
+              ]
+            }
+          ],
+          "minStreams": 1,
+          "maxStreams": 256,
+          "required": true
+        }
+      ],
+      "outputPorts": [],
+      "maxBatch": 256,
+      "drainPolicy": "drain-to-empty"
+    }
+  ],
+  "buildArtifacts": [
+    {
+      "artifactId": "pepper-isomorphic",
+      "kind": "wasm",
+      "path": "dist/isomorphic/module.wasm",
+      "target": "isomorphic"
+    }
+  ],
+  "externalInterfaces": []
+}

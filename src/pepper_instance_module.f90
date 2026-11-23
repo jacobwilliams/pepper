@@ -35,7 +35,7 @@
 !> ctx%errdev, as the legacy interface in tspice/src/legacy does.
 module pepper_instance_module
 
-   use, intrinsic :: iso_fortran_env, only: error_unit, int64
+   use, intrinsic :: iso_fortran_env, only: error_unit, int8, int64
    use pepper_kinds, only: ip, wp
    use pepper_errors, only: expln
    use pepper_strings, only: dpstr, intstr, lparse, wdcnt, nextwd
@@ -216,6 +216,7 @@ module pepper_instance_module
       procedure, non_overridable :: kernel_memory
       ! Changes of the kernels: methods of the instance, not of its contexts
       procedure, non_overridable :: furnsh => spice_furnsh
+      procedure, non_overridable :: furnsh_memory => spice_furnsh_memory
       procedure, non_overridable :: unload => spice_unload
       procedure, non_overridable :: kclear => spice_kclear
       procedure, non_overridable :: destroy => spice_destroy
@@ -4153,6 +4154,13 @@ module pepper_instance_module
          character(*), intent(in) :: fname  !! Name of the text kernel file.
       end subroutine ldpool
 
+      module subroutine ldpool_text ( ctx, fname, text )
+         implicit none
+         class(pepper_context), intent(inout) :: ctx  !! the context
+         character(*), intent(in) :: fname  !! Virtual name of the text or JSON kernel.
+         character(*), intent(in) :: text  !! Kernel contents.
+      end subroutine ldpool_text
+
       module subroutine rtpool ( ctx, name, n, values, found )
          implicit none
          class(pepper_context), intent(inout) :: ctx  !! the context
@@ -6775,6 +6783,13 @@ module pepper_instance_module
          character(*), intent(in), optional :: loader  !! PEPPER: the registered kernel loader that reads FILE, overriding
                                                        !! every other choice ([[spice_furnsh]]; blank or absent: FURNSH chooses)
       end subroutine furnsh
+
+      module subroutine furnsh_memory ( ctx, name, bytes )
+         implicit none
+         class(pepper_context), intent(inout) :: ctx  !! the context
+         character(*), intent(in) :: name  !! Virtual kernel name (e.g. 'de440s.bsp', 'naif0012.tls').
+         integer(int8), intent(in) :: bytes(:)  !! Raw kernel bytes.
+      end subroutine furnsh_memory
 
       module subroutine ktotal ( ctx, kind, count )
          implicit none
@@ -17116,6 +17131,18 @@ contains
       this%in_memory = saved
    end subroutine spice_furnsh
 
+   !> Load a SPICE kernel (binary DAF SPK/CK/PCK, ASCII text kernel, or
+   !> JSON kernel) directly from an in-memory byte buffer without touching
+   !> the filesystem (PEPPER). Errors are signaled in the instance's context.
+   subroutine spice_furnsh_memory(this, name, bytes)
+      class(pepper_instance), target, intent(inout) :: this  !! the instance
+      character(*), intent(in) :: name  !! Virtual kernel name (for kdata/kinfo/unload and *.json detection).
+      integer(int8), intent(in) :: bytes(:)  !! Raw kernel bytes.
+      type(pepper_context), pointer :: ctx
+      ctx => this%context()
+      call furnsh_memory(ctx, name, bytes)
+   end subroutine spice_furnsh_memory
+
    !> Unload a SPICE kernel.
    !>
    !> PEPPER: a method of the instance (SPICELIB's UNLOAD changes the
@@ -17712,6 +17739,17 @@ contains
          end if
       end associate
    end function daf_image_slot
+
+   !> The index in the instance's file table of the DAF `handle` if the file
+   !> has raw 1024-byte records in memory ([[spice_furnsh_memory]]), else 0.
+   integer(ip) function daf_raw_slot(ctx, handle) result(k)
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      integer(ip), intent(in) :: handle  !! the handle of the DAF
+      k = daf_image_slot(ctx, handle)
+      if (k > 0) then
+         if (.not. allocated(ctx%spice%zzddhman%files(k)%raw_records)) k = 0
+      end if
+   end function daf_raw_slot
 
    !> The index in the instance's file table of the DAF `handle` if it was
    !> built in memory (it has no file: [[spice_load_kernel]], or a kernel

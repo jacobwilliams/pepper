@@ -4734,6 +4734,25 @@ contains
       rchar = rtrim ( fname )
 
 !
+!     PEPPER: in-memory binary kernels (furnsh_memory) have no OS file;
+!     match their virtual name directly in the file table (unless files_only).
+!
+      if ( .not. ft%files_only ) then
+         do i = ft%nft, 1, -1
+            if ( allocated ( ft%files(i)%raw_records ) ) then
+               if ( ft%files(i)%name == fname( 1:rchar ) ) then
+                  exists = .true.
+                  opened = .false.
+                  found  = .true.
+                  handle = ft%files(i)%handle
+                  mnm    = ft%files(i)%mnm
+                  return
+               end if
+            end if
+         end do
+      end if
+
+!
 !     Now INQUIRE on the input file FNAME.
 !
       inquire ( file   = fname( 1:rchar ), &
@@ -4909,7 +4928,7 @@ contains
 !
 !        PEPPER: a DAF built in memory has no file: it is not this one.
 !
-         if ( ft%files(i)%synthetic .or. &
+         if ( ft%files(i)%synthetic .or. allocated ( ft%files(i)%raw_records ) .or. &
               ( mnm /= 0.0_wp                               .and. &
               ( mnm /= ft%files(i)%mnm .and. ft%files(i)%method == read ) ) ) then
 
@@ -6143,7 +6162,7 @@ contains
       if ( (( accmet == read  ) .or. &
             ( accmet == write )) .and. .not. ft%files_only ) then
          do i = nft, 1, -1
-            if ( .not. ft%files(i)%synthetic ) cycle
+            if ( .not. ( ft%files(i)%synthetic .or. allocated ( ft%files(i)%raw_records ) ) ) cycle
             if ( ft%files(i)%name /= locfnm ) cycle
             if ( accmet /= read ) then
                call ctx%setmsg ( 'The kernel ''#'' was built in memory: ' &
@@ -7238,7 +7257,7 @@ contains
 !
 !     PEPPER: a DAF built in memory has no file, so it has no unit.
 !
-      if ( ft%files(findex)%synthetic ) then
+      if ( ft%files(findex)%synthetic .or. allocated ( ft%files(findex)%raw_records ) ) then
          unit = 0
          call ctx%setmsg ( 'The kernel ''#'' (handle #) was built in ' &
          //            'memory: it has no file, and this operation ' &

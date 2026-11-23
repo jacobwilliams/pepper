@@ -1,0 +1,1505 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PEPPER · WebAssembly &amp; SpaceDataStandards.org Workbench</title>
+  <meta name="description" content="Run PEPPER SPICE astrodynamics directly in the browser via WebAssembly, SpaceDataStandards.org FlatBuffers, and space-data-module-sdk.">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <script src="coi-serviceworker.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    main { max-width: 1200px; margin: 0 auto; padding: 0 16px 48px; }
+    .wb-hero { padding: 36px 0 18px; }
+    .wb-hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); letter-spacing: 0.04em; margin-bottom: 8px; }
+    .wb-hero p.lede { max-width: 58em; font-size: 1.02rem; color: var(--muted); margin: 8px 0 16px; }
+    .status-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: rgba(5, 8, 22, 0.65);
+      border: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(122, 162, 255, 0.14);
+      border: 1px solid rgba(122, 162, 255, 0.3);
+      color: var(--ink);
+    }
+    .pill.ok {
+      background: rgba(80, 220, 140, 0.15);
+      border-color: rgba(80, 220, 140, 0.4);
+      color: #7ff0b0;
+    }
+    .pill.warn {
+      background: rgba(255, 179, 71, 0.16);
+      border-color: rgba(255, 179, 71, 0.4);
+      color: #ffd7a0;
+    }
+    .pill.err {
+      background: rgba(255, 95, 95, 0.18);
+      border-color: rgba(255, 95, 95, 0.45);
+      color: #ff9e9e;
+    }
+    .wb-panel { margin: 24px 0; padding: clamp(18px, 3vw, 28px); }
+    .wb-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .wb-tabs button {
+      padding: 9px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(5, 8, 22, 0.55);
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s, border-color 0.18s;
+    }
+    .wb-tabs button:hover { color: var(--ink); border-color: var(--accent-2); }
+    .wb-tabs button[aria-selected="true"] {
+      background: linear-gradient(135deg, var(--accent), #ff7b3a);
+      color: #1b0f00;
+      border-color: transparent;
+      font-weight: 600;
+    }
+    .wb-tabs button code {
+      color: inherit;
+      opacity: 0.88;
+      margin-right: 4px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .field input, .field select {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(5, 8, 22, 0.8);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 0.86rem;
+    }
+    .field input:focus, .field select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .actions-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .btn-action {
+      padding: 9px 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: linear-gradient(135deg, var(--accent), #ff7b3a);
+      color: #1b0f00;
+      font: inherit;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .btn-action:disabled { opacity: 0.5; cursor: wait; }
+    .btn-secondary {
+      padding: 8px 15px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(5, 8, 22, 0.65);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.86rem;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { border-color: var(--accent-2); }
+    .split-view {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.05fr) minmax(300px, 1.25fr);
+      gap: 18px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .split-view { grid-template-columns: 1fr; }
+    }
+    .viz-box {
+      border-radius: 12px;
+      background: rgba(5, 8, 22, 0.78);
+      border: 1px solid var(--border);
+      padding: 12px;
+    }
+    .viz-box canvas {
+      width: 100%;
+      height: 320px;
+      display: block;
+      border-radius: 8px;
+    }
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .metric-card {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(5, 8, 22, 0.65);
+      border: 1px solid var(--border);
+    }
+    .metric-card .k {
+      display: block;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .metric-card .v {
+      display: block;
+      margin-top: 2px;
+      font-family: var(--mono);
+      font-size: 0.98rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .table-wrap {
+      max-height: 320px;
+      overflow: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(5, 8, 22, 0.72);
+    }
+    table.sds-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+    }
+    table.sds-table th, table.sds-table td {
+      padding: 7px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(122, 162, 255, 0.12);
+      white-space: nowrap;
+    }
+    table.sds-table th {
+      position: sticky;
+      top: 0;
+      background: #0b1130;
+      color: var(--accent-2);
+      font-weight: 600;
+    }
+    .wire-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 820px) {
+      .wire-grid { grid-template-columns: 1fr; }
+    }
+    .wire-pre {
+      margin: 0;
+      padding: 12px;
+      border-radius: 10px;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.48;
+      max-height: 240px;
+      overflow: auto;
+      color: #d6defa;
+    }
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(5, 8, 22, 0.78);
+      border: 1px solid var(--border);
+    }
+    .matrix-grid span {
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: rgba(122, 162, 255, 0.08);
+      text-align: right;
+    }
+    .error-banner {
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(255, 82, 82, 0.16);
+      border: 1px solid rgba(255, 82, 82, 0.45);
+      color: #ffb3b3;
+      font-family: var(--mono);
+      font-size: 0.84rem;
+      margin-bottom: 14px;
+    }
+    .dropzone {
+      padding: 16px;
+      border: 1px dashed var(--accent-2);
+      border-radius: 12px;
+      background: rgba(122, 162, 255, 0.06);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stars" aria-hidden="true"></canvas>
+
+  <header class="nav">
+    <a class="brand" href="index.html"><img src="logo.svg" alt="" width="32" height="32"> PEPPER</a>
+    <nav>
+      <a href="index.html#about">Overview</a>
+      <a href="index.html#code">Code</a>
+      <a href="wasm.html" style="color: var(--accent);">WASM Workbench</a>
+      <a href="https://spacedatastandards.org" rel="noopener">SpaceDataStandards.org</a>
+      <a href="https://digitalarsenal.github.io/space-data-module-sdk/" rel="noopener">Module SDK</a>
+      <a class="nav-gh" href="https://github.com/jacobwilliams/pepper" rel="noopener">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="wb-hero">
+      <p class="eyebrow">Fortran 2018 · WebAssembly · SpaceDataStandards.org · space-data-module-sdk</p>
+      <h1><span class="glow">PEPPER</span> WASM Astrodynamics Workbench</h1>
+      <p class="lede">
+        All 119 modern Fortran SPICE modules compiled to a single <code>wasm32-wasip1-threads</code>
+        sequential module (<code>dist/isomorphic/module.wasm</code>), loaded via
+        <code>space-data-module-sdk/host/isomorphic</code> with zero filesystem dependencies and genuine
+        SpaceDataStandards.org FlatBuffer inputs &amp; outputs.
+      </p>
+      <div class="status-strip" id="status-strip">
+        <span class="pill warn" id="wasm-status" data-testid="wasm-status">Initializing WASM runtime…</span>
+        <span class="pill" id="coi-status" data-testid="coi-status">COI: checking…</span>
+        <span class="pill" id="manifest-status" data-testid="manifest-status">Manifest: reading $PLG…</span>
+        <span class="pill" id="kernel-status" data-testid="kernel-status">Kernels: fetching…</span>
+      </div>
+    </section>
+
+    <section class="panel wb-panel">
+      <div id="global-error" class="error-banner" hidden></div>
+
+      <div class="wb-tabs" role="tablist" aria-label="SDS Astrodynamics Methods">
+        <button role="tab" aria-selected="true" data-wb-tab="oem" id="tab-btn-oem"><code>$OEM</code> Orbit Ephemeris</button>
+        <button role="tab" aria-selected="false" data-wb-tab="aem" id="tab-btn-aem"><code>$AEM</code> Attitude</button>
+        <button role="tab" aria-selected="false" data-wb-tab="frm" id="tab-btn-frm"><code>$FRM</code> Frames &amp; Geodesy</button>
+        <button role="tab" aria-selected="false" data-wb-tab="tim" id="tab-btn-tim"><code>$TIM</code> Time Scales</button>
+        <button role="tab" aria-selected="false" data-wb-tab="evl" id="tab-btn-evl"><code>$EVL</code> Event Locator</button>
+        <button role="tab" aria-selected="false" data-wb-tab="ncd" id="tab-btn-ncd"><code>$NCD</code> Kernel Inspector</button>
+      </div>
+
+      <!-- ==================== TAB 1: $OEM ==================== -->
+      <div data-wb-pane="oem" id="pane-oem">
+        <div class="form-grid">
+          <div class="field">
+            <label for="oem-target">Target Body</label>
+            <select id="oem-target">
+              <option value="MOON" selected>MOON (301)</option>
+              <option value="SUN">SUN (10)</option>
+              <option value="MARS BARYCENTER">MARS BARYCENTER (4)</option>
+              <option value="VENUS BARYCENTER">VENUS BARYCENTER (2)</option>
+              <option value="MERCURY BARYCENTER">MERCURY BARYCENTER (1)</option>
+              <option value="JUPITER BARYCENTER">JUPITER BARYCENTER (5)</option>
+              <option value="SATURN BARYCENTER">SATURN BARYCENTER (6)</option>
+              <option value="EARTH">EARTH (399)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="oem-center">Center / Observer</label>
+            <select id="oem-center">
+              <option value="EARTH" selected>EARTH (399)</option>
+              <option value="SUN">SUN (10)</option>
+              <option value="SOLAR SYSTEM BARYCENTER">SSB (0)</option>
+              <option value="MOON">MOON (301)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="oem-frame">Reference Frame ($RFM)</label>
+            <select id="oem-frame">
+              <option value="J2000" selected>J2000 (ICRF)</option>
+              <option value="ECLIPJ2000">ECLIPJ2000</option>
+              <option value="IAU_EARTH">IAU_EARTH</option>
+              <option value="IAU_MOON">IAU_MOON</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="oem-abcorr">Aberration</label>
+            <select id="oem-abcorr">
+              <option value="NONE" selected>NONE (Geometric)</option>
+              <option value="LT">LT (Light-Time)</option>
+              <option value="LT+S">LT+S (Apparent)</option>
+              <option value="CN+S">CN+S (Converged)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="oem-start">Start Epoch (UTC)</label>
+            <input id="oem-start" type="text" value="2025-01-01T00:00:00Z">
+          </div>
+          <div class="field">
+            <label for="oem-stop">Stop Epoch (UTC)</label>
+            <input id="oem-stop" type="text" value="2025-01-29T00:00:00Z">
+          </div>
+          <div class="field">
+            <label for="oem-step">Step Size (s)</label>
+            <input id="oem-step" type="number" min="60" step="60" value="21600">
+          </div>
+        </div>
+        <div class="actions-row">
+          <button class="btn-action" id="btn-run-oem" disabled>Compute $OEM Ephemeris</button>
+          <button class="btn-secondary" id="btn-dl-oem" disabled>Download .oem.fb</button>
+        </div>
+        <div class="metrics-row" id="oem-metrics"></div>
+        <div class="split-view">
+          <div class="viz-box">
+            <canvas id="oem-canvas" width="520" height="340"></canvas>
+          </div>
+          <div class="table-wrap">
+            <table class="sds-table" id="oem-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>X (km)</th>
+                  <th>Y (km)</th>
+                  <th>Z (km)</th>
+                  <th>|r| (km)</th>
+                  <th>|v| (km/s)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 2: $AEM ==================== -->
+      <div data-wb-pane="aem" id="pane-aem" hidden>
+        <div class="form-grid">
+          <div class="field">
+            <label for="aem-frame-a">REF_FRAME_A</label>
+            <select id="aem-frame-a">
+              <option value="J2000" selected>J2000</option>
+              <option value="ECLIPJ2000">ECLIPJ2000</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="aem-frame-b">REF_FRAME_B</label>
+            <select id="aem-frame-b">
+              <option value="IAU_EARTH" selected>IAU_EARTH</option>
+              <option value="IAU_MOON">IAU_MOON</option>
+              <option value="IAU_MARS">IAU_MARS</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="aem-dir">ATTITUDE_DIR</label>
+            <select id="aem-dir">
+              <option value="A2B" selected>A2B</option>
+              <option value="B2A">B2A</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="aem-start">Start Epoch (UTC)</label>
+            <input id="aem-start" type="text" value="2025-01-01T00:00:00Z">
+          </div>
+          <div class="field">
+            <label for="aem-stop">Stop Epoch (UTC)</label>
+            <input id="aem-stop" type="text" value="2025-01-02T00:00:00Z">
+          </div>
+          <div class="field">
+            <label for="aem-step">Step Size (s)</label>
+            <input id="aem-step" type="number" min="60" step="60" value="3600">
+          </div>
+        </div>
+        <div class="actions-row">
+          <button class="btn-action" id="btn-run-aem" disabled>Compute $AEM Attitude</button>
+          <button class="btn-secondary" id="btn-dl-aem" disabled>Download .aem.fb</button>
+        </div>
+        <div class="metrics-row" id="aem-metrics"></div>
+        <div class="split-view">
+          <div class="viz-box">
+            <canvas id="aem-canvas" width="520" height="340"></canvas>
+          </div>
+          <div class="table-wrap">
+            <table class="sds-table" id="aem-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Q1</th>
+                  <th>Q2</th>
+                  <th>Q3</th>
+                  <th>QC (Scalar)</th>
+                  <th>|Q|</th>
+                  <th>|ω| (deg/s)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 3: $FRM ==================== -->
+      <div data-wb-pane="frm" id="pane-frm" hidden>
+        <div class="form-grid">
+          <div class="field">
+            <label for="frm-op">Operation ($FRM)</label>
+            <select id="frm-op">
+              <option value="LLA_TO_PCPF" selected>LLA_TO_PCPF (WGS-84 Geodetic → ECEF)</option>
+              <option value="STATE_TRANSFORM">STATE_TRANSFORM (J2000 → IAU_EARTH 6-DOF)</option>
+              <option value="STATE_REPRESENTATION_CONVERT">CARTESIAN → KEPLERIAN (Osculating)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="frm-epoch">Epoch (UTC)</label>
+            <input id="frm-epoch" type="text" value="2025-01-04T12:00:00Z">
+          </div>
+          <div class="field" id="frm-f1-wrap">
+            <label for="frm-v1" id="frm-l1">Latitude (deg)</label>
+            <input id="frm-v1" type="number" step="any" value="28.572872">
+          </div>
+          <div class="field" id="frm-f2-wrap">
+            <label for="frm-v2" id="frm-l2">Longitude (deg)</label>
+            <input id="frm-v2" type="number" step="any" value="-80.648981">
+          </div>
+          <div class="field" id="frm-f3-wrap">
+            <label for="frm-v3" id="frm-l3">Altitude (m)</label>
+            <input id="frm-v3" type="number" step="any" value="54.0">
+          </div>
+        </div>
+        <div class="actions-row">
+          <button class="btn-action" id="btn-run-frm" disabled>Execute $FRM Transform</button>
+        </div>
+        <div class="metrics-row" id="frm-metrics"></div>
+        <div id="frm-output" class="wire-pre" data-testid="frm-output"></div>
+      </div>
+
+      <!-- ==================== TAB 4: $TIM ==================== -->
+      <div data-wb-pane="tim" id="pane-tim" hidden>
+        <div class="form-grid">
+          <div class="field">
+            <label for="tim-src-sys">Source Scale</label>
+            <select id="tim-src-sys">
+              <option value="UTC" selected>UTC</option>
+              <option value="TAI">TAI</option>
+              <option value="TT">TT</option>
+              <option value="TDB">TDB</option>
+              <option value="GPS">GPS</option>
+              <option value="A1">A1</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="tim-src-iso">Source ISO-8601</label>
+            <input id="tim-src-iso" type="text" value="2025-01-04T12:00:00.000Z">
+          </div>
+          <div class="field">
+            <label for="tim-dst-sys">Target Scale</label>
+            <select id="tim-dst-sys">
+              <option value="TDB" selected>TDB (Barycentric Dynamical)</option>
+              <option value="TAI">TAI (Atomic)</option>
+              <option value="TT">TT (Terrestrial)</option>
+              <option value="GPS">GPS</option>
+              <option value="A1">A1</option>
+              <option value="UTC">UTC</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="tim-dst-fmt">Target Format</label>
+            <select id="tim-dst-fmt">
+              <option value="ISO8601" selected>ISO8601</option>
+              <option value="JULIAN_DATE">JULIAN_DATE</option>
+              <option value="MODIFIED_JULIAN_DATE">MODIFIED_JULIAN_DATE</option>
+              <option value="UNIX_SECONDS">UNIX_SECONDS</option>
+              <option value="GPS_SECONDS">GPS_SECONDS</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions-row">
+          <button class="btn-action" id="btn-run-tim" disabled>Convert $TIM Scale</button>
+        </div>
+        <div class="metrics-row" id="tim-metrics"></div>
+        <div class="table-wrap">
+          <table class="sds-table" id="tim-table">
+            <thead>
+              <tr>
+                <th>Scale</th>
+                <th>ISO-8601</th>
+                <th>Julian Date</th>
+                <th>Modified JD</th>
+                <th>Δt vs Source (s)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 5: $EVL ==================== -->
+      <div data-wb-pane="evl" id="pane-evl" hidden>
+        <div class="form-grid">
+          <div class="field">
+            <label for="evl-preset">Geometry Finder Mode ($EVL)</label>
+            <select id="evl-preset">
+              <option value="apsides" selected>Lunar Apsides (Perigee &amp; Apogee)</option>
+              <option value="eclipse">2024 Solar Eclipse Geometry (Earth–Moon–Sun)</option>
+              <option value="range">Earth–Moon 380,000 km Range Crossing</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="evl-start">Scan Start (UTC)</label>
+            <input id="evl-start" type="text" value="2025-01-01T00:00:00Z">
+          </div>
+          <div class="field">
+            <label for="evl-stop">Scan Stop (UTC)</label>
+            <input id="evl-stop" type="text" value="2025-02-01T00:00:00Z">
+          </div>
+          <div class="field">
+            <label for="evl-step">Search Step (s)</label>
+            <input id="evl-step" type="number" min="60" value="3600">
+          </div>
+        </div>
+        <div class="actions-row">
+          <button class="btn-action" id="btn-run-evl" disabled>Locate $EVL Events</button>
+        </div>
+        <div class="metrics-row" id="evl-metrics"></div>
+        <div class="table-wrap">
+          <table class="sds-table" id="evl-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Event Type</th>
+                <th>Start Epoch (UTC)</th>
+                <th>Stop Epoch (UTC)</th>
+                <th>Duration (s)</th>
+                <th>Extremum / Goal Value</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 6: $NCD ==================== -->
+      <div data-wb-pane="ncd" id="pane-ncd" hidden>
+        <div class="dropzone">
+          <div>
+            <strong>In-Memory NAIF Kernel Loader (<code>furnish_kernels</code> / <code>describe_kernel</code>)</strong>
+            <div style="color: var(--muted); font-size: 0.85rem;">
+              Load custom <code>.bsp</code>, <code>.bpc</code>, <code>.tls</code>, <code>.tpc</code>, <code>.tf</code>, or <code>.json</code> kernels directly into WASM memory via <code>$MBL</code> → <code>$NCD</code>.
+            </div>
+          </div>
+          <input type="file" id="ncd-file-input" multiple accept=".bsp,.bpc,.bc,.tls,.tpc,.tf,.ti,.tsc,.json">
+        </div>
+        <div class="metrics-row" id="ncd-metrics"></div>
+        <div class="table-wrap">
+          <table class="sds-table" id="ncd-table">
+            <thead>
+              <tr>
+                <th>Kernel / Segment</th>
+                <th>Format / Type</th>
+                <th>Target → Center</th>
+                <th>Frame</th>
+                <th>Coverage (TDB)</th>
+                <th>Bytes / SHA-256</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== WIRE INSPECTOR ==================== -->
+    <section class="panel wb-panel">
+      <h2 style="font-size: 1.35rem; margin-bottom: 10px;">SpaceDataStandards.org FlatBuffer Wire Inspector</h2>
+      <div class="metrics-row" id="wire-metrics"></div>
+      <div class="wire-grid">
+        <div>
+          <h3 style="font-size: 0.9rem; margin-bottom: 6px;">Request Wire Bytes (Hex + Identifier)</h3>
+          <pre class="wire-pre" id="wire-req-hex" data-testid="wire-req-hex">Waiting for invocation…</pre>
+        </div>
+        <div>
+          <h3 style="font-size: 0.9rem; margin-bottom: 6px;">Response Wire Bytes &amp; Decoded Summary</h3>
+          <pre class="wire-pre" id="wire-res-hex" data-testid="wire-res-hex">Waiting for invocation…</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>PEPPER WASM Module · SpaceDataStandards.org FlatBuffers · Compatible with <code>space-data-module-sdk</code></p>
+  </footer>
+
+  <script src="script.js"></script>
+  <script type="module">
+    import {
+      flatbuffers,
+      loadModule,
+      decodePluginManifest,
+      encodeModuleBundle,
+      ModuleBundleEntryRole,
+      ModulePayloadEncoding,
+      NCD_NS,
+      OEM_NS,
+      AEM_NS,
+      FRM_NS,
+      RFM_NS,
+      TIM_NS,
+      EVL_NS,
+      PCE_NS,
+      CAT_NS,
+    } from "./wasm/pepper-sdk-client.js";
+
+    const state = {
+      loaded: null,
+      descriptors: [],
+      lastOemBytes: null,
+      lastAemBytes: null,
+    };
+
+    const el = (id) => document.getElementById(id);
+    const sdsTypeRef = (code) => ({
+      schemaName: `${code}.fbs`,
+      fileIdentifier: `$${code}`,
+      rootTypeName: code,
+      wireFormat: "flatbuffer",
+    });
+
+    function packRoot(rootObjT, identifier) {
+      const fbb = new flatbuffers.Builder(1024);
+      const off = rootObjT.pack(fbb);
+      fbb.finish(off, identifier);
+      return fbb.asUint8Array();
+    }
+
+    function readWireId(bytes) {
+      if (!bytes || bytes.byteLength < 8) return "none";
+      return String.fromCharCode(bytes[4], bytes[5], bytes[6], bytes[7]);
+    }
+
+    function hexPreview(bytes, maxBytes = 64) {
+      if (!bytes || bytes.byteLength === 0) return "(empty)";
+      const slice = bytes.subarray(0, Math.min(bytes.byteLength, maxBytes));
+      const lines = [];
+      for (let i = 0; i < slice.length; i += 16) {
+        const row = slice.subarray(i, i + 16);
+        const hex = Array.from(row, (b) => b.toString(16).padStart(2, "0")).join(" ");
+        const ascii = Array.from(row, (b) => (b >= 32 && b <= 126 ? String.fromCharCode(b) : ".")).join("");
+        lines.push(`${i.toString(16).padStart(4, "0")}  ${hex.padEnd(47, " ")}  |${ascii}|`);
+      }
+      if (bytes.byteLength > maxBytes) {
+        lines.push(`… (${bytes.byteLength - maxBytes} more bytes)`);
+      }
+      return lines.join("\n");
+    }
+
+    function updateWireInspector(methodId, inCode, reqBytes, outCode, resBytes, elapsedMs, summaryObj) {
+      const reqId = readWireId(reqBytes);
+      const resId = readWireId(resBytes);
+      el("wire-metrics").innerHTML = [
+        ["Method", methodId],
+        ["Input Schema", `${reqId} (${reqBytes.byteLength.toLocaleString()} B)`],
+        ["Output Schema", `${resId} (${resBytes.byteLength.toLocaleString()} B)`],
+        ["WASM Latency", `${elapsedMs.toFixed(2)} ms`],
+      ]
+        .map(([k, v]) => `<div class="metric-card"><span class="k">${k}</span><span class="v">${v}</span></div>`)
+        .join("");
+      el("wire-req-hex").textContent = `file_identifier: "${reqId}" (${inCode}.fbs)\n` + hexPreview(reqBytes, 64);
+      el("wire-res-hex").textContent =
+        `file_identifier: "${resId}" (${outCode}.fbs)\n` +
+        hexPreview(resBytes, 48) +
+        "\n\n--- Unpacked SDS Summary ---\n" +
+        JSON.stringify(summaryObj, (_, v) => (typeof v === "bigint" ? v.toString() : v), 2);
+    }
+
+    function showError(msg) {
+      const banner = el("global-error");
+      if (!msg) {
+        banner.hidden = true;
+        banner.textContent = "";
+      } else {
+        banner.hidden = false;
+        banner.textContent = msg;
+      }
+    }
+
+    async function invokeSds(methodId, portId, inCode, reqBytes) {
+      showError("");
+      const t0 = performance.now();
+      const result = await state.loaded.invoke({
+        methodId,
+        inputs: [{ portId, typeRef: sdsTypeRef(inCode), payload: reqBytes }],
+      });
+      const elapsedMs = performance.now() - t0;
+      if (result.statusCode !== 0) {
+        throw new Error(
+          `${methodId} failed (status=${result.statusCode} ${result.errorCode || ""}): ${result.errorMessage || "unknown error"}`,
+        );
+      }
+      return { outputs: result.outputs, elapsedMs };
+    }
+
+    function downloadBytes(bytes, filename) {
+      const blob = new Blob([bytes], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // ==================== Tab Switching ====================
+    const tabBtns = document.querySelectorAll("[data-wb-tab]");
+    const tabPanes = document.querySelectorAll("[data-wb-pane]");
+    tabBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.wbTab;
+        tabBtns.forEach((b) => b.setAttribute("aria-selected", String(b === btn)));
+        tabPanes.forEach((p) => {
+          p.hidden = p.dataset.wbPane !== target;
+        });
+      });
+    });
+
+    // ==================== 1. $OEM ====================
+    function drawOrbitCanvas(canvas, states, targetName, centerName) {
+      const ctx = canvas.getContext("2d");
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = canvas.clientWidth || 520;
+      const h = canvas.clientHeight || 340;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+
+      if (states.length === 0) return;
+      let maxR = 1;
+      for (const s of states) {
+        const rxy = Math.hypot(s[0], s[1]);
+        if (rxy > maxR) maxR = rxy;
+      }
+      const pad = 38;
+      const scale = Math.min(w - pad * 2, h - pad * 2) / (2 * maxR * 1.08);
+      const cx = w / 2;
+      const cy = h / 2;
+
+      // Grid circles
+      ctx.strokeStyle = "rgba(122, 162, 255, 0.14)";
+      ctx.lineWidth = 1;
+      for (const frac of [0.33, 0.66, 1.0]) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, maxR * frac * scale, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.moveTo(pad * 0.5, cy);
+      ctx.lineTo(w - pad * 0.5, cy);
+      ctx.moveTo(cx, pad * 0.5);
+      ctx.lineTo(cx, h - pad * 0.5);
+      ctx.stroke();
+
+      // Trajectory XY projection
+      ctx.strokeStyle = "#7aa2ff";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      states.forEach((s, i) => {
+        const px = cx + s[0] * scale;
+        const py = cy - s[1] * scale;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+
+      // Central body
+      ctx.fillStyle = "#ffb347";
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Start & End markers
+      const s0 = states[0];
+      const sN = states[states.length - 1];
+      ctx.fillStyle = "#7ff0b0";
+      ctx.beginPath();
+      ctx.arc(cx + s0[0] * scale, cy - s0[1] * scale, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#c48dff";
+      ctx.beginPath();
+      ctx.arc(cx + sN[0] * scale, cy - sN[1] * scale, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#9aa3c7";
+      ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.fillText(`${targetName} wrt ${centerName} (XY projection, max ${(maxR).toLocaleString(undefined, { maximumFractionDigits: 0 })} km)`, 12, 20);
+    }
+
+    async function runOem() {
+      try {
+        const target = el("oem-target").value;
+        const center = el("oem-center").value;
+        const frame = el("oem-frame").value;
+        const abcorr = el("oem-abcorr").value;
+        const start = el("oem-start").value.trim();
+        const stop = el("oem-stop").value.trim();
+        const step = Number(el("oem-step").value) || 3600;
+
+        const blk = new OEM_NS.ephemerisDataBlockT();
+        blk.COMMENT = `ABCORR=${abcorr}`;
+        blk.OBJECT = new CAT_NS.CATT();
+        blk.OBJECT.OBJECT_NAME = target;
+        blk.CENTER_NAME = center;
+        blk.REFERENCE_FRAME = new RFM_NS.RFMT(RFM_NS.RFMUnion.NONE, null, 0, frame);
+        blk.TIME_SYSTEM = TIM_NS.timingStandard.UTC;
+        blk.START_TIME = start;
+        blk.STOP_TIME = stop;
+        blk.STEP_SIZE = step;
+
+        const oemReq = new OEM_NS.OEMT();
+        oemReq.CCSDS_OEM_VERS = 2.0;
+        oemReq.ORIGINATOR = "PEPPER-WEB";
+        oemReq.EPHEMERIS_DATA_BLOCK = [blk];
+
+        const reqBytes = packRoot(oemReq, "$OEM");
+        const { outputs, elapsedMs } = await invokeSds("compute_ephemeris", "request", "OEM", reqBytes);
+        const resBytes = outputs[0].payload;
+        state.lastOemBytes = resBytes;
+        el("btn-dl-oem").disabled = false;
+
+        const oemOut = OEM_NS.OEM.getRootAsOEM(new flatbuffers.ByteBuffer(resBytes)).unpack();
+        const outBlk = oemOut.EPHEMERIS_DATA_BLOCK[0];
+        const data = outBlk.EPHEMERIS_DATA || [];
+        const states = [];
+        for (let i = 0; i + 5 < data.length; i += 6) {
+          states.push(data.slice(i, i + 6));
+        }
+
+        let minR = Infinity, maxR = 0;
+        for (const s of states) {
+          const r = Math.hypot(s[0], s[1], s[2]);
+          if (r < minR) minR = r;
+          if (r > maxR) maxR = r;
+        }
+        const v0 = states.length ? Math.hypot(states[0][3], states[0][4], states[0][5]) : 0;
+
+        el("oem-metrics").innerHTML = [
+          ["Samples", String(states.length)],
+          ["Target NAIF ID", String(outBlk.OBJECT_NAIF_ID)],
+          ["Min |r| (km)", minR.toLocaleString(undefined, { maximumFractionDigits: 3 })],
+          ["Max |r| (km)", maxR.toLocaleString(undefined, { maximumFractionDigits: 3 })],
+          ["Initial |v| (km/s)", v0.toFixed(6)],
+        ]
+          .map(([k, v]) => `<div class="metric-card"><span class="k">${k}</span><span class="v">${v}</span></div>`)
+          .join("");
+
+        const tbody = el("oem-table").querySelector("tbody");
+        tbody.innerHTML = states
+          .slice(0, 120)
+          .map((s, idx) => {
+            const r = Math.hypot(s[0], s[1], s[2]);
+            const v = Math.hypot(s[3], s[4], s[5]);
+            return `<tr>
+              <td>${idx}</td>
+              <td>${s[0].toFixed(3)}</td>
+              <td>${s[1].toFixed(3)}</td>
+              <td>${s[2].toFixed(3)}</td>
+              <td>${r.toFixed(3)}</td>
+              <td>${v.toFixed(5)}</td>
+            </tr>`;
+          })
+          .join("");
+
+        drawOrbitCanvas(el("oem-canvas"), states, target, center);
+        updateWireInspector("compute_ephemeris", "OEM", reqBytes, "OEM", resBytes, elapsedMs, {
+          ORIGINATOR: oemOut.ORIGINATOR,
+          OBJECT_NAIF_ID: outBlk.OBJECT_NAIF_ID,
+          CENTER_NAIF_ID: outBlk.CENTER_NAIF_ID,
+          START_TIME: outBlk.START_TIME,
+          STOP_TIME: outBlk.STOP_TIME,
+          STATE_COUNT: states.length,
+          FIRST_STATE_KM: states[0],
+        });
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    // ==================== 2. $AEM ====================
+    function drawAttitudeCanvas(canvas, rows) {
+      const ctx = canvas.getContext("2d");
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = canvas.clientWidth || 520;
+      const h = canvas.clientHeight || 340;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      if (rows.length < 2) return;
+
+      const padL = 42, padR = 16, padT = 28, padB = 26;
+      const pw = w - padL - padR;
+      const ph = h - padT - padB;
+      const midY = padT + ph / 2;
+
+      ctx.strokeStyle = "rgba(122, 162, 255, 0.18)";
+      ctx.beginPath();
+      ctx.moveTo(padL, midY);
+      ctx.lineTo(w - padR, midY);
+      ctx.stroke();
+
+      const colors = ["#ff7b3a", "#7aa2ff", "#7ff0b0", "#c48dff"];
+      const labels = ["Q1", "Q2", "Q3", "QC"];
+      for (let c = 0; c < 4; c++) {
+        ctx.strokeStyle = colors[c];
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        rows.forEach((r, i) => {
+          const x = padL + (i / (rows.length - 1)) * pw;
+          const y = midY - r[c] * (ph * 0.46);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.fillStyle = colors[c];
+        ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, monospace";
+        ctx.fillText(labels[c], padL + c * 52, 18);
+      }
+    }
+
+    async function runAem() {
+      try {
+        const seg = new AEM_NS.AEMSegmentT();
+        seg.OBJECT_NAME = el("aem-frame-b").value;
+        seg.REF_FRAME_A = el("aem-frame-a").value;
+        seg.REF_FRAME_B = el("aem-frame-b").value;
+        seg.ATTITUDE_DIR = el("aem-dir").value;
+        seg.TIME_SYSTEM = "UTC";
+        seg.START_TIME = el("aem-start").value.trim();
+        seg.STOP_TIME = el("aem-stop").value.trim();
+        seg.STEP_SIZE = Number(el("aem-step").value) || 3600;
+        seg.ATTITUDE_COMPONENTS = 7;
+
+        const aemReq = new AEM_NS.AEMT();
+        aemReq.CCSDS_AEM_VERS = "2.0";
+        aemReq.ORIGINATOR = "PEPPER-WEB";
+        aemReq.SEGMENTS = [seg];
+
+        const reqBytes = packRoot(aemReq, "$AEM");
+        const { outputs, elapsedMs } = await invokeSds("compute_attitude", "request", "AEM", reqBytes);
+        const resBytes = outputs[0].payload;
+        state.lastAemBytes = resBytes;
+        el("btn-dl-aem").disabled = false;
+
+        const aemOut = AEM_NS.AEM.getRootAsAEM(new flatbuffers.ByteBuffer(resBytes)).unpack();
+        const outSeg = aemOut.SEGMENTS[0];
+        const raw = outSeg.ATTITUDE_DATA || [];
+        const rows = [];
+        for (let i = 0; i + 6 < raw.length; i += 7) {
+          rows.push(raw.slice(i, i + 7));
+        }
+
+        let maxNormErr = 0;
+        for (const r of rows) {
+          const n = Math.hypot(r[0], r[1], r[2], r[3]);
+          maxNormErr = Math.max(maxNormErr, Math.abs(n - 1));
+        }
+        const omega0 = rows.length ? Math.hypot(rows[0][4], rows[0][5], rows[0][6]) : 0;
+        const periodHrs = omega0 > 0 ? 360.0 / (omega0 * 3600.0) : 0;
+
+        el("aem-metrics").innerHTML = [
+          ["Samples", String(rows.length)],
+          ["Attitude Type", outSeg.ATTITUDE_TYPE],
+          ["Max ||Q|-1|", maxNormErr.toExponential(2)],
+          ["|ω| (deg/s)", omega0.toExponential(6)],
+          ["Rotation Period", `${periodHrs.toFixed(4)} h`],
+        ]
+          .map(([k, v]) => `<div class="metric-card"><span class="k">${k}</span><span class="v">${v}</span></div>`)
+          .join("");
+
+        el("aem-table").querySelector("tbody").innerHTML = rows
+          .slice(0, 80)
+          .map((r, i) => {
+            const qn = Math.hypot(r[0], r[1], r[2], r[3]);
+            const wn = Math.hypot(r[4], r[5], r[6]);
+            return `<tr>
+              <td>${i}</td>
+              <td>${r[0].toFixed(6)}</td>
+              <td>${r[1].toFixed(6)}</td>
+              <td>${r[2].toFixed(6)}</td>
+              <td>${r[3].toFixed(6)}</td>
+              <td>${qn.toFixed(12)}</td>
+              <td>${wn.toExponential(6)}</td>
+            </tr>`;
+          })
+          .join("");
+
+        drawAttitudeCanvas(el("aem-canvas"), rows);
+        updateWireInspector("compute_attitude", "AEM", reqBytes, "AEM", resBytes, elapsedMs, {
+          REF_FRAME_A: outSeg.REF_FRAME_A,
+          REF_FRAME_B: outSeg.REF_FRAME_B,
+          ATTITUDE_TYPE: outSeg.ATTITUDE_TYPE,
+          SAMPLES: rows.length,
+          FIRST_QUAT_ANGVEL: rows[0],
+        });
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    // ==================== 3. $FRM ====================
+    el("frm-op").addEventListener("change", () => {
+      const op = el("frm-op").value;
+      if (op === "LLA_TO_PCPF") {
+        el("frm-l1").textContent = "Latitude (deg)";
+        el("frm-v1").value = "28.572872";
+        el("frm-l2").textContent = "Longitude (deg)";
+        el("frm-v2").value = "-80.648981";
+        el("frm-l3").textContent = "Altitude (m)";
+        el("frm-v3").value = "54.0";
+      } else {
+        el("frm-l1").textContent = "X Position (m)";
+        el("frm-v1").value = "6778137.0";
+        el("frm-l2").textContent = "Y Position (m)";
+        el("frm-v2").value = "0.0";
+        el("frm-l3").textContent = "VY Velocity (m/s)";
+        el("frm-v3").value = "7668.63";
+      }
+    });
+
+    async function runFrm() {
+      try {
+        const opStr = el("frm-op").value;
+        const epoch = el("frm-epoch").value.trim();
+        const v1 = Number(el("frm-v1").value);
+        const v2 = Number(el("frm-v2").value);
+        const v3 = Number(el("frm-v3").value);
+
+        const req = new FRM_NS.FRMFrameTransformRequestT();
+        req.EPOCH = epoch;
+        req.EPOCH_TIME_SYSTEM = "UTC";
+        req.TRACE_ID = "pepper-wb-frm";
+
+        if (opStr === "LLA_TO_PCPF") {
+          req.OPERATION = FRM_NS.frmOperationCode.LLA_TO_PCPF;
+          req.POSITION = new FRM_NS.FRMVector3T((v1 * Math.PI) / 180.0, (v2 * Math.PI) / 180.0, v3);
+        } else if (opStr === "STATE_TRANSFORM") {
+          req.OPERATION = FRM_NS.frmOperationCode.STATE_TRANSFORM;
+          const srcCs = new RFM_NS.RFMCoordinateSystemT();
+          srcCs.NAME = "J2000";
+          const dstCs = new RFM_NS.RFMCoordinateSystemT();
+          dstCs.NAME = "IAU_EARTH";
+          req.SOURCE_COORDINATE_SYSTEM = srcCs;
+          req.TARGET_COORDINATE_SYSTEM = dstCs;
+          req.TARGET_REPRESENTATION = FRM_NS.frmStateRepresentation.CARTESIAN;
+          const sv = new FRM_NS.FRMStateVectorT();
+          sv.REPRESENTATION = FRM_NS.frmStateRepresentation.CARTESIAN;
+          sv.POSITION = new FRM_NS.FRMVector3T(v1, v2, 0.0);
+          sv.VELOCITY = new FRM_NS.FRMVector3T(0.0, v3 * Math.cos(0.9), v3 * Math.sin(0.9));
+          sv.GRAVITATIONAL_PARAMETER = 3.986004418e14;
+          req.SOURCE_STATE = sv;
+        } else {
+          req.OPERATION = FRM_NS.frmOperationCode.STATE_REPRESENTATION_CONVERT;
+          req.TARGET_REPRESENTATION = FRM_NS.frmStateRepresentation.KEPLERIAN;
+          const sv = new FRM_NS.FRMStateVectorT();
+          sv.REPRESENTATION = FRM_NS.frmStateRepresentation.CARTESIAN;
+          sv.POSITION = new FRM_NS.FRMVector3T(v1, v2, 0.0);
+          sv.VELOCITY = new FRM_NS.FRMVector3T(0.0, v3 * Math.cos(0.9), v3 * Math.sin(0.9));
+          sv.GRAVITATIONAL_PARAMETER = 3.986004418e14;
+          req.SOURCE_STATE = sv;
+        }
+
+        const frmEnv = new FRM_NS.FRMT(req, null);
+        const reqBytes = packRoot(frmEnv, "$FRM");
+        const { outputs, elapsedMs } = await invokeSds("transform_frame", "request", "FRM", reqBytes);
+        const resBytes = outputs[0].payload;
+        const frmOut = FRM_NS.FRM.getRootAsFRM(new flatbuffers.ByteBuffer(resBytes)).unpack();
+        const res = frmOut.FRAME_TRANSFORM_RESULT;
+
+        el("frm-metrics").innerHTML = [
+          ["Operation", opStr],
+          ["Status", res.STATUS === FRM_NS.frmResultStatus.OK ? "OK (0)" : `ERR (${res.STATUS})`],
+          [
+            "Output |r| (m)",
+            res.POSITION
+              ? Math.hypot(res.POSITION.X, res.POSITION.Y, res.POSITION.Z).toFixed(3)
+              : res.TARGET_STATE && res.TARGET_STATE.ELEMENTS.length
+                ? `a = ${res.TARGET_STATE.ELEMENTS[0].toFixed(2)} m`
+                : "—",
+          ],
+        ]
+          .map(([k, v]) => `<div class="metric-card"><span class="k">${k}</span><span class="v">${v}</span></div>`)
+          .join("");
+
+        el("frm-output").textContent = JSON.stringify(res, null, 2);
+        updateWireInspector("transform_frame", "FRM", reqBytes, "FRM", resBytes, elapsedMs, res);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    // ==================== 4. $TIM ====================
+    async function convertSingleTim(srcScale, srcIso, dstScale, dstFmt) {
+      const src = new TIM_NS.TIMInstantT();
+      src.TIME_SYSTEM = TIM_NS.timingStandard[srcScale];
+      src.EPOCH_FORMAT = TIM_NS.timEpochRepresentation.ISO8601;
+      src.ISO8601 = srcIso;
+
+      const req = new TIM_NS.TIMConversionRequestT();
+      req.SOURCE = src;
+      req.TARGET_TIME_SYSTEM = TIM_NS.timingStandard[dstScale];
+      req.TARGET_EPOCH_FORMAT = TIM_NS.timEpochRepresentation[dstFmt];
+
+      const env = new TIM_NS.TIMT(src.TIME_SYSTEM, null, req, null);
+      const reqBytes = packRoot(env, "$TIM");
+      const { outputs, elapsedMs } = await invokeSds("convert_time", "request", "TIM", reqBytes);
+      const resBytes = outputs[0].payload;
+      const out = TIM_NS.TIM.getRootAsTIM(new flatbuffers.ByteBuffer(resBytes)).unpack();
+      return { reqBytes, resBytes, elapsedMs, out };
+    }
+
+    async function runTim() {
+      try {
+        const srcScale = el("tim-src-sys").value;
+        const srcIso = el("tim-src-iso").value.trim();
+        const dstScale = el("tim-dst-sys").value;
+        const dstFmt = el("tim-dst-fmt").value;
+
+        const primary = await convertSingleTim(srcScale, srcIso, dstScale, dstFmt);
+        const res = primary.out.CONVERSION_RESULT;
+        const tgt = res.TARGET;
+
+        const formattedTarget =
+          dstFmt === "ISO8601"
+            ? tgt.ISO8601
+            : dstFmt === "JULIAN_DATE" || dstFmt === "MODIFIED_JULIAN_DATE"
+              ? tgt.JULIAN_DATE.toFixed(9)
+              : tgt.SECONDS.toFixed(6);
+
+        el("tim-metrics").innerHTML = [
+          ["Target Reading", formattedTarget],
+          ["Δt (Target − Source)", `${res.DELTA_SECONDS >= 0 ? "+" : ""}${res.DELTA_SECONDS.toFixed(9)} s`],
+          ["Julian Date", tgt.JULIAN_DATE.toFixed(8)],
+        ]
+          .map(([k, v]) => `<div class="metric-card"><span class="k">${k}</span><span class="v">${v}</span></div>`)
+          .join("");
+
+        const scales = ["UTC", "TAI", "TT", "TDB", "GPS", "A1"];
+        const rowsHtml = [];
+        for (const sc of scales) {
+          const r = await convertSingleTim(srcScale, srcIso, sc, "JULIAN_DATE");
+          const cr = r.out.CONVERSION_RESULT;
+          const jd = cr.TARGET.JULIAN_DATE;
+          rowsHtml.push(`<tr>
+            <td><strong>${sc}</strong></td>
+            <td>${cr.TARGET.ISO8601}</td>
+            <td>${jd.toFixed(8)}</td>
+            <td>${(jd - 2400000.5).toFixed(8)}</td>
+            <td>${cr.DELTA_SECONDS >= 0 ? "+" : ""}${cr.DELTA_SECONDS.toFixed(9)}</td>
+          </tr>`);
+        }
+        el("tim-table").querySelector("tbody").innerHTML = rowsHtml.join("");
+        updateWireInspector("convert_time", "TIM", primary.reqBytes, "TIM", primary.resBytes, primary.elapsedMs, res);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    // ==================== 5. $EVL ====================
+    el("evl-preset").addEventListener("change", () => {
+      const p = el("evl-preset").value;
+      if (p === "apsides") {
+        el("evl-start").value = "2025-01-01T00:00:00Z";
+        el("evl-stop").value = "2025-02-01T00:00:00Z";
+        el("evl-step").value = "3600";
+      } else if (p === "eclipse") {
+        el("evl-start").value = "2024-04-08T15:00:00Z";
+        el("evl-stop").value = "2024-04-08T22:00:00Z";
+        el("evl-step").value = "300";
+      } else {
+        el("evl-start").value = "2025-01-01T00:00:00Z";
+        el("evl-stop").value = "2025-01-20T00:00:00Z";
+        el("evl-step").value = "3600";
+      }
+    });
+
+    const EVL_TYPE_NAMES = {};
+    for (const [k, v] of Object.entries(EVL_NS.evlEventType)) {
+      if (typeof v === "number") EVL_TYPE_NAMES[v] = k;
+    }
+
+    async function runEvl() {
+      try {
+        const preset = el("evl-preset").value;
+        const req = new EVL_NS.EVLEventLocationRequestT();
+        req.SCAN_START_EPOCH = el("evl-start").value.trim();
+        req.SCAN_STOP_EPOCH = el("evl-stop").value.trim();
+        req.EPOCH_TIME_SYSTEM = "UTC";
+        req.SCAN_STEP_SECONDS = Number(el("evl-step").value) || 3600;
+        req.TRACE_ID = `pepper-wb-evl-${preset}`;
+
+        if (preset === "apsides") {
+          req.LOCATOR_CLASS = EVL_NS.evlLocatorClass.APSIDES;
+          req.TARGET_OBJECT_ID = "301";
+          req.APSIDES_CONFIGURATION = new EVL_NS.EVLApsidesConfigurationT(399, true, true);
+        } else if (preset === "eclipse") {
+          req.LOCATOR_CLASS = EVL_NS.evlLocatorClass.ECLIPSE;
+          req.TARGET_OBJECT_ID = "399";
+          const ec = new EVL_NS.EVLEclipseConfigurationT();
+          ec.OCCULTING_BODY_IDS = [301];
+          ec.ILLUMINATING_BODY_ID = 10;
+          ec.REPORT_UMBRA = false;
+          ec.REPORT_ANTUMBRA = false;
+          ec.REPORT_PENUMBRA = true;
+          ec.ABERRATION_CORRECTION = EVL_NS.evlAberrationCorrection.LIGHT_TIME;
+          req.ECLIPSE_CONFIGURATION = ec;
+        } else {
+          req.LOCATOR_CLASS = EVL_NS.evlLocatorClass.PARAMETER_CONDITION;
+          req.TARGET_OBJECT_ID = "301";
+          const pref = new PCE_NS.PCEParameterRefT();
+          pref.PARAMETER = PCE_NS.pceParameter.RELATIVE_RANGE;
+          pref.SECOND_OBJECT_ID = "399";
+          const cond = new PCE_NS.PCEParameterConditionT();
+          cond.PARAMETER = pref;
+          cond.GOAL_VALUE = 380000000.0;
+          const pcfg = new EVL_NS.EVLParameterConditionConfigurationT([cond], false, 0.0);
+          req.PARAMETER_CONDITION_CONFIGURATION = pcfg;
+        }
+
+        const env = new EVL_NS.EVLT(req, null);
+        const reqBytes = packRoot(env, "$EVL");
+        const { outputs, elapsedMs } = await invokeSds("locate_events", "request", "EVL", reqBytes);
+        const resBytes = outputs[0].payload;
+        const out = EVL_NS.EVL.getRootAsEVL(new flatbuffers.ByteBuffer(resBytes)).unpack();
+        const rep = out.EVENT_REPORT;
+        const events = rep.EVENTS || [];
+
+        el("evl-metrics").innerHTML = [
+          ["Events Found", String(events.length)],
+          ["Status", rep.STATUS === EVL_NS.evlResultStatus.OK ? "OK (0)" : `Code ${rep.STATUS}`],
+          ["Evaluations", String(rep.EVALUATION_COUNT)],
+        ]
+          .map(([k, v]) => `<div class="metric-card"><span class="k">${k}</span><span class="v">${v}</span></div>`)
+          .join("");
+
+        el("evl-table").querySelector("tbody").innerHTML = events
+          .map((ev, i) => {
+            const valStr =
+              ev.EXTREMUM_VALUE > 0
+                ? `${(ev.EXTREMUM_VALUE / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 })} km`
+                : "—";
+            return `<tr>
+              <td>${i + 1}</td>
+              <td>${EVL_TYPE_NAMES[ev.EVENT_TYPE] || ev.EVENT_TYPE}</td>
+              <td>${ev.START_EPOCH}</td>
+              <td>${ev.STOP_EPOCH}</td>
+              <td>${ev.DURATION_SECONDS.toFixed(2)}</td>
+              <td>${valStr}</td>
+            </tr>`;
+          })
+          .join("");
+
+        updateWireInspector("locate_events", "EVL", reqBytes, "EVL", resBytes, elapsedMs, rep);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    // ==================== 6. $NCD ====================
+    const NCD_FMT_NAMES = {};
+    for (const [k, v] of Object.entries(NCD_NS.ncdContainerFormat)) {
+      if (typeof v === "number") NCD_FMT_NAMES[v] = k;
+    }
+
+    function renderNcdDescriptors() {
+      const totalBytes = state.descriptors.reduce((acc, d) => acc + Number(d.SOURCE_BYTE_LENGTH), 0);
+      const totalSegs = state.descriptors.reduce((acc, d) => acc + (d.SEGMENTS ? d.SEGMENTS.length : 0), 0);
+      el("ncd-metrics").innerHTML = [
+        ["Resident Kernels", String(state.descriptors.length)],
+        ["Total Segments", String(totalSegs)],
+        ["Resident Footprint", `${(totalBytes / (1024 * 1024)).toFixed(2)} MiB`],
+      ]
+        .map(([k, v]) => `<div class="metric-card"><span class="k">${k}</span><span class="v">${v}</span></div>`)
+        .join("");
+
+      const rows = [];
+      for (const d of state.descriptors) {
+        const fmt =
+          d.FORMAT === NCD_NS.ncdContainerFormat.PROVIDER_DEFINED
+            ? d.PROVIDER_DEFINED_FORMAT_NAME
+            : NCD_FMT_NAMES[d.FORMAT] || String(d.FORMAT);
+        rows.push(`<tr>
+          <td><strong>${d.INTERNAL_FILE_NAME || "kernel"}</strong></td>
+          <td>${fmt}</td>
+          <td>—</td>
+          <td>${d.NATIVE_TIME_SYSTEM || "TEXT"}</td>
+          <td>${d.START_TIME ? `${d.START_TIME} → ${d.STOP_TIME}` : "Pool variables"}</td>
+          <td>${Number(d.SOURCE_BYTE_LENGTH).toLocaleString()} B · ${String(d.SOURCE_SHA256).slice(0, 12)}…</td>
+        </tr>`);
+        for (const s of d.SEGMENTS || []) {
+          rows.push(`<tr>
+            <td style="padding-left: 24px; color: var(--muted);">↳ ${s.SEGMENT_NAME || "segment"}</td>
+            <td>Type ${s.SEGMENT_TYPE}</td>
+            <td>${s.TARGET_NAIF_ID} → ${s.CENTER_NAIF_ID}</td>
+            <td>${s.FRAME_NAME || s.FRAME_ID}</td>
+            <td>${s.START_EPOCH} → ${s.STOP_EPOCH}</td>
+            <td>words ${s.INITIAL_ADDRESS}..${s.FINAL_ADDRESS}</td>
+          </tr>`);
+        }
+      }
+      el("ncd-table").querySelector("tbody").innerHTML = rows.join("");
+    }
+
+    el("ncd-file-input").addEventListener("change", async (ev) => {
+      const files = Array.from(ev.target.files || []);
+      if (!files.length || !state.loaded) return;
+      try {
+        const entries = [];
+        for (const f of files) {
+          const buf = new Uint8Array(await f.arrayBuffer());
+          entries.push({
+            entryId: f.name,
+            role: ModuleBundleEntryRole.AUXILIARY,
+            sectionName: f.name,
+            mediaType: "application/octet-stream",
+            payloadEncoding: ModulePayloadEncoding.RAW_BYTES,
+            payload: buf,
+          });
+        }
+        const mblBytes = encodeModuleBundle({ entries });
+        const { outputs, elapsedMs } = await invokeSds("furnish_kernels", "kernels", "MBL", mblBytes);
+        const newDescs = outputs.map((o) =>
+          NCD_NS.NCD.getRootAsNCD(new flatbuffers.ByteBuffer(o.payload)).unpack(),
+        );
+        state.descriptors.push(...newDescs);
+        renderNcdDescriptors();
+        el("kernel-status").textContent = `Kernels: ${state.descriptors.length} loaded`;
+        if (outputs.length > 0) {
+          updateWireInspector("furnish_kernels", "MBL", mblBytes, "NCD", outputs[0].payload, elapsedMs, newDescs[0]);
+        }
+      } catch (err) {
+        showError(err.message);
+      }
+    });
+
+    // ==================== Wire up Action Buttons ====================
+    el("btn-run-oem").addEventListener("click", runOem);
+    el("btn-dl-oem").addEventListener("click", () => {
+      if (state.lastOemBytes) downloadBytes(state.lastOemBytes, "pepper-ephemeris.oem.fb");
+    });
+    el("btn-run-aem").addEventListener("click", runAem);
+    el("btn-dl-aem").addEventListener("click", () => {
+      if (state.lastAemBytes) downloadBytes(state.lastAemBytes, "pepper-attitude.aem.fb");
+    });
+    el("btn-run-frm").addEventListener("click", runFrm);
+    el("btn-run-tim").addEventListener("click", runTim);
+    el("btn-run-evl").addEventListener("click", runEvl);
+
+    // ==================== Bootstrap WASM + Default Kernels ====================
+    async function fetchWasmBytes() {
+      const candidates = ["/dist/isomorphic/module.wasm", "../dist/isomorphic/module.wasm"];
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) return new Uint8Array(await res.arrayBuffer());
+        } catch {}
+      }
+      throw new Error("Could not fetch module.wasm from /dist/isomorphic/module.wasm");
+    }
+
+    async function bootstrap() {
+      const coi = Boolean(window.crossOriginIsolated);
+      const coiEl = el("coi-status");
+      coiEl.textContent = `crossOriginIsolated: ${coi}`;
+      coiEl.className = coi ? "pill ok" : "pill warn";
+
+      try {
+        const wasmBytes = await fetchWasmBytes();
+        state.loaded = await loadModule({ wasmSource: wasmBytes });
+        el("wasm-status").textContent = `Ready · WASM ${(wasmBytes.byteLength / (1024 * 1024)).toFixed(2)} MiB`;
+        el("wasm-status").className = "pill ok";
+
+        const manifestBytes = state.loaded.readManifest();
+        const manifestInfo = manifestBytes ? decodePluginManifest(manifestBytes) : null;
+        el("manifest-status").textContent = manifestInfo
+          ? `$PLG: ${manifestInfo.pluginId} (${manifestInfo.methods?.length || 8} methods)`
+          : "$PLG embedded";
+        el("manifest-status").className = "pill ok";
+
+        const kernelNames = ["naif0012.tls", "pck00011.tpc", "de440_2000_2035.bsp"];
+        const fetched = await Promise.all(
+          kernelNames.map(async (name) => {
+            const r = await fetch(`./wasm/kernels/${name}`);
+            if (!r.ok) throw new Error(`Failed to fetch ./wasm/kernels/${name} (${r.status})`);
+            return { name, bytes: new Uint8Array(await r.arrayBuffer()) };
+          }),
+        );
+
+        const mblBytes = encodeModuleBundle({
+          entries: fetched.map((k) => ({
+            entryId: k.name,
+            role: ModuleBundleEntryRole.AUXILIARY,
+            sectionName: k.name,
+            mediaType: "application/octet-stream",
+            payloadEncoding: ModulePayloadEncoding.RAW_BYTES,
+            payload: k.bytes,
+          })),
+        });
+
+        const { outputs, elapsedMs } = await invokeSds("furnish_kernels", "kernels", "MBL", mblBytes);
+        state.descriptors = outputs.map((o) =>
+          NCD_NS.NCD.getRootAsNCD(new flatbuffers.ByteBuffer(o.payload)).unpack(),
+        );
+        renderNcdDescriptors();
+
+        el("kernel-status").textContent = `Kernels: ${state.descriptors.length} loaded (${elapsedMs.toFixed(1)} ms)`;
+        el("kernel-status").className = "pill ok";
+
+        for (const id of ["btn-run-oem", "btn-run-aem", "btn-run-frm", "btn-run-tim", "btn-run-evl"]) {
+          el(id).disabled = false;
+        }
+
+        // Run initial $OEM computation so the workbench opens with live astrodynamics plotted
+        await runOem();
+        window.__PEPPER_WASM_READY__ = true;
+      } catch (err) {
+        el("wasm-status").textContent = "WASM Init Error";
+        el("wasm-status").className = "pill err";
+        showError(err.message || String(err));
+        console.error(err);
+      }
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>
