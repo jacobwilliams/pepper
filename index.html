@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PEPPER · Planetary Ephemerides, Positions, Pointing, Events &amp; Rotations</title>
+  <meta name="description" content="PEPPER: a modern Fortran, thread-safe reimagining of NAIF's SPICELIB, with C and Python interfaces.">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- three.js, for the hero's 3D logo (hero3d.js) -->
+  <script type="importmap">
+    {"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                 "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <canvas id="stars" aria-hidden="true"></canvas>
+
+  <header class="nav">
+    <a class="brand" href="#top"><img src="logo.svg" alt="" width="32" height="32"> PEPPER</a>
+    <nav>
+      <a href="#about">About</a>
+      <a href="#speed">Speed</a>
+      <a href="#code">Code</a>
+      <a href="#features">Features</a>
+      <a class="nav-gh" href="https://github.com/jacobwilliams/pepper">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <!-- Hero: the logo with planets in orbit -->
+    <section class="hero">
+      <a class="orbits" href="model.html" title="Explore the logo in 3D">
+        <div class="orbit o1" aria-hidden="true"><span class="planet p1"></span></div>
+        <div class="orbit o2" aria-hidden="true"><span class="planet p2"></span></div>
+        <div class="orbit o3" aria-hidden="true"><span class="planet p3"><span class="ring"></span></span></div>
+        <img class="hero-logo" src="logo_mark.svg" alt="PEPPER logo: a pepper shaker pouring out the planets (explore it in 3D)">
+        <canvas class="hero-3d" aria-hidden="true"></canvas>
+      </a>
+      <div class="hero-text">
+        <p class="eyebrow">Modern Fortran · thread-safe · SPICE-compatible</p>
+        <h1><span class="glow">PEPPER</span></h1>
+        <p class="tagline">
+          <b>P</b>lanetary <b>E</b>phemerides, <b>P</b>ositions, <b>P</b>ointing,
+          <b>E</b>vents &amp; <b>R</b>otations
+        </p>
+        <p class="lede">
+          A modern, thread-safe reimagining of NAIF's SPICELIB: the same routines,
+          names and results, from Fortran, C and Python, on as many threads as you have.
+        </p>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/jacobwilliams/pepper">View on GitHub</a>
+          <a class="btn" href="#code">See the code</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- What it is -->
+    <section id="about" class="panel reveal">
+      <h2>SPICE, modernized, not rewritten</h2>
+      <p>
+        PEPPER starts from SPICELIB N0067, the Fortran 77 library NASA's NAIF has
+        developed for decades, and keeps its routines, arguments and behavior.
+        What changes is underneath: all state lives in an <code>instance</code>,
+        each thread queries it through its own <code>context</code>, and the
+        limits of fixed-size tables are gone.
+      </p>
+      <div class="cards">
+        <article class="card">
+          <h3>Fortran</h3>
+          <p>SPICELIB's routines as methods: <code>spice%furnsh</code> loads, <code>ctx%spkezr</code> queries.</p>
+        </article>
+        <article class="card">
+          <h3>C &amp; C++</h3>
+          <p>About 830 routines in <code>pepper.h</code>, generated from the Fortran interfaces.</p>
+        </article>
+        <article class="card">
+          <h3>Python</h3>
+          <p>PepperyPy, with SpiceyPy's API: <code>import pepperypy as spice</code>.</p>
+        </article>
+      </div>
+      <p class="tests">
+        <span class="badge">399 / 399</span> of NAIF's tspice test families pass.
+      </p>
+    </section>
+
+    <!-- Speed -->
+    <section id="speed" class="panel reveal">
+      <h2>Fast, and faster with more cores</h2>
+      <div class="stats">
+        <div class="stat"><span class="num" data-to="5" data-prefix="1.4–" data-suffix="×">5×</span><span class="label">faster than NAIF's SPICELIB build, for most queries</span></div>
+        <div class="stat"><span class="num" data-to="0.25" data-decimals="2" data-suffix=" µs">0.25 µs</span><span class="label">per state with kernels in memory</span></div>
+        <div class="stat"><span class="num" data-to="5.4" data-decimals="1" data-suffix="×">5.4×</span><span class="label">speedup on 8 threads (SPICELIB: one thread)</span></div>
+        <div class="stat"><span class="num" data-to="1800" data-suffix="×">1800×</span><span class="label">faster to unload a kernel</span></div>
+        <div class="stat"><span class="num" data-to="30" data-prefix="up to " data-suffix="×">up to 30×</span><span class="label">PepperyPy against SpiceyPy, with prepared queries</span></div>
+        <div class="stat"><span class="num" data-to="0.5" data-decimals="1" data-prefix="0.1–" data-suffix=" µs">0.1–0.5 µs</span><span class="label">per state, with prepared queries</span></div>
+      </div>
+      <p class="fine">Measurements: pepper_vs_spicelib.md and python/README.md in the repository.</p>
+    </section>
+
+    <!-- Code -->
+    <section id="code" class="panel reveal">
+      <h2>The Moon from Earth, three ways</h2>
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="f">Fortran</button>
+        <button role="tab" aria-selected="false" data-tab="c">C</button>
+        <button role="tab" aria-selected="false" data-tab="py">Python</button>
+      </div>
+      <pre class="code" data-pane="f"><code><span class="k">use</span> pepper_module
+
+<span class="k">type</span>(pepper_instance), target :: spice
+<span class="k">type</span>(pepper_context) :: ctx
+<span class="k">real</span>(wp) :: et, state(6), lt
+
+<span class="k">call</span> spice%furnsh(<span class="s">'kernels.tm'</span>)
+ctx = spice%new_context()                <span class="c">! one per thread</span>
+<span class="k">call</span> ctx%str2et(<span class="s">'2026 NOV 8 12:00:00 UTC'</span>, et)
+<span class="k">call</span> ctx%spkezr(<span class="s">'MOON'</span>, et, <span class="s">'J2000'</span>, <span class="s">'LT+S'</span>, <span class="s">'EARTH'</span>, state, lt)</code></pre>
+      <pre class="code" data-pane="c" hidden><code><span class="k">#include</span> <span class="s">"pepper.h"</span>
+
+pepper_runtime_init();
+<span class="k">void</span> *spice = pepper_spice_new();
+<span class="k">void</span> *ctx = pepper_context_new(spice);   <span class="c">/* one per thread */</span>
+pepper_spice_furnsh(spice, <span class="s">"kernels.tm"</span>, -1);
+<span class="k">double</span> et, state[6], lt;
+pepper_str2et(ctx, <span class="s">"2026 NOV 8 12:00"</span>, &amp;et);
+pepper_spkezr(ctx, <span class="s">"MOON"</span>, et, <span class="s">"J2000"</span>, <span class="s">"LT+S"</span>, <span class="s">"EARTH"</span>, state, &amp;lt);</code></pre>
+      <pre class="code" data-pane="py" hidden><code><span class="k">import</span> pepperypy <span class="k">as</span> spice
+
+spice.furnsh(<span class="s">'kernels.tm'</span>)
+et = spice.str2et(<span class="s">'2026 NOV 8'</span>)
+state, lt = spice.spkezr(<span class="s">'MOON'</span>, et, <span class="s">'J2000'</span>, <span class="s">'LT+S'</span>, <span class="s">'EARTH'</span>)</code></pre>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="panel reveal">
+      <h2>What's new on board</h2>
+      <ul class="features">
+        <li><h3>Thread-safe</h3><p>No global state: load kernels once, query from every core, a context per thread.</p></li>
+        <li><h3>Kernels in memory</h3><p><code>in_memory=.true.</code> reads binary kernels whole: queries at scattered epochs never touch the disk.</p></li>
+        <li><h3>Prepared queries</h3><p>Resolve names and frames once, then evaluate states at any number of epochs, to the last bit of SPKEZR.</p></li>
+        <li><h3>Programmatic ephemerides</h3><p>Bodies and frames defined by your own procedures, used by every query like kernel data.</p></li>
+        <li><h3>JSON kernels</h3><p>Text kernels written in JSON (<code>*.json</code>), loaded straight into the kernel pool.</p></li>
+        <li><h3>No fixed limits</h3><p>Names, paths and results of any size; the old tables of 26003 variables and 5000 files are gone.</p></li>
+      </ul>
+    </section>
+
+    <section class="panel note reveal">
+      <p>
+        PEPPER is new and experimental: its interfaces may still change. It passes
+        NAIF's test suite and agrees with SPICELIB and SpiceyPy in the comparisons
+        described in the repository, but it has not yet been used for mission-critical
+        applications. PEPPER is not developed or supported by NAIF, JPL, or NASA.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2026 Jacob Williams · MIT License · <a href="https://github.com/jacobwilliams/pepper">github.com/jacobwilliams/pepper</a></p>
+  </footer>
+
+  <script src="script.js"></script>
+  <script type="module" src="hero3d.js"></script>
+</body>
+</html>
