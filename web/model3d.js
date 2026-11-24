@@ -1,4 +1,5 @@
-// The interactive 3D logo (model.html): the model (logo3d.js) under a sky of
+// The interactive 3D logo (model.html, and rings.html: the model named by the
+// canvas's data-model, pepper_logo.glb by default) under a sky of
 // stars, turned with the mouse or a finger (OrbitControls): drag to rotate,
 // scroll or pinch to zoom, right-drag or two-finger drag to pan,
 // double-click to reset the view. The view turns slowly by itself until the
@@ -83,13 +84,13 @@ function start() {
   canvas.addEventListener('dblclick', resetView);
   resetButton?.addEventListener('click', resetView);
 
-  loadLogo((model, spinPlanets) => {
-    if (!reduceMotion) spin = spinPlanets;
+  loadLogo((model, spinParts) => {
+    if (!reduceMotion) spin = spinParts;
     scene.add(model);
     canvas.classList.add('ready');
     document.body.classList.add('viewer-ready');
     run();
-  }, error => fallback('the model could not be loaded', error));
+  }, error => fallback('the model could not be loaded', error), canvas.dataset.model);
 
   const clock = new THREE.Clock();
   function frame() {

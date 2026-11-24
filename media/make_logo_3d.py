@@ -569,11 +569,11 @@ def to_model(x, y, z=0.0):
     return ((x - CENTER[0]) * SCALE, -(y - CENTER[1]) * SCALE, z * SCALE)
 
 
-def build_scene():
-    """The meshes, the materials and the textures (name -> PNG bytes)."""
-    meshes, materials, textures = [], {}, {}
-
-    # --- the shaker: upright at the origin (logo pixels), then placed ---
+def add_shaker(meshes, materials, textures):
+    """The shaker, placed in the logo's pose: its meshes, materials and
+    textures added to MESHES, MATERIALS and TEXTURES. Returns the logo point
+    of the holes (the spray's origin) and the direction the cap points
+    (degrees, SVG)."""
     bp, cp, dp = body_profile(), collar_profile(), dome_profile()
     parts = [lathe("BODY", "ceramic", bp), lathe("COLLAR", "collar", cp), lathe("CAP", "chrome", dp)]
     textures["BODY.PNG"] = body_texture(bp)
@@ -596,17 +596,32 @@ def build_scene():
     materials["chrome"] = {"texture": "CAP.PNG", "color": "#dfe3ea", "metal": 0.75, "rough": 0.22}
     materials["collar"] = {"color": "#b4bac6", "metal": 0.75, "rough": 0.28}
 
-    # --- the planets and the dust, where make_logo.spray() puts them ---
     ox, oy = origin
     tx, ty = logo.rotate(0, logo.CAP_TOP, tilt)
-    tip = (ox + tx, oy + ty)
-    axis = math.degrees(math.atan2(ty, tx))
-    ndust = 0
+    return (ox + tx, oy + ty), math.degrees(math.atan2(ty, tx))
+
+
+def spray_places(tip, axis):
+    """Where make_logo.spray() puts the planets and the dust: for each entry
+    of make_logo.SPRAY, (index, kind, radius in logo pixels, center in model
+    units)."""
     for k, (dist, off, kind, r) in enumerate(logo.SPRAY):
         a = math.radians(axis + off)
         cx, cy = tip[0] + dist * math.cos(a), tip[1] + dist * math.sin(a)
         depth = 45 * math.sin(1.7 * k + 0.4)  # some in front of the logo's plane, some behind
-        center = to_model(cx, cy, depth)
+        yield k, kind, r, to_model(cx, cy, depth)
+
+
+def build_scene():
+    """The meshes, the materials and the textures (name -> PNG bytes)."""
+    meshes, materials, textures = [], {}, {}
+
+    # --- the shaker: upright at the origin (logo pixels), then placed ---
+    tip, axis = add_shaker(meshes, materials, textures)
+
+    # --- the planets and the dust, where make_logo.spray() puts them ---
+    ndust = 0
+    for k, kind, r, center in spray_places(tip, axis):
         if kind == "dust":
             ndust += 1
             m = sphere(f"DUST{ndust}", "dust", r * SCALE, 6, 12)
@@ -676,6 +691,10 @@ def write_glb(path, meshes, materials, textures):
         mat = {"name": name, "pbrMetallicRoughness": pbr}
         if m.get("glow"):
             mat["emissiveFactor"] = [m["glow"] * x for x in srgb_to_linear(hex_rgb(m["color"]))]
+        if "emission" in m:
+            # a glowing pattern: the emissive texture, at full strength
+            mat["emissiveTexture"] = {"index": tex_index[m["emission"]]}
+            mat["emissiveFactor"] = [1.0, 1.0, 1.0]
         if m.get("blend"):
             mat["alphaMode"] = "BLEND"
         if m.get("double"):

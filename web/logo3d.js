@@ -1,16 +1,23 @@
-// The 3D logo (the model of media/make_logo_3d.py, pepper_logo.glb), shared
-// by the hero (hero3d.js) and the interactive viewer (model3d.js): the
-// renderer's settings, the lights, loading the model, and the planets' spins.
+// The 3D logo (the model of media/make_logo_3d.py, pepper_logo.glb, and its
+// variant with rings of power, media/make_rings_3d.py, pepper_rings.glb),
+// shared by the hero (hero3d.js) and the interactive viewers (model3d.js):
+// the renderer's settings, the lights, loading a model, and the spins of
+// its planets or rings.
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-// the planets' spins, radians per second (the model's nodes have these names)
+// the spins, radians per second, by node name: the planets, and the rings
+// (a ring's band, setting, stone and inlay are the nodes RING, RING_SET,
+// RING_GEM and RING_INLAY: the spin of the name before the "_")
 const SPIN = {
   MOON: 0.25, MARS: 0.5, EARTH: 0.6, VENUS: 0.2, MERCURY: 0.3,
   NEPTUNE: 0.7, URANUS: 0.6, SATURN: 0.8, JUPITER: 0.9,
+  ONE: 0.7, FIRE: 1.1, AIR: -1.0, WATER: 1.2,
+  DWARF1: -0.9, DWARF2: 0.95, MAN1: 1.3, MAN2: -1.25, MAN3: 1.4,
 };
+const spinOf = name => SPIN[name.split('_')[0]];
 
 export function webglAvailable() {
   try {
@@ -42,16 +49,17 @@ export function createScene(renderer) {
   return scene;
 }
 
-// Load the model (10 units across, centered at the origin). onLoad gets the
-// model's root and a function spin(dt) that turns each planet about its own
-// (tilted) axis by dt seconds' worth.
-export function loadLogo(onLoad, onError) {
-  new GLTFLoader().load('pepper_logo.glb', gltf => {
-    const planets = [];
+// Load the model at url (10 units across, centered at the origin; the logo
+// by default). onLoad gets the model's root and a function spin(dt) that
+// turns each planet or ring about its own (tilted) axis by dt seconds' worth.
+export function loadLogo(onLoad, onError, url = 'pepper_logo.glb') {
+  new GLTFLoader().load(url, gltf => {
+    const spinning = [];
     gltf.scene.traverse(node => {
-      if (SPIN[node.name] !== undefined) planets.push(node);
+      const rate = spinOf(node.name);
+      if (rate !== undefined) spinning.push([node, rate]);
     });
-    const spin = dt => { for (const p of planets) p.rotateY(SPIN[p.name] * dt); };
+    const spin = dt => { for (const [node, rate] of spinning) node.rotateY(rate * dt); };
     onLoad(gltf.scene, spin);
   }, undefined, onError);
 }
