@@ -1577,10 +1577,12 @@ contains
 !
 !                 Differentiate with respect to EPOCH the Jth
 !                 term of the expression for the Ith angle; add
-!                 the result to the current sum.
+!                 the result to the current sum. TC = EPOCH/T, so
+!                 d(TC**L)/dEPOCH = L * TC**(L-1) / T for every L
+!                 (SPICELIB N0067 divides by T**(L-1), wrong for L > 2).
 !
                   dtheta = dtheta + &
-                           ( l * tc**(l-1) * bang(at)%t(k) ) / t**(l-1)
+                           ( l * tc**(l-1) * bang(at)%t(k) ) / t
                end do
 
                dtheta = dtheta * rpd

@@ -918,7 +918,7 @@
 !                    and derivative wrt. ET match, i.e.
 !
 !                       C2 * TC**2    + D2 * TC**3         =  TC * B/2
-!                       C2 * 2 * TC/T + D2 * 3 * (TC/T)**2 = (B/2) / T
+!                       C2 * 2 * TC/T + D2 * 3 * TC**2/T   = (B/2) / T
 !
 !                   where TC = ET / T.
 !
@@ -936,7 +936,7 @@
 !                      M11 = TC**2
 !                      M12 = TC**3
 !                      M21 = 2 * TC/T
-!                      M22 = 3 * (TC/T)**2
+!                      M22 = 3 * TC**2 / T
 !
 !                      R1  = TC * B/2
 !                      R2  = (B/2) / T
@@ -975,7 +975,12 @@
                         CMAT(1,1) = TC**2
                         CMAT(1,2) = TC**3
                         CMAT(2,1) = 2 *  TC/T
-                        CMAT(2,2) = 3 * (TC/T)**2
+!
+!                       d(TC**3)/dET = 3 * TC**2 / T. N0067 had
+!                       3 * (TC/T)**2, the same mistake as TISBOD's
+!                       (see spicelib_bugs.md), so the two agreed.
+!
+                        CMAT(2,2) = 3 * TC**2 / T
 
                         RVEC(1) = TC * SAVBUF(H+1) / 2
                         RVEC(2) = ( SAVBUF(H+1) / 2 ) / T
@@ -1029,8 +1034,14 @@
 !                 Compare against TIPM and TSIPM computed using the
 !                 original phase angle coefficients.
 !
+!
+!                 With the corrected cubic (C2 = B/TC, D2 = -B/(2*TC**2)),
+!                 the angle is a sum of terms of size B*TC and B*TC/2,
+!                 a few hundred radians for fast angles (Saturn), so it
+!                 rounds to about 1e-13: VTIGHT is too tight here.
+!
                   CALL CHCKAD ( 'TIPM2', &
-                                 TIPM2, '~',  TIPM,   9, VTIGHT, OK )
+                                 TIPM2, '~',  TIPM,   9, 1.D-13, OK )
 
                   CALL CHCKAD ( 'TSIPM2', &
                                  TSIPM2, '~', TSIPM, 36, TIGHT,  OK )
@@ -1041,9 +1052,9 @@
                   CALL BODEUL ( ANGSET(I), ET, RA, DEC, W, LAMBDA )
                   CALL CHCKXC ( .FALSE., ' ', OK )
 
-                  CALL CHCKSD ( 'RA',  RA,  '~', XRA,  VTIGHT, OK )
-                  CALL CHCKSD ( 'DEC', DEC, '~', XDEC, VTIGHT, OK )
-                  CALL CHCKSD ( 'W',   W,   '~', XW,   VTIGHT, OK )
+                  CALL CHCKSD ( 'RA',  RA,  '~', XRA,  1.D-13, OK )
+                  CALL CHCKSD ( 'DEC', DEC, '~', XDEC, 1.D-13, OK )
+                  CALL CHCKSD ( 'W',   W,   '~', XW,   1.D-13, OK )
 
 !
 !                 LAMBDA is not affected by the phase angles. We

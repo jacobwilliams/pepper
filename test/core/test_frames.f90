@@ -69,6 +69,8 @@ program test_frames
 
    call delete_file()
 
+   call test_cubic_phase_angles()
+
    if (failures > 0) then
       print '(i0, a)', failures, ' check(s) failed'
       stop 1
@@ -130,5 +132,34 @@ contains
       write (unit, '(a)') '\begintext'
       close (unit)
    end subroutine write_fk
+
+   !> TISBOD's derivative block for a body whose nutation/precession angle
+   !> is a cubic (MAX_PHASE_DEGREE = 3) matches a central difference of its
+   !> rotation. SPICELIB N0067 divides the cubic term's derivative by T**2
+   !> instead of T (seconds per century), so its rate was about 40% off here.
+   !> The pole and prime meridian are fixed, so the angle drives all the
+   !> motion.
+   subroutine test_cubic_phase_angles()
+      integer(ip), parameter :: body = 9001
+      real(wp), parameter :: et = 1.0e9_wp  !! about 0.32 Julian centuries past J2000
+      real(wp), parameter :: h = 1.0e5_wp  !! the difference step (seconds)
+      real(wp) :: tsipm(6, 6), tplus(6, 6), tminus(6, 6), drot(3, 3)
+      call spice%pdpool('BODY9001_POLE_RA', 3_ip, [10.0_wp, 0.0_wp, 0.0_wp])
+      call spice%pdpool('BODY9001_POLE_DEC', 3_ip, [60.0_wp, 0.0_wp, 0.0_wp])
+      call spice%pdpool('BODY9001_PM', 3_ip, [20.0_wp, 0.0_wp, 0.0_wp])
+      call spice%pdpool('BODY9001_MAX_PHASE_DEGREE', 1_ip, [3.0_wp])
+      call spice%pdpool('BODY9001_NUT_PREC_ANGLES', 4_ip, [10.0_wp, 1000.0_wp, 2000.0_wp, 5000.0_wp])
+      call spice%pdpool('BODY9001_NUT_PREC_RA', 1_ip, [0.5_wp])
+      call spice%pdpool('BODY9001_NUT_PREC_DEC', 1_ip, [0.5_wp])
+      call spice%pdpool('BODY9001_NUT_PREC_PM', 1_ip, [0.5_wp])
+      call a%tisbod('J2000', body, et, tsipm)
+      call a%tisbod('J2000', body, et + h, tplus)
+      call a%tisbod('J2000', body, et - h, tminus)
+      call check(.not. a%failed(), 'tisbod with cubic phase angles')
+      drot = (tplus(1:3, 1:3) - tminus(1:3, 1:3)) / (2*h)
+      call check(maxval(abs(tsipm(4:6, 1:3) - drot)) < 1.0e-5_wp * maxval(abs(drot)), &
+                 'tisbod: the rate with cubic phase angles matches a central difference')
+      call spice%clpool()
+   end subroutine test_cubic_phase_angles
 
 end program test_frames
