@@ -198,6 +198,51 @@ where each factor is a rotation about one axis:
 where Rₖ′ and Rₖ″ are the derivatives of the axis rotation in its angle
 (sines and cosines). Then apply the product rule to the three factors.
 
+**Dynamic frames (ZZDYNFRM).** A dynamic frame's orientation is computed at
+run time from a definition in a frame kernel. There are three styles, and they
+differ in how hard R̈ is:
+
+- **Of-date frames** (mean or true equator and equinox of date, mean ecliptic
+  of date). R is built from model angles that are explicit functions of time:
+  the IAU 1976 precession angles (ZZEPRC76, polynomials in t), the IAU 1980
+  nutation (ZZENUT80, trigonometric series) and the mean obliquity (ZZMOBLIQ,
+  a polynomial). These routines already differentiate their angles once to
+  give the 6×6. Differentiating once more is mechanical (polynomial and
+  sine/cosine terms), and then EUL2XF2 (or the product rule on the precession,
+  nutation and obliquity rotations) gives the 9×9. Nothing outside the frame
+  is needed.
+- **Euler frames.** The three angles are polynomials in (t − epoch) whose
+  coefficients are in the kernel. ZZDYNFRM evaluates them with POLYDS to order
+  1. Evaluating to order 2 gives θ̈, and EUL2XF2 does the rest.
+- **Two-vector frames.** R is built from two defining vectors v₁ (primary) and
+  v₂ (secondary): one axis is along v₁, another is along v₁ × v₂, and the third
+  completes the right-handed set (ZZTWOVXF). Ṙ depends on v₁, v₂ and their
+  first derivatives, and R̈ also needs their second derivatives. What those
+  derivatives are depends on the kind of each vector:
+  - *Position* (observer-to-target): the first derivative is a velocity and the
+    second is an acceleration, which phases 1 and 3 provide. This kind is
+    straightforward.
+  - *Velocity* (the target's velocity relative to the observer, for example
+    the secondary vector of a radial/along-track frame): the first derivative
+    is an acceleration and the second is the **jerk**, the third derivative of
+    position. No SPK evaluator provides jerk, and the fits are not accurate
+    enough to give a usable third derivative. SPICE already uses a numerical
+    derivative here: ZZDYNFRM gets the derivative of the unit velocity vector
+    by a central difference (QDERIV) of SPKEZ velocities at t ± δ, so even the
+    6×6 is not analytic for this kind. With accelerations available, the first
+    derivative could be computed analytically from v and a, but the second
+    would still need a difference of accelerations. That conflicts with the
+    rule that numerical differentiation is never the default.
+  - *Near point* (the point on the target body's surface nearest the
+    observer): R̈ needs the second derivative of the near point, which needs
+    the observer's acceleration and the second derivative of the near-point
+    geometry (DNEARP gives only the first).
+  - *Constant* (fixed in some frame): its derivatives come from the R̈ of that
+    frame, recursively.
+
+  Defining vectors can also carry aberration corrections, which need phase 4.
+  For these reasons two-vector frames come last.
+
 **SPKGEO.**
 - Inertial links still use IRFROT, because R̈ = 0: the acceleration rotates
   like the position.
