@@ -103,7 +103,7 @@ with de440.as_current():                    # the module-level functions use de4
   `close()`.
 - `Context`: every query, with SpiceyPy's names, arguments and results, as
   methods (`ctx.spkezr`, `ctx.pxform`, `ctx.gfdist`, ...), and PEPPER's own
-  (`prepare_state`, `spk_coverage`, `gf_distance`, ...).
+  (`prepare_state`, `prepare_position`, `spk_coverage`, `gf_distance`, ...).
 - `current_instance()`, `current_context()`, `default_instance()`.
 - `KernelPool(paths)`: a block in which the module-level functions use a
   new instance with only these kernels; the current one is unchanged.
@@ -132,6 +132,10 @@ with de440.as_current():                    # the module-level functions use de4
 q = ctx.prepare_state('MARS BARYCENTER', 'EARTH', 'ECLIPJ2000', 'LT+S')
 state, lt = q(et)                 # one epoch
 states, lts = q(ets)              # (n, 6), (n,): one call for all the epochs
+
+p = ctx.prepare_position('MARS BARYCENTER', 'EARTH', 'ECLIPJ2000', 'LT+S')
+pos, lt = p(et)                   # SPKPOS: no velocities evaluated
+positions, lts = p(ets)           # (n, 3), (n,)
 
 r = ctx.prepare_rotation('J2000', 'IAU_EARTH')
 m = r(et)                         # PXFORM's 3x3

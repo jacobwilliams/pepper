@@ -43,7 +43,7 @@ module pepper_instance_module
    use pepper_output, only: wrline, byebye
    use pepper_containers, only: string, string_map
    use pepper_windows, only: interval_list
-   use pepper_query_types, only: state_query, rotation_query, spk_segment_cache
+   use pepper_query_types, only: state_query, position_query, rotation_query, spk_segment_cache
    ! The state types of the subsystems, and the routines that set the
    ! initial values of the large ones.
    use pepper_states
@@ -67,7 +67,7 @@ module pepper_instance_module
    private
 
    public :: pepper_instance, pepper_context
-   public :: state_query, rotation_query
+   public :: state_query, position_query, rotation_query
 
    !> Number of entries the kernel pool's change log keeps; when it is full,
    !> the log is emptied and every variable counts as changed.
@@ -1223,6 +1223,10 @@ module pepper_instance_module
       procedure, non_overridable :: query_state_one
       procedure, non_overridable :: query_state_batch
       generic :: query_state => query_state_one, query_state_batch
+      procedure, non_overridable :: prepare_position
+      procedure, non_overridable :: query_position_one
+      procedure, non_overridable :: query_position_batch
+      generic :: query_position => query_position_one, query_position_batch
       procedure, non_overridable :: prepare_rotation
       procedure, non_overridable :: query_rotation_one
       procedure, non_overridable :: query_rotation_batch
@@ -9626,6 +9630,34 @@ module pepper_instance_module
          real(wp), intent(out) :: states(:,:)  !! the states, shape (6, size(ets)) at least
          real(wp), intent(out), optional :: lts(:)  !! the light times
       end subroutine query_state_batch
+
+      module subroutine prepare_position ( ctx, q, target, observer, frame, abcorr )
+         implicit none
+         class(pepper_context), intent(inout) :: ctx  !! the context
+         type(position_query), intent(out) :: q  !! the query
+         character(*), intent(in) :: target  !! the target's name or ID code
+         character(*), intent(in) :: observer  !! the observer's name or ID code
+         character(*), intent(in) :: frame  !! the frame of the position
+         character(*), intent(in) :: abcorr  !! the aberration correction, as for [[spkpos]]
+      end subroutine prepare_position
+
+      recursive module subroutine query_position_one ( ctx, q, et, pos, lt )
+         implicit none
+         class(pepper_context), intent(inout) :: ctx  !! the context
+         type(position_query), intent(inout) :: q  !! the query (its segment cache is updated)
+         real(wp), intent(in) :: et  !! the epoch (TDB seconds past J2000)
+         real(wp), intent(out) :: pos(3)  !! the position of the target relative to the observer
+         real(wp), intent(out) :: lt  !! the one-way light time between them
+      end subroutine query_position_one
+
+      recursive module subroutine query_position_batch ( ctx, q, ets, positions, lts )
+         implicit none
+         class(pepper_context), intent(inout) :: ctx  !! the context
+         type(position_query), intent(inout) :: q  !! the query (its segment cache is updated)
+         real(wp), intent(in) :: ets(:)  !! the epochs (TDB seconds past J2000)
+         real(wp), intent(out) :: positions(:,:)  !! the positions, shape (3, size(ets)) at least
+         real(wp), intent(out), optional :: lts(:)  !! the light times
+      end subroutine query_position_batch
 
       module subroutine prepare_rotation ( ctx, q, from, to )
          implicit none

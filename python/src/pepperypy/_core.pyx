@@ -1043,6 +1043,20 @@ cdef class Context(_ContextRoutines):
             self._leave()
         return StateQuery._make(self, q)
 
+    def prepare_position(self, target, observer, frame, abcorr):
+        """A prepared position query: SPKPOS's arguments but the epoch,
+        resolved once. Call it with an epoch or an array of epochs. Faster
+        than a state query when velocities are not needed."""
+        self._enter()
+        cdef bytes bt = _b(target), bo = _b(observer), bf = _b(frame), ba = _b(abcorr)
+        cdef void *q = NULL
+        try:
+            if pepper_prepare_position(self._ptr, bt, bo, bf, ba, &q):
+                self._raise()
+        finally:
+            self._leave()
+        return PositionQuery._make(self, q)
+
     def prepare_rotation(self, from_, to):
         """A prepared frame transformation query: PXFORM's and SXFORM's
         arguments but the epoch. Call it (or `rotation`) for rotations,
@@ -1512,6 +1526,57 @@ cdef class StateQuery:
             if st:
                 c._raise()
             return state, lt
+        finally:
+            c._leave()
+
+
+cdef class PositionQuery:
+    """A prepared position query (`Context.prepare_position`): `q(et)` gives
+    `(position, lt)` as SPKPOS; `q(ets)` gives `(positions (n, 3), lts (n,))`,
+    one call for all the epochs. A query belongs to its context (one thread
+    at a time)."""
+
+    cdef void *_q
+    cdef readonly Context context
+
+    @staticmethod
+    cdef PositionQuery _make(Context ctx, void *q):
+        cdef PositionQuery s = PositionQuery.__new__(PositionQuery)
+        s._q = q
+        s.context = ctx
+        return s
+
+    def __dealloc__(self):
+        if self._q != NULL:
+            pepper_position_query_free(self._q)
+            self._q = NULL
+
+    def __call__(self, et):
+        cdef Context c = self.context
+        cdef cnp.ndarray ets, positions, lts
+        cdef double e, lt
+        cdef cnp.ndarray pos
+        cdef int st, n
+        c._enter()
+        try:
+            if _iterable(et) or (isinstance(et, np.ndarray) and (<cnp.ndarray>et).ndim > 0):
+                ets = np.ascontiguousarray(et, dtype=np.float64).reshape(-1)
+                n = <int>ets.shape[0]
+                positions = np.empty((n, 3))
+                lts = np.empty(n)
+                with nogil:     # a batch: worth releasing the GIL
+                    st = pepper_query_position(c._ptr, self._q, n, <const double*>cnp.PyArray_DATA(ets),
+                                               <double*>cnp.PyArray_DATA(positions),
+                                               <double*>cnp.PyArray_DATA(lts))
+                if st:
+                    c._raise()
+                return positions, lts
+            e = et
+            pos = _empty(NPY_DOUBLE, 3, -1)
+            st = pepper_query_position(c._ptr, self._q, 1, &e, <double*>cnp.PyArray_DATA(pos), &lt)
+            if st:
+                c._raise()
+            return pos, lt
         finally:
             c._leave()
 

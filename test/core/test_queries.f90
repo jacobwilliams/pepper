@@ -1,9 +1,10 @@
 !> Prepared queries (pepper_queries): the states of `query_state` must equal
-!> SPKEZR's, to the last bit, for every combination of target, observer,
-!> frame and aberration correction, one epoch at a time and in batches, at
-!> random and at sequential epochs; the rotations of `query_rotation` and
+!> SPKEZR's, and the positions of `query_position` SPKPOS's, to the last
+!> bit, for every combination of target, observer, frame and aberration
+!> correction, one epoch at a time and in batches, at random and at
+!> sequential epochs; the rotations of `query_rotation` and
 !> `query_transform` must equal PXFORM's and SXFORM's. The errors are
-!> SPKEZR's and PXFORM's.
+!> SPKEZR's, SPKPOS's and PXFORM's.
 !>
 !> The kernels are synthetic: a DE-like chain of type 2 segments (the
 !> Earth-Moon barycenter and Mars relative to the barycenter, the Earth
@@ -14,7 +15,7 @@
 program test_queries
 
    use pepper_kinds, only: ip, wp
-   use pepper_instance_module, only: pepper_instance, pepper_context, state_query, rotation_query
+   use pepper_instance_module, only: pepper_instance, pepper_context, state_query, position_query, rotation_query
 
    implicit none
 
@@ -33,6 +34,8 @@ program test_queries
 
    call test_states()
    call test_batches()
+   call test_positions()
+   call test_position_batches()
    call test_rotations()
    call test_errors()
 
@@ -279,6 +282,87 @@ contains
       call check(short_error() == 'SPICE(INVALIDDIMENSION)', 'a batch with too small an array')
    end subroutine test_batches
 
+   !> Every combination of target, observer, frame and correction (also
+   !> spelled as SPKAPO accepts them: lower case, blanks), at random epochs
+   !> and at sequential epochs: query_position = spkpos.
+   subroutine test_positions()
+      character(*), parameter :: bodies(8) = [character(24) :: '301', 'EARTH', 'MARS BARYCENTER', '401', &
+                                               'EARTH BARYCENTER', 'SUN', 'SOLAR SYSTEM BARYCENTER', '999']
+      character(*), parameter :: frames(5) = [character(12) :: 'J2000', 'ECLIPJ2000', 'IAU_EARTH', &
+                                               'P7_FIXED', 'P7_TOPO']
+      character(*), parameter :: corrs(11) = [character(8) :: 'NONE', 'LT', 'LT+S', 'CN', 'CN+S', &
+                                               'XLT', 'XLT+S', 'XCN', 'XCN+S', ' none', 'cn + s']
+      type(position_query) :: q
+      real(wp) :: et, pos(3), pos2(3), lt, lt2, r(1)
+      integer :: it, io, ifr, ic, k, ncases, nbad
+      character(200) :: what
+      ncases = 0
+      nbad = 0
+      do it = 1, size(bodies)
+         do io = 1, size(bodies)
+            if (it == io) cycle
+            do ifr = 1, size(frames)
+               do ic = 1, size(corrs)
+                  call ctx%prepare_position(q, trim(bodies(it)), trim(bodies(io)), trim(frames(ifr)), &
+                                            trim(corrs(ic)))
+                  write (what, '(7a)') trim(bodies(it)), ' from ', trim(bodies(io)), ' in ', &
+                     trim(frames(ifr)), ', ', trim(corrs(ic))
+                  call check(no_error('prepare position ' // trim(what)), 'prepare position ' // trim(what))
+                  do k = 1, 12
+                     if (k <= 6) then
+                        call random_number(r)
+                        et = 5.0e5_wp + r(1)*3.0e6_wp
+                     else
+                        et = 2.0e6_wp + 50.0_wp*k  ! sequential: the same records
+                     end if
+                     if (bodies(it) == '999' .or. bodies(io) == '999') et = 5.0e5_wp + 10.0_wp*k
+                     call ctx%query_position(q, et, pos, lt)
+                     call ctx%spkpos(trim(bodies(it)), et, trim(frames(ifr)), trim(corrs(ic)), &
+                                     trim(bodies(io)), pos2, lt2)
+                     ncases = ncases + 1
+                     if (.not. (no_error(trim(what)) .and. all(pos == pos2) .and. lt == lt2)) then
+                        nbad = nbad + 1
+                        if (nbad <= 10) print '(a, es24.16, 2(1x, es24.16))', 'mismatch: ' // trim(what) // &
+                           ' et, dx, dlt =', et, maxval(abs(pos - pos2)), lt - lt2
+                     end if
+                  end do
+               end do
+            end do
+         end do
+      end do
+      print '(a, i0, a)', '   ', ncases, ' positions compared with SPKPOS'
+      call check(nbad == 0, 'query_position = spkpos, to the last bit')
+   end subroutine test_positions
+
+   !> A position batch gives the positions of single queries, at
+   !> sequential and at random epochs.
+   subroutine test_position_batches()
+      integer, parameter :: n = 500
+      type(position_query) :: q, q2
+      real(wp) :: ets(n), positions(3, n), lts(n), p(3), lt, r(n)
+      integer :: k
+      logical :: same
+      call random_number(r)
+      ets(1:n/2) = 1.0e6_wp + 37.0_wp*[(k, k = 1, n/2)]
+      ets(n/2 + 1:) = 5.0e5_wp + 3.0e6_wp*r(n/2 + 1:)
+      call ctx%prepare_position(q, 'MOON', 'EARTH', 'IAU_EARTH', 'CN+S')
+      call ctx%prepare_position(q2, 'MOON', 'EARTH', 'IAU_EARTH', 'CN+S')
+      call ctx%query_position(q, ets, positions, lts)
+      same = .true.
+      do k = 1, n
+         call ctx%query_position(q2, ets(k), p, lt)
+         same = same .and. all(p == positions(:, k)) .and. lt == lts(k)
+      end do
+      call check(no_error('position batch') .and. same, 'a position batch gives the single queries'' positions')
+      call ctx%spkpos('MOON', ets(n), 'IAU_EARTH', 'CN+S', 'EARTH', p, lt)
+      call check(all(p == positions(:, n)) .and. lt == lts(n), 'position batch = spkpos')
+      ! without the light times; a positions array too small, or of states
+      call ctx%query_position(q, ets, positions)
+      call check(no_error('position batch without lts'), 'a position batch without the light times')
+      call ctx%query_position(q, ets, positions(:, 1:n - 1))
+      call check(short_error() == 'SPICE(INVALIDDIMENSION)', 'a position batch with too small an array')
+   end subroutine test_position_batches
+
    !> query_rotation = pxform and query_transform = sxform, for time
    !> dependent and constant rotations; a constant rotation is recomputed
    !> when the pool changes.
@@ -338,8 +422,9 @@ contains
    !> The errors of SPKEZR and PXFORM.
    subroutine test_errors()
       type(state_query) :: q
+      type(position_query) :: p
       type(rotation_query) :: r
-      real(wp) :: state(6), lt, rot(3, 3)
+      real(wp) :: state(6), pos(3), lt, rot(3, 3)
       call ctx%prepare_state(q, 'NO_SUCH_BODY', 'EARTH', 'J2000', 'NONE')
       call check(short_error() == 'SPICE(IDCODENOTFOUND)', 'prepare_state: unknown target')
       call ctx%prepare_state(q, 'MOON', 'NO_SUCH_BODY', 'J2000', 'NONE')
@@ -354,6 +439,25 @@ contains
       call ctx%prepare_state(q, '999', 'EARTH', 'J2000', 'LT+S')
       call ctx%query_state(q, 3.0e6_wp, state, lt)
       call check(short_error() == 'SPICE(SPKINSUFFDATA)', 'query_state: no data')
+      ! positions: SPKPOS's errors; SPKPOS has no relativistic correction
+      call ctx%prepare_position(p, 'NO_SUCH_BODY', 'EARTH', 'J2000', 'NONE')
+      call check(short_error() == 'SPICE(IDCODENOTFOUND)', 'prepare_position: unknown target')
+      call ctx%prepare_position(p, 'MOON', 'NO_SUCH_BODY', 'J2000', 'NONE')
+      call check(short_error() == 'SPICE(IDCODENOTFOUND)', 'prepare_position: unknown observer')
+      call ctx%prepare_position(p, 'MOON', 'EARTH', 'NO_SUCH_FRAME', 'NONE')
+      call check(short_error() == 'SPICE(UNKNOWNFRAME)', 'prepare_position: unknown frame')
+      call ctx%prepare_position(p, 'MOON', 'EARTH', 'J2000', 'RL')
+      call check(short_error() == 'SPICE(SPKINVALIDOPTION)', 'prepare_position: invalid correction')
+      call ctx%spkpos('MOON', 1.0e6_wp, 'J2000', 'RL', 'EARTH', pos, lt)
+      call check(short_error() == 'SPICE(SPKINVALIDOPTION)', 'spkpos: the same error')
+      call ctx%query_position(p, 1.0e6_wp, pos, lt)
+      call check(short_error() == 'SPICE(NOTINITIALIZED)', 'query_position: not prepared')
+      call ctx%prepare_position(p, '999', 'EARTH', 'J2000', 'LT+S')
+      call ctx%query_position(p, 3.0e6_wp, pos, lt)
+      call check(short_error() == 'SPICE(SPKINSUFFDATA)', 'query_position: no data')
+      call ctx%prepare_position(p, '999', 'EARTH', 'IAU_EARTH', 'NONE')
+      call ctx%query_position(p, 3.0e6_wp, pos, lt)
+      call check(short_error() == 'SPICE(SPKINSUFFDATA)', 'query_position: no data (geometric)')
       call ctx%prepare_rotation(r, 'J2000', 'NO_SUCH_FRAME')
       call check(short_error() == 'SPICE(UNKNOWNFRAME)', 'prepare_rotation: unknown frame')
       call ctx%query_rotation(r, 1.0e6_wp, rot)

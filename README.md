@@ -346,22 +346,30 @@ exactly).
 
 ## Prepared queries
 
-A state or frame query can be resolved once (names, aberration correction,
-frame) and then evaluated at any number of epochs, one at a time or as a
-batch. The results are SPKEZR's, PXFORM's and SXFORM's, to the last bit, and
-states are 1.5 to 4 times faster (`pepper_vs_spicelib.md`, "Prepared
-queries"):
+A state, position or frame query can be resolved once (names, aberration
+correction, frame) and then evaluated at any number of epochs, one at a
+time or as a batch, with no string handling per epoch. The results are
+SPKEZR's, SPKPOS's, PXFORM's and SXFORM's, to the last bit, and states are
+1.5 to 4 times faster (`pepper_vs_spicelib.md`, "Prepared queries"). A
+position query evaluates no velocities (only the position series of
+Chebyshev segments, 3x3 frame rotations, no observer acceleration for
+stellar aberration): about 1.3 to 2 times faster than a state query.
 
 ```fortran
-use pepper_module, only: state_query, rotation_query
+use pepper_module, only: state_query, position_query, rotation_query
 
 type(state_query) :: q
+type(position_query) :: p
 type(rotation_query) :: r
-real(wp) :: state(6), lt, states(6, 1000), lts(1000), ets(1000), rot(3, 3)
+real(wp) :: state(6), pos(3), lt, states(6, 1000), positions(3, 1000), lts(1000), ets(1000), rot(3, 3)
 
 call ctx%prepare_state(q, 'MOON', 'EARTH', 'J2000', 'LT+S')
 call ctx%query_state(q, et, state, lt)         ! one epoch
 call ctx%query_state(q, ets, states, lts)      ! a batch (lts is optional)
+
+call ctx%prepare_position(p, 'MOON', 'EARTH', 'J2000', 'LT+S')
+call ctx%query_position(p, et, pos, lt)        ! SPKPOS
+call ctx%query_position(p, ets, positions, lts)
 
 call ctx%prepare_rotation(r, 'J2000', 'ITRF93')
 call ctx%query_rotation(r, et, rot)            ! PXFORM; query_transform: SXFORM
@@ -572,6 +580,7 @@ state, lt = spice.spkezr('MOON', spice.str2et('2026 NOV 8'), 'J2000', 'LT+S', 'E
 
 ctx = spice.current_context()                       # this thread's
 states, lts = ctx.prepare_state('MOON', 'EARTH', 'J2000', 'LT+S')(ets)   # (n, 6), (n,)
+positions, lts = ctx.prepare_position('MOON', 'EARTH', 'J2000', 'LT+S')(ets)   # (n, 3), (n,)
 ```
 
 It is Cython extension modules over PEPPER's C interface, generated from

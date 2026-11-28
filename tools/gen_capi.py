@@ -51,7 +51,8 @@ EXCLUDE_CTX = {
     'errfnm', 'errhan', 'reset', 'getmsg', 'message', 'erract', 'errdev', 'errprt',
     'return', 'outmsg', 'seterr', 'accept', 'allowd', 'getsms', 'chkin', 'chkout',
     'trcoff', 'trcdep', 'trcmxd', 'trcnam', 'qcktrc', 'getlms', 'putlms', 'putsms',
-    'prepare_state', 'query_state', 'prepare_rotation', 'query_rotation', 'query_transform',
+    'prepare_state', 'query_state', 'prepare_position', 'query_position',
+    'prepare_rotation', 'query_rotation', 'query_transform',
     'gf_user_scalar', 'gf_user_boolean', 'uddc', 'instance',
 }
 # Instance procedures with hand-written wrappers.

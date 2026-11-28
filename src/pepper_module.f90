@@ -37,7 +37,7 @@ module pepper_module
    use pepper_instance_module, only: pepper_instance, pepper_context, &
       ! programmatic ephemerides and frames
       ephemeris_provider, frame_provider, ephemeris_procedure, frame_procedure, &
-      state_query, rotation_query, &
+      state_query, position_query, rotation_query, &
       ! kernels built in memory and kernel loaders
       kernel_builder, kernel_loader, &
       ! the procedures passed to the GF searches

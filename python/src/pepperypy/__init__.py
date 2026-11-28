@@ -22,7 +22,7 @@ from .cells import (SpiceCell, SPICEDOUBLE_CELL, SPICEINT_CELL, SPICECHAR_CELL, 
                     SPICEBOOL_CELL, SPICETIME_CELL, Cell_Double, Cell_Int, Cell_Char, Cell_Bool,
                     Cell_Time, window)
 from ._core import *  # noqa: F401,F403  (the generated functions)
-from ._core import (Spice, Context, StateQuery, RotationQuery, ContextInUseError,  # noqa: F401
+from ._core import (Spice, Context, StateQuery, PositionQuery, RotationQuery, ContextInUseError,  # noqa: F401
                     CallbackError, current_instance, current_context, default_instance,
                     KernelBuilder, KernelLoader, load_kernel, add_loader)
 from ._compat import *  # noqa: F401,F403

@@ -220,6 +220,11 @@ int pepper_prepare_state(void *ctx, const char *target, const char *observer, co
 void pepper_state_query_free(void *query);
 /* states double[n][6]; lts double[n] or NULL */
 int pepper_query_state(void *ctx, void *query, int n, const double *ets, double *states, double *lts);
+int pepper_prepare_position(void *ctx, const char *target, const char *observer, const char *frame,
+                            const char *abcorr, void **query);
+void pepper_position_query_free(void *query);
+/* positions double[n][3]; lts double[n] or NULL */
+int pepper_query_position(void *ctx, void *query, int n, const double *ets, double *positions, double *lts);
 int pepper_prepare_rotation(void *ctx, const char *from_frame, const char *to_frame, void **query);
 void pepper_rotation_query_free(void *query);
 /* n column-major 3x3 (6x6) matrices */

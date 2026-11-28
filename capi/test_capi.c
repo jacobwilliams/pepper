@@ -171,6 +171,13 @@ int main(void) {
     CHECK(pepper_query_state(ctx, q, 2, ets, &states[0][0], lts) == 0, "query_state");
     CHECK(states[1][0] == 7010.0 && states[1][2] == 30.0, "query state %g %g", states[1][0], states[1][2]);
     pepper_state_query_free(q);
+    CHECK(pepper_prepare_position(ctx, "-999", "EARTH", "J2000", "NONE", &q) == 0 && q != NULL,
+          "prepare_position");
+    double positions[2][3];
+    CHECK(pepper_query_position(ctx, q, 2, ets, &positions[0][0], NULL) == 0, "query_position");
+    CHECK(positions[1][0] == states[1][0] && positions[1][2] == states[1][2], "query position %g %g",
+          positions[1][0], positions[1][2]);
+    pepper_position_query_free(q);
 
     /* a kernel built in memory: Hermite segment on a circle, loaded with no
        file, written to an SPK, the file loaded by another instance */

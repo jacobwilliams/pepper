@@ -89,6 +89,18 @@ def main():
     mq2 = mctx.prepare_state('MARS BARYCENTER', 'EARTH', 'ECLIPJ2000', 'LT+S')
     row('Mars barycenter from Earth, ECLIPJ2000, LT+S: prepared query, a batch (PepperyPy only)', None,
         best(lambda: q2(ets), n), best(lambda: mq2(ets), n))
+    p = ctx.prepare_position('MOON', 'EARTH', 'J2000', 'NONE')
+    mp = mctx.prepare_position('MOON', 'EARTH', 'J2000', 'NONE')
+    row('Moon from Earth, J2000, NONE: prepared position query, a batch (PepperyPy only)', None,
+        best(lambda: p(ets), n), best(lambda: mp(ets), n))
+    p2 = ctx.prepare_position('MARS BARYCENTER', 'EARTH', 'ECLIPJ2000', 'LT+S')
+    mp2 = mctx.prepare_position('MARS BARYCENTER', 'EARTH', 'ECLIPJ2000', 'LT+S')
+    row('Mars barycenter from Earth, ECLIPJ2000, LT+S: prepared position query, a batch (PepperyPy only)', None,
+        best(lambda: p2(ets), n), best(lambda: mp2(ets), n))
+    q3 = mctx.prepare_state('MOON', 'EARTH', 'IAU_EARTH', 'LT+S')
+    p3 = mctx.prepare_position('MOON', 'EARTH', 'IAU_EARTH', 'LT+S')
+    row('Moon from Earth, IAU_EARTH, LT+S: prepared state / position query, a batch (PepperyPy only)', None,
+        best(lambda: q3(ets), n), best(lambda: p3(ets), n))
     r = ctx.prepare_rotation('J2000', 'IAU_EARTH')
     row('J2000 to IAU_EARTH: prepared rotation, a batch (PepperyPy only)', None, best(lambda: r(ets), n))
 

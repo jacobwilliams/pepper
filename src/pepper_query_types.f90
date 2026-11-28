@@ -7,13 +7,18 @@
 !> call ctx%prepare_state(q, 'MOON', 'EARTH', 'J2000', 'LT+S')
 !> call ctx%query_state(q, et, state, lt)          ! one epoch
 !> call ctx%query_state(q, ets, states, lts)       ! many: states(6, n)
+!>
+!> type(position_query) :: p
+!> call ctx%prepare_position(p, 'MOON', 'EARTH', 'J2000', 'LT+S')
+!> call ctx%query_position(p, et, pos, lt)         ! pos(3)
+!> call ctx%query_position(p, ets, positions, lts) ! positions(3, n)
 !> ```
 !>
 !> A query also keeps what makes repeated evaluations fast (the SPK
 !> segments it used and their current Chebyshev records), so it is used by
 !> one thread at a time, like a context; each thread prepares its own (or
 !> copies a prepared one). The results are the same, to the last bit, as
-!> those of SPKEZR, PXFORM and SXFORM with the same arguments.
+!> those of SPKEZR, SPKPOS, PXFORM and SXFORM with the same arguments.
 !>
 !> The components are internal: set them with the context's `prepare_*`
 !> procedures only.
@@ -25,7 +30,7 @@ module pepper_query_types
 
    private
 
-   public :: state_query, rotation_query, spk_segment_cache
+   public :: state_query, position_query, rotation_query, spk_segment_cache
 
    !> An SPK segment used by a prepared state query, with its current
    !> record (segment types 2 and 3: Chebyshev polynomials).
@@ -67,6 +72,19 @@ module pepper_query_types
       type(spk_segment_cache), allocatable :: segs(:)  !! the segments used so far
       integer(ip) :: nsegs = 0  !! number of segments in SEGS
    end type state_query
+
+   !> A prepared position query: the position of a target relative to an
+   !> observer in a frame, with an aberration correction (SPKPOS's
+   !> arguments but the epoch). It is evaluated as SPKPOS evaluates it
+   !> (SPKGPS, SPKAPO), which differs from SPKEZR's light time and stellar
+   !> aberration corrections: its positions are not always the first three
+   !> components of SPKEZR's state.
+   type :: position_query
+      !> the target, observer, frame and correction (flags with SPKAPO's
+      !> meaning: USELT one light time iteration, USECN three), and the
+      !> segment cache
+      type(state_query) :: s
+   end type position_query
 
    !> A prepared frame transformation query (PXFORM's and SXFORM's
    !> arguments but the epoch).

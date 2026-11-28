@@ -180,6 +180,22 @@ def test_prepared_state(spice):
     assert np.array_equal(s1, states[3]) and lt1 == lts[3]
 
 
+def test_prepared_position(spice):
+    ctx = spice.context()
+    for frame, corr in [('ECLIPJ2000', 'LT+S'), ('IAU_EARTH', 'CN'), ('J2000', 'NONE')]:
+        q = ctx.prepare_position('MARS BARYCENTER', 'EARTH', frame, corr)
+        ets = np.linspace(1.0e8, 3.0e8, 50)
+        positions, lts = q(ets)
+        assert positions.shape == (50, 3) and lts.shape == (50,)
+        for k, et in enumerate(ets):
+            p, lt = ctx.spkpos('MARS BARYCENTER', et, frame, corr, 'EARTH')
+            assert np.array_equal(positions[k], p) and lts[k] == lt
+        p1, lt1 = q(ets[3])
+        assert np.array_equal(p1, positions[3]) and lt1 == lts[3]
+    with pytest.raises(Exception, match='SPKINVALIDOPTION'):
+        ctx.prepare_position('MOON', 'EARTH', 'J2000', 'RL')
+
+
 def test_prepared_rotation(spice):
     ctx = spice.context()
     r = ctx.prepare_rotation('J2000', 'IAU_EARTH')
@@ -346,6 +362,8 @@ def test_provider_queries(spice):
     assert np.allclose(mid, moon / 2.0)
     q = ctx.prepare_state('-998', 'EARTH', 'J2000', 'NONE')
     assert np.allclose(q(ET)[0], moon / 2.0)
+    p = ctx.prepare_position('-998', 'EARTH', 'J2000', 'NONE')
+    assert np.allclose(p(ET)[0], moon[:3] / 2.0)
 
 
 def test_python_frame(spice):

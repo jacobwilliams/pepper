@@ -21,6 +21,12 @@
 !> by a query may make queries of its own (pepper_programmatic). Cases outside the fast path (a chain longer than SPKGEO's 20
 !> links, missing data, the relativistic correction) are evaluated by the
 !> SPICELIB routines, with their errors.
+!>
+!> A position query gives the result of SPKPOS the same way, with SPKPOS's
+!> arithmetic (SPKGPS, SPKAPO, SPKEZP's branch for non-inertial frames).
+!> It evaluates no velocities that the result does not use: for types 2
+!> and 3 only the position series, and position-only frame rotations
+!> (REFCHG, not FRMCHG).
 submodule (pepper_instance_module) pepper_queries
 
    implicit none
@@ -196,6 +202,137 @@ contains
          if ( present(lts) ) lts(k) = lt
       end do
    end subroutine query_state_batch
+
+   !> Prepare a position query (PEPPER; [[pepper_query_types]]): the
+   !> position of a target relative to an observer in a frame, with an
+   !> aberration correction, as [[spkpos]], resolved once for evaluation at
+   !> any number of epochs with `query_position`.
+   !>
+   !> The corrections are SPKPOS's ('NONE', 'LT', 'LT+S', 'CN', 'CN+S' and
+   !> the transmission forms 'XLT', ...); others are SPKAPO's error,
+   !> SPICE(SPKINVALIDOPTION). The other errors are those of
+   !> [[prepare_state]] (unknown names, an unknown frame).
+   module subroutine prepare_position ( ctx, q, target, observer, frame, abcorr )
+      use pepper_math, only: odd
+      use pepper_strings, only: eqstr, ljucrs
+      implicit none
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      type(position_query), intent(out) :: q  !! the query
+      character(*), intent(in) :: target  !! the target's name or ID code
+      character(*), intent(in) :: observer  !! the observer's name or ID code
+      character(*), intent(in) :: frame  !! the frame of the position
+      character(*), intent(in) :: abcorr  !! the aberration correction, as for [[spkpos]]
+      integer(ip), parameter :: corlen = 5  !! SPKAPO's length of a correction
+      integer(ip), parameter :: ixcns = 5  !! SPKAPO's index of CN+S (the last reception correction)
+      character(corlen), parameter :: flags(9) = [ character(corlen) :: 'NONE', 'LT', 'LT+S', 'CN', &
+         'CN+S', 'XLT', 'XLT+S', 'XCN', 'XCN+S' ]  !! SPKAPO's corrections
+      character(corlen) :: corr
+      integer(ip) :: i
+      if ( ctx%failed() ) return
+!
+!     The names and the frame, as for a state (SPKPOS and SPKEZP check
+!     them first).
+!
+      call prepare_state ( ctx, q%s, target, observer, frame, 'NONE' )
+      if ( ctx%failed() ) return
+      q%s%prepared = .false.
+      q%s%abcorr   = abcorr
+!
+!     SPKEZP evaluates 'NONE' with SPKGPS; any other correction with
+!     SPKAPO, which parses it (left justified, upper case, blanks removed).
+!
+      q%s%geometric = eqstr ( abcorr, 'NONE' )
+      q%s%xmit   = .false.
+      q%s%uselt  = .false.
+      q%s%usecn  = .false.
+      q%s%usestl = .false.
+      if ( .not. q%s%geometric ) then
+         call ljucrs ( 0, abcorr, corr )
+         i = findloc(flags, corr, dim=1)
+         if ( i == 0 ) then
+            call ctx%setmsg ( 'Requested aberration correction was #.' )
+            call ctx%errch  ( '#', abcorr                              )
+            call ctx%sigerr ( 'SPICE(SPKINVALIDOPTION)'                )
+            return
+         end if
+         q%s%xmit   = i > ixcns
+         q%s%uselt  = any ( i == [2, 3, 6, 7] )
+         q%s%usecn  = any ( i == [4, 5, 8, 9] )
+         q%s%usestl = ( i > 1 ) .and. odd(i)
+      end if
+      q%s%prepared = .true.
+   end subroutine prepare_position
+
+   !> The position of a prepared query at one epoch (PEPPER): [[spkpos]]'s
+   !> result, to the last bit. Bound as the generic `query_position`.
+   recursive module subroutine query_position_one ( ctx, q, et, pos, lt )
+      implicit none
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      type(position_query), intent(inout) :: q  !! the query (its segment cache is updated)
+      real(wp), intent(in) :: et  !! the epoch (TDB seconds past J2000)
+      real(wp), intent(out) :: pos(3)  !! the position of the target relative to the observer
+      real(wp), intent(out) :: lt  !! the one-way light time between them
+      real(wp) :: sobs(6)
+      real(wp) :: ltobs
+      if ( ctx%failed() ) return
+      if ( .not. q%s%prepared ) then
+         call ctx%setmsg ( 'The position query has not been prepared ' &
+         //            '(PREPARE_POSITION).' )
+         call ctx%sigerr ( 'SPICE(NOTINITIALIZED)' )
+         return
+      end if
+      if ( q%s%nsegs > max_cached_segments ) q%s%nsegs = 0
+      if ( q%s%geometric ) then
+         call fast_gps ( ctx, q%s, q%s%target, et, q%s%frame, q%s%frame_name, q%s%observer, pos, lt )
+      else if ( q%s%inertial ) then
+!
+!        SPKEZP: the observer's state relative to the barycenter (SPKSSB),
+!        then SPKAPO.
+!
+         call fast_geo ( ctx, q%s, q%s%observer, et, q%s%frame, q%s%frame_name, ssb, sobs, ltobs )
+         call fast_apo ( ctx, q%s, q%s%target, et, q%s%frame, q%s%frame_name, sobs, pos, lt )
+      else
+         call fast_position_noninertial ( ctx, q%s, et, pos, lt )
+      end if
+   end subroutine query_position_one
+
+   !> The positions of a prepared query at many epochs (PEPPER). Bound as
+   !> the generic `query_position`.
+   recursive module subroutine query_position_batch ( ctx, q, ets, positions, lts )
+      implicit none
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      type(position_query), intent(inout) :: q  !! the query (its segment cache is updated)
+      real(wp), intent(in) :: ets(:)  !! the epochs (TDB seconds past J2000)
+      real(wp), intent(out) :: positions(:,:)  !! the positions, shape (3, size(ets)) at least
+      real(wp), intent(out), optional :: lts(:)  !! the light times
+      real(wp) :: lt
+      integer(ip) :: k
+      if ( ctx%failed() ) return
+      if ( size(positions, 1) /= 3 .or. size(positions, 2) < size(ets) ) then
+         call ctx%setmsg ( 'The positions array has shape (#, #); ' &
+         //            '(3, #) is needed.' )
+         call ctx%errint ( '#', size(positions, 1, ip) )
+         call ctx%errint ( '#', size(positions, 2, ip) )
+         call ctx%errint ( '#', size(ets, kind=ip) )
+         call ctx%sigerr ( 'SPICE(INVALIDDIMENSION)' )
+         return
+      end if
+      if ( present(lts) ) then
+         if ( size(lts) < size(ets) ) then
+            call ctx%setmsg ( 'The light time array has # elements; ' &
+            //            '# are needed.' )
+            call ctx%errint ( '#', size(lts, kind=ip) )
+            call ctx%errint ( '#', size(ets, kind=ip) )
+            call ctx%sigerr ( 'SPICE(INVALIDDIMENSION)' )
+            return
+         end if
+      end if
+      do k = 1, size(ets, kind=ip)
+         call query_position_one ( ctx, q, ets(k), positions(:, k), lt )
+         if ( ctx%failed() ) return
+         if ( present(lts) ) lts(k) = lt
+      end do
+   end subroutine query_position_batch
 
    !> Prepare a frame transformation query (PEPPER;
    !> [[pepper_query_types]]): the transformation from one frame to
@@ -442,6 +579,29 @@ contains
       q%nsegs = k
    end function segment_slot
 
+   !> Make the record for ET a type 2 or 3 segment's current record (in
+   !> S%RECORD), chosen as SPKR02 and SPKR03 choose it, read only if it is
+   !> another.
+   recursive subroutine fetch_record ( ctx, s, et )
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      type(spk_segment_cache), intent(inout) :: s  !! the segment
+      real(wp), intent(in) :: et  !! the epoch
+      integer(ip) :: recno
+      integer(ip) :: recadr
+      recno = int( (et - s%init) / s%intlen ) + 1
+      recno = min( recno, s%nrec )
+      if ( recno /= s%recno ) then
+         recadr = ( recno - 1 )*s%recsiz + s%begin
+         s%record(1) = s%rsize
+         call dafgda ( ctx, s%handle, recadr, recadr + s%recsiz - 1, s%record(2) )
+         if ( ctx%failed() ) then
+            s%recno = 0
+            return
+         end if
+         s%recno = recno
+      end if
+   end subroutine fetch_record
+
    !> The state of a segment's body relative to its center at ET, in the
    !> segment's frame: SPKPVN, with the current record kept for types 2
    !> and 3 (whose record is chosen as SPKR02 and SPKR03 choose it).
@@ -451,24 +611,12 @@ contains
       integer(ip), intent(in) :: k  !! the segment's index in Q%SEGS
       real(wp), intent(in) :: et  !! the epoch
       real(wp), intent(out) :: state(6)  !! the state
-      integer(ip) :: recno
-      integer(ip) :: recadr
       integer(ip) :: ref
       integer(ip) :: center
       associate ( s => q%segs(k) )
       if ( s%type == 2 .or. s%type == 3 ) then
-         recno = int( (et - s%init) / s%intlen ) + 1
-         recno = min( recno, s%nrec )
-         if ( recno /= s%recno ) then
-            recadr = ( recno - 1 )*s%recsiz + s%begin
-            s%record(1) = s%rsize
-            call dafgda ( ctx, s%handle, recadr, recadr + s%recsiz - 1, s%record(2) )
-            if ( ctx%failed() ) then
-               s%recno = 0
-               return
-            end if
-            s%recno = recno
-         end if
+         call fetch_record ( ctx, s, et )
+         if ( ctx%failed() ) return
          if ( s%type == 2 ) then
             call spke02 ( ctx, et, s%record, state )
          else
@@ -896,5 +1044,355 @@ contains
       end do
       call mxvg ( xform, state, 6, 6, starg )
    end subroutine fast_noninertial
+
+   ! ----------------------------------------------------------------------
+   ! The fast path of position queries: SPKGPS, SPKAPO and SPKEZP, statement
+   ! for statement, on the query's segments, evaluating positions only.
+   ! ----------------------------------------------------------------------
+
+   !> The position of a segment's body relative to its center at ET, in the
+   !> segment's frame: the position of SPKPVN's state. For types 2 and 3
+   !> only the three position series are evaluated, with the current record
+   !> kept. (CHBVAL's value is CHBINT's, which SPKE02 uses: the same
+   !> recurrence, the last sum's operands commuted.)
+   recursive subroutine evaluate_position ( ctx, q, k, et, pos )
+      use pepper_math, only: chbval
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      type(state_query), intent(inout) :: q  !! the query
+      integer(ip), intent(in) :: k  !! the segment's index in Q%SEGS
+      real(wp), intent(in) :: et  !! the epoch
+      real(wp), intent(out) :: pos(3)  !! the position
+      real(wp) :: state(6)
+      integer(ip) :: ncof
+      integer(ip) :: i
+      integer(ip) :: ref
+      integer(ip) :: center
+      associate ( s => q%segs(k) )
+      if ( s%type == 2 .or. s%type == 3 ) then
+         call fetch_record ( ctx, s, et )
+         if ( ctx%failed() ) return
+         if ( s%type == 2 ) then
+            ncof = ( int( s%record(1) ) - 2 ) / 3
+         else
+            ncof = ( int( s%record(1) ) - 2 ) / 6
+         end if
+         if ( ncof < 1 .or. s%record(3) <= 0.0_wp ) then
+!
+!           An invalid record: SPKE02 or SPKE03 signals the error.
+!
+            if ( s%type == 2 ) then
+               call spke02 ( ctx, et, s%record, state )
+            else
+               call spke03 ( ctx, et, s%record, state )
+            end if
+            pos = state(1:3)
+            return
+         end if
+         do i = 1, 3
+            call chbval ( s%record( ncof*(i-1) + 4 ), ncof - 1, s%record(2), et, pos(i) )
+         end do
+      else
+         call spkpvn ( ctx, s%handle, s%descr, et, ref, state, center )
+         pos = state(1:3)
+      end if
+      end associate
+   end subroutine evaluate_position
+
+   !> The geometric position of TARG relative to OBS at ET in frame REFID:
+   !> SPKGPS. As in [[fast_geo]], the target's chain is found first, and
+   !> only its links up to the body where it meets the observer's chain are
+   !> evaluated.
+   recursive subroutine fast_gps ( ctx, q, targ, et, refid, refname, obs, pos, lt )
+      use pepper_constants, only: clight
+      use pepper_math, only: mxv, vnorm
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      type(state_query), intent(inout) :: q  !! the query
+      integer(ip), intent(in) :: targ  !! the target
+      real(wp), intent(in) :: et  !! the epoch
+      integer(ip), intent(in) :: refid  !! the frame's ID code
+      character(*), intent(in) :: refname  !! the frame's name (for SPKGPS, when the fast path does not apply)
+      integer(ip), intent(in) :: obs  !! the observer
+      real(wp), intent(out) :: pos(3)  !! the position
+      real(wp), intent(out) :: lt  !! the one-way light time
+      character(40) :: ident
+      real(wp) :: descr(5)
+      real(wp) :: sobs(3)
+      real(wp) :: starg(3, chlen)
+      real(wp) :: stemp(3)
+      real(wp) :: rot(3, 3)
+      real(wp) :: vtemp(3)
+      integer(ip) :: cframe
+      integer(ip) :: cobs
+      integer(ip) :: ctarg(chlen)
+      integer(ip) :: tframe(chlen)
+      integer(ip) :: tseg(chlen)
+      integer(ip) :: ctpos
+      integer(ip) :: handle
+      integer(ip) :: i
+      integer(ip) :: k
+      integer(ip) :: legs
+      integer(ip) :: nct
+      integer(ip) :: tmpfrm
+      logical :: found
+      logical :: nofrm
+
+      if ( ctx%failed() ) return
+      if ( targ == obs ) then
+         lt  = 0.0_wp
+         pos = 0.0_wp
+         return
+      end if
+!
+!     The target's chain: the segments and their centers.
+!
+      tframe   = 0
+      i        = 1
+      ctarg(i) = targ
+      found    = .true.
+      starg(:,i) = 0.0_wp
+      do while (           found &
+                  .and.  ( i        < chlen ) &
+                  .and.  ( ctarg(i) /= obs   ) &
+                  .and.  ( ctarg(i) /= ssb   )  )
+         call spksfs ( ctx, ctarg(i), et, handle, descr, ident, found )
+         if ( ctx%failed() ) return
+         if ( found ) then
+            k = segment_slot ( ctx, q, handle, descr )
+            if ( ctx%failed() ) return
+            tseg(i)   = k
+            i         = i + 1
+            ctarg(i)  = q%segs(k)%center
+            tframe(i) = q%segs(k)%frame
+         end if
+      end do
+      if ( i == chlen ) then
+!
+!        A chain longer than SPKGPS's table: SPKGPS handles it.
+!
+         call spkgps ( ctx, targ, et, refname, obs, pos, lt )
+         return
+      end if
+      tframe(1) = tframe(2)
+      nct = i
+!
+!     The observer's chain, evaluated, until it meets the target's.
+!
+      cobs = obs
+      sobs = 0.0_wp
+      if ( ctarg(nct) == cobs ) then
+         ctpos  = nct
+         cframe = tframe(ctpos)
+      else
+         ctpos  = 0
+      end if
+      found  = .true.
+      nofrm  = .true.
+      legs   =  0
+      do while (           found &
+                  .and.  ( cobs  /= ssb ) &
+                  .and.  ( ctpos == 0   )  )
+         call spksfs ( ctx, cobs, et, handle, descr, ident, found )
+         if ( ctx%failed() ) return
+         if ( found ) then
+            k = segment_slot ( ctx, q, handle, descr )
+            if ( ctx%failed() ) return
+            tmpfrm = q%segs(k)%frame
+            if ( legs == 0 ) then
+               call evaluate_position ( ctx, q, k, et, sobs )
+            else
+               call evaluate_position ( ctx, q, k, et, stemp )
+            end if
+            cobs = q%segs(k)%center
+            if ( ctx%failed() ) return
+            if ( nofrm ) then
+               nofrm  = .false.
+               cframe = tmpfrm
+            end if
+            if ( cframe == tmpfrm ) then
+               if ( legs > 0 ) then
+                  vtemp = sobs + stemp
+                  sobs = vtemp
+               end if
+            else if ( is_inertial_pair ( cframe, tmpfrm ) ) then
+               call irfrot ( ctx, cframe, tmpfrm, rot )
+               call mxv    ( rot,    sobs,   vtemp  )
+               sobs = vtemp + stemp
+               cframe = tmpfrm
+            else
+               call refchg ( ctx, cframe, tmpfrm, et,   rot )
+               if ( ctx%failed() ) return
+               call mxv    ( rot,    sobs,   vtemp  )
+               sobs = vtemp + stemp
+               cframe = tmpfrm
+            end if
+            legs  = legs + 1
+            ctpos = findloc(ctarg(1:nct), cobs, dim=1)
+         end if
+      end do
+      if ( ctpos == 0 ) then
+!
+!        Not enough data: SPKGPS signals the error.
+!
+         call spkgps ( ctx, targ, et, refname, obs, pos, lt )
+         return
+      end if
+!
+!     The target's links up to the common body.
+!
+      do i = 1, ctpos - 1
+         call evaluate_position ( ctx, q, tseg(i), et, starg(:,i+1) )
+         if ( ctx%failed() ) return
+      end do
+!
+!     SPKGPS's combination of the two chains.
+!
+      if ( ctpos == 1 ) then
+         tframe(1) = cframe
+      end if
+      do i = 2, ctpos-1
+         if ( tframe(i) == tframe(i+1) ) then
+            stemp = starg(:,i) + starg(:,i+1)
+            starg(:,i+1) = stemp
+         else if ( is_inertial_pair ( tframe(i), tframe(i+1) ) ) then
+            call irfrot ( ctx, tframe(i),  tframe(i+1),     rot   )
+            call mxv    ( rot,        starg(:,i),      stemp )
+            vtemp = stemp + starg(:,i+1)
+            starg(:,i+1) = vtemp
+         else
+            call refchg ( ctx, tframe(i),  tframe(i+1), et,  rot  )
+            if ( ctx%failed() ) return
+            call mxv    ( rot,        starg(:,i),       stemp )
+            vtemp = stemp + starg(:,i+1)
+            starg(:,i+1) = vtemp
+         end if
+      end do
+      if ( tframe(ctpos) == cframe ) then
+         pos = starg(:,ctpos) - sobs
+      else if ( tframe(ctpos) == refid ) then
+         if ( is_inertial_pair ( cframe, refid ) ) then
+            call irfrot ( ctx, cframe, refid,   rot   )
+            call mxv    ( rot,    sobs,  stemp )
+         else
+            call refchg ( ctx, cframe, refid, et,  rot )
+            if ( ctx%failed() ) return
+            call mxv    ( rot,    sobs,       stemp  )
+         end if
+         cframe = refid
+         pos = starg(:,ctpos) - stemp
+      else if ( is_inertial_pair ( tframe(ctpos), cframe ) ) then
+         call irfrot ( ctx, tframe(ctpos),  cframe,               rot   )
+         call mxv    ( rot,            starg(:,ctpos),       stemp )
+         pos = stemp - sobs
+      else
+         call refchg ( ctx, tframe(ctpos),  cframe,          et,  rot )
+         if ( ctx%failed() ) return
+         call mxv    ( rot,            starg(:,ctpos),       stemp  )
+         pos = stemp - sobs
+      end if
+      if ( cframe == refid ) then
+         continue
+      else if ( is_inertial_pair ( cframe, refid ) ) then
+         call irfrot ( ctx, cframe,  refid,    rot   )
+         call mxv    ( rot,     pos,      stemp )
+         pos = stemp
+      else
+         call refchg ( ctx, cframe,  refid, et,  rot  )
+         if ( ctx%failed() ) return
+         call mxv    ( rot,     pos,        stemp   )
+         pos = stemp
+      end if
+      lt = vnorm  ( pos ) / clight
+   end subroutine fast_gps
+
+   !> The apparent position of TARG relative to an observer whose state
+   !> relative to the barycenter is SOBS, in an inertial frame: SPKAPO (one
+   !> light time iteration for LT, three for CN; STELAB or STLABX).
+   recursive subroutine fast_apo ( ctx, q, targ, et, refid, refname, sobs, ptarg, lt )
+      use pepper_constants, only: clight
+      use pepper_math, only: vnorm
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      type(state_query), intent(inout) :: q  !! the query
+      integer(ip), intent(in) :: targ  !! the target
+      real(wp), intent(in) :: et  !! the epoch
+      integer(ip), intent(in) :: refid  !! the (inertial) frame's ID code
+      character(*), intent(in) :: refname  !! its name
+      real(wp), intent(in) :: sobs(6)  !! the observer's state relative to the barycenter
+      real(wp), intent(out) :: ptarg(3)  !! the apparent position of the target
+      real(wp), intent(out) :: lt  !! the one-way light time
+      real(wp) :: tpos(3)
+      integer(ip) :: i
+      integer(ip) :: ltsign
+      integer(ip) :: maxitr
+      if ( ctx%failed() ) return
+      if ( q%xmit ) then
+         ltsign = 1
+      else
+         ltsign = -1
+      end if
+      call fast_gps ( ctx, q, targ, et, refid, refname, ssb, ptarg, lt )
+      if ( ctx%failed() ) return
+      tpos = ptarg - sobs(1:3)
+      ptarg = tpos
+      lt = vnorm  ( ptarg ) / clight
+      if ( q%uselt ) then
+         maxitr = 1
+      else if ( q%usecn ) then
+         maxitr = 3
+      else
+         maxitr = 0
+      end if
+      do i = 1, maxitr
+         call fast_gps ( ctx, q, targ, et + ltsign*lt, refid, refname, ssb, ptarg, lt )
+         if ( ctx%failed() ) return
+         tpos = ptarg - sobs(1:3)
+         ptarg = tpos
+         lt = vnorm  ( ptarg ) / clight
+      end do
+      if ( q%usestl ) then
+         if ( q%xmit ) then
+            call stlabx ( ctx, ptarg, sobs(4:6), tpos )
+            ptarg = tpos
+         else
+            call stelab ( ctx, ptarg, sobs(4:6), tpos )
+            ptarg = tpos
+         end if
+      end if
+   end subroutine fast_apo
+
+   !> The apparent position in a non-inertial frame: SPKEZP's branch for
+   !> those frames (the position in J2000, rotated at the epoch of the
+   !> frame's center corrected for light time).
+   recursive subroutine fast_position_noninertial ( ctx, q, et, ptarg, lt )
+      use pepper_math, only: mxv
+      class(pepper_context), intent(inout) :: ctx  !! the context
+      type(state_query), intent(inout) :: q  !! the query
+      real(wp), intent(in) :: et  !! the epoch
+      real(wp), intent(out) :: ptarg(3)  !! the apparent position of the target
+      real(wp), intent(out) :: lt  !! the one-way light time
+      integer(ip), parameter :: fj2000 = 1
+      real(wp) :: postn(3)
+      real(wp) :: temp(3)
+      real(wp) :: xform(3, 3)
+      real(wp) :: sobs(6)
+      real(wp) :: ltcent
+      real(wp) :: ltobs
+      call fast_geo ( ctx, q, q%observer, et, fj2000, 'J2000', ssb, sobs, ltobs )
+      call fast_apo ( ctx, q, q%target, et, fj2000, 'J2000', sobs, postn, lt )
+      if ( ctx%failed() ) return
+      if ( q%frame_center == q%observer ) then
+         ltcent = 0.0_wp
+      else if ( q%frame_center == q%target ) then
+         ltcent = lt
+      else
+         call fast_apo ( ctx, q, q%frame_center, et, fj2000, 'J2000', sobs, temp, ltcent )
+      end if
+      if ( ctx%failed() ) return
+      if ( q%xmit ) then
+         ltcent = -ltcent
+      end if
+      call refchg ( ctx, fj2000, q%frame, et-ltcent, xform )
+      if ( ctx%failed() ) return
+      call mxv    ( xform,  postn,             ptarg )
+   end subroutine fast_position_noninertial
 
 end submodule pepper_queries

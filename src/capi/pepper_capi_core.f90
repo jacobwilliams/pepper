@@ -27,7 +27,7 @@ module pepper_capi_core
    use, intrinsic :: iso_c_binding
    use pepper_kinds, only: ip, wp
    use pepper_containers, only: string
-   use pepper_instance_module, only: pepper_instance, pepper_context, state_query, rotation_query, &
+   use pepper_instance_module, only: pepper_instance, pepper_context, state_query, position_query, rotation_query, &
                               ephemeris_provider, frame_provider, gf_scalar, kernel_builder, kernel_loader, &
                               zzdynrot
    use pepper_bounds, only: lbcell
@@ -1653,6 +1653,78 @@ contains
       end if
       pepper_query_state = status_of(c)
    end function pepper_query_state
+
+   !> A prepared position query (see `ctx%prepare_position`): freed with
+   !> [[pepper_position_query_free]]. Used by one context (thread) at a time.
+   integer(c_int) function pepper_prepare_position ( ctx, target, observer, frame, abcorr, query ) &
+         bind(c, name='pepper_prepare_position')
+      type(c_ptr), value :: ctx  !! the context
+      character(kind=c_char), intent(in) :: target(*)  !! the target's name or ID code
+      character(kind=c_char), intent(in) :: observer(*)  !! the observer's name or ID code
+      character(kind=c_char), intent(in) :: frame(*)  !! the frame of the positions
+      character(kind=c_char), intent(in) :: abcorr(*)  !! the aberration correction
+      type(c_ptr), intent(out) :: query  !! the query (null after an error)
+      type(capi_context), pointer :: c
+      type(position_query), pointer :: q
+      character(:), allocatable :: f_target, f_observer, f_frame, f_abcorr
+      c => context_of(ctx)
+      call c_to_f(target, f_target)
+      call c_to_f(observer, f_observer)
+      call c_to_f(frame, f_frame)
+      call c_to_f(abcorr, f_abcorr)
+      allocate (q)
+      call c%prepare_position(q, f_target, f_observer, f_frame, f_abcorr)
+      if (c%failed()) then
+         deallocate (q)
+         query = c_null_ptr
+      else
+         query = c_loc(q)
+      end if
+      pepper_prepare_position = status_of(c)
+   end function pepper_prepare_position
+
+   !> Free a prepared position query.
+   subroutine pepper_position_query_free ( query ) bind(c, name='pepper_position_query_free')
+      type(c_ptr), value :: query  !! the query
+      type(position_query), pointer :: q
+      if (.not. c_associated(query)) return
+      call c_f_pointer(query, q)
+      deallocate (q)
+   end subroutine pepper_position_query_free
+
+   !> Evaluate a prepared position query at `n` epochs: `positions`
+   !> `[n][3]`, `lts` `[n]` (or null).
+   integer(c_int) function pepper_query_position ( ctx, query, n, ets, positions, lts ) &
+         bind(c, name='pepper_query_position')
+      type(c_ptr), value :: ctx  !! the context
+      type(c_ptr), value :: query  !! the query
+      integer(c_int), value :: n  !! the number of epochs
+      real(c_double), intent(in) :: ets(n)  !! the epochs
+      real(c_double), intent(out) :: positions(3, n)  !! the positions
+      type(c_ptr), value :: lts  !! the light times (`n`), or null
+      type(capi_context), pointer :: c
+      type(position_query), pointer :: q
+      real(c_double), pointer :: f_lts(:)
+      c => context_of(ctx)
+      call c_f_pointer(query, q)
+      if (n == 1) then
+         if (c_associated(lts)) then
+            call c_f_pointer(lts, f_lts, [n])
+            call c%query_position(q, ets(1), positions(:, 1), f_lts(1))
+         else
+            block
+               real(wp) :: lt
+               call c%query_position(q, ets(1), positions(:, 1), lt)
+            end block
+         end if
+      else if (c_associated(lts)) then
+         call c_f_pointer(lts, f_lts, [n])
+         call c%query_position(q, ets, positions, f_lts)
+      else
+         call c%query_position(q, ets, positions)
+      end if
+      pepper_query_position = status_of(c)
+   end function pepper_query_position
 
    !> A prepared frame transformation query (see `ctx%prepare_rotation`):
    !> freed with [[pepper_rotation_query_free]].
